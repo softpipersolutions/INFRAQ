@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pebble v1.0 · Module 02 — Estimate Crafting Space</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #F8F7F3;
+      --surface:      #FFFFFF;
+      --ink-1:        #161512;
+      --ink-2:        #5E5C55;
+      --ink-3:        #9A9790;
+      --border:       #E6E4DC;
+      --header-bg:    #0F0E0D;
+      --fire:         #D04010;
+      --teal:         #1A7A5C;
+      --teal-bg:      #EDF7F3;
+      --purple:       #4F45B0;
+      --purple-bg:    #F2F1FB;
+      --amber:        #B36810;
+      --amber-bg:     #FDF5E6;
+      --coral:        #9E3318;
+      --coral-bg:     #FDF0EB;
+      --p1-bg:        #A8DFC8;
+      --p1-ink:       #0A4A35;
+      --p2-bg:        #D8D6CE;
+      --p2-ink:       #3A3835;
+      --mono:   'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+      --sans:   'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --display:'Space Grotesk', 'DM Sans', sans-serif;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--ink-1);
+      line-height: 1.65;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── HEADER ────────────────────────────────────── */
+    .hdr { background: var(--header-bg); padding: 44px 52px 40px; }
+
+    .hdr__eyebrow {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 28px;
+    }
+
+    .hdr__crumb {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hdr__brand {
+      font-family: var(--display);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--fire);
+    }
+
+    .hdr__sep { color: #333; font-size: 14px; }
+
+    .hdr__pebble {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: #555;
+      letter-spacing: 0.06em;
+    }
+
+    .hdr__meta {
+      text-align: right;
+      font-size: 12px;
+      color: #555;
+      line-height: 1.9;
+    }
+
+    .hdr__meta strong { color: #888; font-weight: 500; }
+
+    .hdr__mod-tag {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .hdr__mod-num {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      color: #555;
+      letter-spacing: 0.1em;
+    }
+
+    .hdr__mod-line { width: 32px; height: 1px; background: #2A2826; }
+
+    .hdr__title {
+      font-family: var(--display);
+      font-size: 52px;
+      font-weight: 700;
+      line-height: 1.0;
+      letter-spacing: -1.5px;
+      color: #F5F3EE;
+      margin-bottom: 8px;
+    }
+
+    .hdr__title em { color: var(--fire); font-style: normal; }
+
+    .hdr__sub {
+      font-size: 13px;
+      color: #666;
+      font-weight: 300;
+    }
+
+    /* ── PURPOSE STRIP ──────────────────────────────── */
+    .purpose {
+      background: var(--fire);
+      padding: 14px 52px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .purpose__text { font-size: 14px; color: #fff; line-height: 1.5; }
+    .purpose__text strong { font-weight: 600; }
+    .purpose__rule {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: rgba(255,255,255,0.75);
+      white-space: nowrap;
+    }
+
+    /* ── PHASE MAP ──────────────────────────────────── */
+    .phases {
+      background: #1A1916;
+      padding: 24px 52px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .ph {
+      padding: 16px 20px;
+      border-radius: 6px;
+      border: 1px solid;
+    }
+
+    .ph--1 { border-color: #1A7A5C; background: rgba(26,122,92,0.08); }
+    .ph--2 { border-color: #3A3835; background: rgba(255,255,255,0.02); }
+
+    .ph__label {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .ph--1 .ph__label { color: var(--teal); }
+    .ph--2 .ph__label { color: #555; }
+
+    .ph__title {
+      font-family: var(--display);
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .ph--1 .ph__title { color: #E0F7F0; }
+    .ph--2 .ph__title { color: #555; }
+
+    .ph__desc { font-size: 13px; line-height: 1.5; }
+    .ph--1 .ph__desc { color: #88C4AE; }
+    .ph--2 .ph__desc { color: #444; }
+
+    /* ── BODY ───────────────────────────────────────── */
+    .body { max-width: 960px; margin: 0 auto; padding: 48px 40px; }
+
+    /* ── SECTION HEADING ────────────────────────────── */
+    .sec-head {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .sec-head__letter {
+      font-family: var(--display);
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .sec-head__letter--teal   { color: var(--teal); }
+    .sec-head__letter--purple { color: var(--purple); }
+    .sec-head__letter--amber  { color: var(--amber); }
+    .sec-head__letter--coral  { color: var(--coral); }
+
+    .sec-head__name {
+      font-family: var(--display);
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--ink-1);
+    }
+
+    .sec-head__meta {
+      font-size: 12px;
+      color: var(--ink-3);
+      margin-left: auto;
+    }
+
+    .sec { margin-bottom: 56px; }
+
+    /* ── PHASE BADGE ────────────────────────────────── */
+    .pbadge {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      padding: 3px 9px;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .pbadge--1 { background: var(--p1-bg); color: var(--p1-ink); }
+    .pbadge--2 { background: var(--p2-bg); color: var(--p2-ink); }
+
+    /* ── PIPELINE ───────────────────────────────────── */
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+      margin-bottom: 52px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .pipe { padding: 20px 18px; display: flex; flex-direction: column; gap: 8px; }
+    .pipe--1 { background: var(--teal-bg); }
+    .pipe--2 { background: var(--purple-bg); }
+    .pipe--3 { background: var(--amber-bg); }
+    .pipe--4 { background: var(--coral-bg); }
+
+    .pipe__num {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+    }
+
+    .pipe--1 .pipe__num { color: var(--teal); }
+    .pipe--2 .pipe__num { color: var(--purple); }
+    .pipe--3 .pipe__num { color: var(--amber); }
+    .pipe--4 .pipe__num { color: var(--coral); }
+
+    .pipe__title {
+      font-family: var(--display);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink-1);
+      line-height: 1.2;
+    }
+
+    .pipe__list { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+
+    .pipe__list li {
+      font-size: 12px;
+      color: var(--ink-2);
+      line-height: 1.45;
+      padding-left: 12px;
+      position: relative;
+    }
+
+    .pipe__list li::before {
+      content: "→";
+      position: absolute;
+      left: 0;
+      color: var(--ink-3);
+      font-size: 10px;
+    }
+
+    /* ── ENTITY GRID & CARDS ────────────────────────── */
+    .entity-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .entity {
+      background: var(--surface);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    }
+
+    .entity__hdr {
+      padding: 15px 20px 13px;
+      border-left: 3px solid var(--teal);
+      background: var(--teal-bg);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .entity__num {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--teal);
+      margin-bottom: 3px;
+    }
+
+    .entity__name {
+      font-family: var(--display);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink-1);
+    }
+
+    .entity__body { padding: 14px 20px 18px; }
+
+    .entity__purpose {
+      font-size: 13px;
+      color: var(--ink-2);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    /* ── FIELD LIST ─────────────────────────────────── */
+    .fields { list-style: none; }
+
+    .field {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      padding: 4px 0;
+      border-bottom: 1px solid #F2F1EC;
+    }
+
+    .field:last-child { border-bottom: none; }
+
+    .field__name {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--ink-1);
+      min-width: 150px;
+      flex-shrink: 0;
+    }
+
+    .field__type {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--fire);
+      min-width: 36px;
+      flex-shrink: 0;
+    }
+
+    .field__desc {
+      font-size: 11px;
+      color: var(--ink-3);
+      line-height: 1.45;
+    }
+
+    /* ── ENGINE GRID & CARDS ────────────────────────── */
+    .engine-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .engine {
+      background: var(--surface);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    }
+
+    .engine__hdr {
+      padding: 15px 20px 13px;
+      border-left: 3px solid var(--purple);
+      background: var(--purple-bg);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .engine__num {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--purple);
+      margin-bottom: 3px;
+    }
+
+    .engine__name {
+      font-family: var(--display);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink-1);
+    }
+
+    .engine__body { padding: 14px 20px 18px; }
+
+    .engine__io { margin-bottom: 10px; }
+
+    .engine__io-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-bottom: 4px;
+    }
+
+    .engine__io-list { list-style: none; }
+
+    .engine__io-list li {
+      font-size: 12px;
+      color: var(--ink-2);
+      padding: 2px 0 2px 14px;
+      position: relative;
+      line-height: 1.4;
+    }
+
+    .engine__io-list li::before {
+      content: "·";
+      position: absolute;
+      left: 0;
+      color: var(--purple);
+      font-weight: 700;
+    }
+
+    .engine__code {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 4px;
+      background: #1A1916;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: #8BC34A;
+      line-height: 1.7;
+      white-space: pre;
+    }
+
+    /* ── FORMAT GRID & CARDS ────────────────────────── */
+    .format-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .fmt {
+      background: var(--surface);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    }
+
+    .fmt__hdr {
+      padding: 15px 20px 13px;
+      border-left: 3px solid var(--amber);
+      background: var(--amber-bg);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .fmt__id {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--amber);
+      margin-bottom: 3px;
+    }
+
+    .fmt__name {
+      font-family: var(--display);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink-1);
+    }
+
+    .fmt__body { padding: 14px 20px 18px; }
+
+    .fmt__desc {
+      font-size: 13px;
+      color: var(--ink-2);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .fmt__rows { list-style: none; }
+
+    .fmt__row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 5px 0;
+      border-bottom: 1px solid #F2F1EC;
+      font-size: 12px;
+      color: var(--ink-2);
+      line-height: 1.45;
+    }
+
+    .fmt__row:last-child { border-bottom: none; }
+
+    .fmt__row-n {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--amber);
+      min-width: 20px;
+      flex-shrink: 0;
+      padding-top: 1px;
+    }
+
+    /* ── AUDIT TRAIL ────────────────────────────────── */
+    .audit {
+      background: var(--surface);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    }
+
+    .audit__hdr {
+      padding: 18px 28px;
+      border-left: 4px solid var(--coral);
+      background: var(--coral-bg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .audit__title {
+      font-family: var(--display);
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--ink-1);
+    }
+
+    .audit__sub {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--coral);
+      margin-top: 3px;
+    }
+
+    .audit__body { padding: 20px 28px 28px; }
+
+    .audit-events {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .ae {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: #FAF9F6;
+      border: 1px solid var(--border);
+    }
+
+    .ae__code {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 500;
+      color: var(--coral);
+      white-space: nowrap;
+      padding-top: 2px;
+      min-width: 88px;
+    }
+
+    .ae__desc {
+      font-size: 12px;
+      color: var(--ink-2);
+      line-height: 1.4;
+    }
+
+    .audit__schema {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 6px;
+      background: #1A1916;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: #C8C6BE;
+      line-height: 1.7;
+    }
+
+    .audit__schema span { color: #8BC34A; }
+
+    /* ── FOOTER ─────────────────────────────────────── */
+    .ftr {
+      background: var(--header-bg);
+      padding: 28px 52px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .ftr__label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: #555;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .ftr__title {
+      font-family: var(--display);
+      font-size: 22px;
+      font-weight: 700;
+      color: #F5F3EE;
+    }
+
+    .ftr__title span { color: var(--fire); }
+
+    .ftr__right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .ftr__badge {
+      display: inline-block;
+      background: var(--fire);
+      color: #fff;
+      font-family: var(--display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 4px;
+    }
+
+    .ftr__credit { font-size: 11px; color: #3A3835; }
+
+    /* ── RESPONSIVE ─────────────────────────────────── */
+    @media (max-width: 720px) {
+      .hdr          { padding: 32px 24px 28px; }
+      .hdr__title   { font-size: 36px; }
+      .purpose      { padding: 14px 24px; flex-direction: column; gap: 6px; }
+      .phases       { padding: 20px 24px; grid-template-columns: 1fr; }
+      .body         { padding: 32px 16px; }
+      .pipeline     { grid-template-columns: 1fr 1fr; }
+      .entity-grid  { grid-template-columns: 1fr; }
+      .engine-grid  { grid-template-columns: 1fr; }
+      .format-grid  { grid-template-columns: 1fr; }
+      .audit-events { grid-template-columns: 1fr; }
+      .ftr          { flex-direction: column; gap: 20px; padding: 24px; }
+      .ftr__right   { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="hdr">
+    <div class="hdr__eyebrow">
+      <div class="hdr__crumb">
+        <span class="hdr__brand">Greenberg Enterprises</span>
+        <span class="hdr__sep">·</span>
+        <span class="hdr__pebble">Pebble v1.0</span>
+      </div>
+      <div class="hdr__meta">
+        <strong>For</strong><br>
+        Amitabh Srivastava<br>
+        Softpiper Solutions
+      </div>
+    </div>
+    <div class="hdr__mod-tag">
+      <span class="hdr__mod-num">MODULE 02</span>
+      <span class="hdr__mod-line"></span>
+    </div>
+    <div class="hdr__title"><em>Estimate</em> Crafting Space</div>
+    <div class="hdr__sub">Technical Specification &nbsp;·&nbsp; Phase 1: Functionality &nbsp;→&nbsp; Phase 2: UI/UX</div>
+  </header>
+
+  <!-- PURPOSE -->
+  <div class="purpose">
+    <span class="purpose__text"><strong>What this space does:</strong> Holds all master data and design rules. Takes an enquiry as input. Automatically produces a first-draft estimate. A human reviews and approves. Approved estimate is formatted and served to client. Every action leaves a trail.</span>
+    <span class="purpose__rule">SITC = Supply × 1.43</span>
+  </div>
+
+  <!-- PHASE MAP -->
+  <div class="phases">
+    <div class="ph ph--1">
+      <div class="ph__label">Build First &nbsp;·&nbsp; Phase 1</div>
+      <div class="ph__title">Functionality</div>
+      <div class="ph__desc">Data architecture, master records, logic engines, auto-generation, SITC validation, audit logging, and output production. All backend. Testable via API or admin panel — no polished UI required.</div>
+    </div>
+    <div class="ph ph--2">
+      <div class="ph__label">Build Second &nbsp;·&nbsp; Phase 2</div>
+      <div class="ph__title">UI / UX</div>
+      <div class="ph__desc">The interface layer — enquiry input form, auto-draft review and edit screen, master data management panels, estimate preview, format selector, dispatch flow, and audit timeline. Built on top of Phase 1 logic.</div>
+    </div>
+  </div>
+
+  <main class="body">
+
+    <!-- PIPELINE -->
+    <div class="pipeline">
+      <div class="pipe pipe--1">
+        <span class="pipe__num">01 · INPUT</span>
+        <div class="pipe__title">Enquiry Received</div>
+        <ul class="pipe__list">
+          <li>Building type &amp; floors</li>
+          <li>Floor area in sqm</li>
+          <li>Occupancy type</li>
+          <li>Systems required</li>
+          <li>Make preference</li>
+          <li>Applicable standard</li>
+        </ul>
+      </div>
+      <div class="pipe pipe--2">
+        <span class="pipe__num">02 · GENERATE</span>
+        <div class="pipe__title">Auto-Draft v1</div>
+        <ul class="pipe__list">
+          <li>Design Logic → BOM</li>
+          <li>Pricing Engine → rates</li>
+          <li>Margin Engine → tier</li>
+          <li>SITC validation check</li>
+          <li>Draft v1 locked</li>
+        </ul>
+      </div>
+      <div class="pipe pipe--3">
+        <span class="pipe__num">03 · REVIEW</span>
+        <div class="pipe__title">Human Check</div>
+        <ul class="pipe__list">
+          <li>Verify quantities</li>
+          <li>Adjust makes if needed</li>
+          <li>Add / remove items</li>
+          <li>Add notes per line</li>
+          <li>Approve → lock version</li>
+        </ul>
+      </div>
+      <div class="pipe pipe--4">
+        <span class="pipe__num">04 · OUTPUT</span>
+        <div class="pipe__title">Serve to Client</div>
+        <ul class="pipe__list">
+          <li>Format A: Greenberg Std.</li>
+          <li>Format B: Client format</li>
+          <li>PDF / Excel output</li>
+          <li>Dispatch email / WA</li>
+          <li>Full trail stored</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- SECTION A: DATA LAYER -->
+    <div class="sec">
+      <div class="sec-head">
+        <span class="sec-head__letter sec-head__letter--teal">A</span>
+        <span class="sec-head__name">Data Layer — The Master Records</span>
+        <span class="sec-head__meta">8 entities &nbsp;·&nbsp; All Phase 1</span>
+      </div>
+
+      <div class="entity-grid">
+
+        <!-- A.01 -->
+        <div class="entity">
+          <div class="entity__hdr">
+            <div>
+              <div class="entity__num">A.01</div>
+              <div class="entity__name">Master Material Register</div>
+            </div>
+            <span class="pbadge pbadge--1">Phase 1</span>
+          </div>
+          <div class="entity__body">
+            <p class="entity__purpose">Single source of truth for every fire safety material Greenberg supplies or installs. Every other master links back to this register via material_code.</p>
+            <ul class="fields">
+              <li class="field"><span class="field__name">material_code</span><span class="field__type">STR</span><span class="field__desc">Unique. E.g. FAS-SMK-001, HYD-PIPE-65, EXT-ABC-04</span></li>
+              <li class="field"><span class="field__name">material_name</span><span class="field__type">STR</span><span class="field__desc">Full name. E.g. Smoke Detector (Photoelectric)</span></li>
+              <li class="field"><span class="field__name">system_type</span><span class="field__type">ENUM</span><span class="field__desc">FAS | Hydrant | Sprinkler | Extinguisher | Suppression | Common</span></li>
+              <li class="field"><span class="field__name">category</span><span class="field__type">ENUM</span><span class="field__desc">Detector | Panel | Cable | Pipe | Valve | Pump | Fitting | Extinguisher | Accessory | Signage</span></li>
+              <li class="field"><span class="field__name">unit_of_measure</span><span class="field__type">ENUM</span><span class="field__desc">No. | Metre | Set | Kg | Litre | Lot</span></li>
+              <li class="field"><span class="field__name">active</span><span class="field__type">BOOL</span><span class="field__desc">Currently in use in BOQs — inactive items excluded from generation</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- A.02 -->
+        <div class="entity">
+          <div class="entity__hdr">
+            <div>
+              <div class="entity__num">A.02</div>
+              <div class="entity__name">Master Spec Data</div>
+            </div>
+            <span class="pbadge pbadge--1">Phase 1</span>
+          </div>
+          <div class="entity__body">
+            <p class="entity__purpose">Technical specifications for each material — standard, rating, size, certifications. Linked 1:1 to the Material Register. Used in BOQ description and compliance notes.</p>
+            <ul class="fields">
+              <li class="field"><span class="field__name">material_code</span><span class="field__type">FK</span><span class="field__desc">Links to A.01 Master Material Register</span></li>
+              <li class="field"><span class="field__name">applicable_standard</span><span class="field__type">ENUM</span><span class="field__desc">IS | NBC 2016 | NFPA | UL Listed | FM Approved | Client Spec</span></li>
+              <li class="field"><span class="field__name">rating</span><span class="field__type">STR</span><span class="field__desc">E.g. 24V DC 20mA, PN16, Class E, 4 kg capacity</span></li>
+              <li class="field"><span class="field__name">size</span><span class="field__type">STR</span><span class="field__desc">E.g. 65mm dia, 4C×1.5sqmm, 150mm dia</span></li>
+              <li class="field"><span class="field__name">certifications</span><span class="field__type">ARR</span><span class="field__desc">Array — BIS | CE | UL | FM | LPCB</span></li>
+              <li class="field"><span class="field__name">compliance_notes</span><span class="field__type">STR</span><span class="field__desc">Free text — clause reference, local fire authority notes</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- A.03 -->
+        <div class="entity">
+          <div class="entity__hdr">
+            <div>
+              <div class="entity__num">A.03</div>
+              <div class="entity__name">Makes &amp; Brand Database</div>
+            </div>
+            <span class="pbadge pbadge--1">Phase 1</span>
+          </div>
+          <div class="entity__body">
+            <p class="entity__purpose">Approved brands for each material, tiered by quality. Pricing engine picks the right make based on client's preference — Premium, Standard, or Economy.</p>
+            <ul class="fields">
+              <li class="field"><span class="field__name">make_code</span><span class="field__type">STR</span><span class="field__desc">Unique. E.g. HON-FAS, AGN-EXT, SIE-DET</span></li>
+              <li class="field"><span class="field__name">material_code</span><span class="field__type">FK</span><span class="field__desc">Links to A.01 — which material this make applies to</span></li>
+              <li class="field"><span class="field__name">brand_name</span><span class="field__type">STR</span><span class="field__desc">E.g. Honeywell, Siemens, Notifier, Agni, Supremex, Minimax</span></li>
+              <li class="field"><span class="field__name">tier</span><span class="field__type">ENUM</span><span class="field__desc">Premium | Standard | Economy</span></li>
+              <li class="field"><span class="field__name">approval_status</span><span class="field__type">ENUM</span><span class="field__desc">Approved | Conditional | Blacklisted</span></li>
+              <li class="field"><span class="field__name">notes</span><span class="field__type">STR</span><span class="field__desc">Conditions, specific product lines, or known exclusions</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- A.04 -->
+        <div class="entity">
+          <div class="entity__hdr">
+            <div>
+              <div class="entity__num">A.04</div>
+              <div class="entity__name">Pricing Database</div>
+            </div>
+            <span class="pbadge pbadge--1">Phase 1</span>
+          </div>
+          <div class="entity__body">
+            <p class="entity__purpose">Live and historical buy/sell rates per material per make. Every rate change creates a new versioned record — old rates are never deleted so past quotes remain fully re-traceable.</p>
+            <ul class="fields">
+              <li class="field"><span class="field__name">price_id</span><span class="field__type">STR</span><span class="field__desc">Auto-generated unique ID per rate entry</span></li>
+              <li class="field"><span class="field__name">material_code</span><span class="field__type">FK</span><span class="field__desc">Links to A.01</span></li>
+              <li class="field"><span class="field__name">make_code</span><span class="field__type">FK</span><span class="field__desc">Links to A.03 — rate is make-specific</span></li>
+              <li class="field"><span class="field__name">buying_rate</span><span class="field__type">NUM</span><span class="field__desc">₹ per unit — what Greenberg pays the supplier</span></li>
+              <li class="field"><span class="field__name">selling_rate</span><span class="field__type">NUM</span><span class="field__desc">₹ per unit — quoted to client (buying + margin)</span></li>
+              <li class="field"><span class="field__name">effective_from</span><span class="field__type">DATE</span><span class="field__desc">Rate valid from this date</span></li>
+              <li class="field"><span class="field__name">effective_to</span><span class="field__type">DATE</span><span class="field__desc">NULL = currently active. Filled when superseded by new rate.</span></li>
+              <li class="field"><span class="field__name">created_by</span><span class="field__type">STR</span><span class="field__desc">User who entered this rate — part of audit chain</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- A.05 -->
+        <div class="entity">
+          <div class="entity__hdr">
+            <div>
+              <div class="entity__num">A.05</div>
+              <div class="entity__name">Installation Rates Master</div>
+            </div>
+            <span class="pbadge pbadge--1">Phase 1</span>
+          </div>
+          <div class="entity__body">
+            <p class="entity__purpose">Labour rate for every installation activity. Together with supply rates, this computes SITC at line-item level. The 1.43 blended ratio is validated against the sum of these line rates.</p>
+            <ul class="fields">
+              <li class="field"><span class="field__name">rate_code</span><span class="field__type">STR</span><span class="field__desc">Unique. E.g. INST-DET-001, INST-PIPE-65</span></li>
+              <li class="field"><span class="field__name">description</span><span class="field__type">STR</span><span class="field__desc">E.g. Supply &amp; Install Smoke Detector (Photoelectric)</span></li>
+              <li class="field"><span class="field__name">system_type</span><span class="field__type">ENUM</span><span class="field__desc">FAS | Hydrant | Sprinkler | Extinguisher | Common</span></li>
+              <li class="field"><span class="field__name">linked_material</span><span class="field__type">FK</span><span class="field__desc">Optional — links to A.01 for material-specific install rates</span></li>
+              <li class="field"><span class="field__name">rate</span><span class="field__type">NUM</span><span class="field__desc">₹ per unit of activity</span></li>
+              <li class="field"><span class="field__name">unit</span><span class="field__type">ENUM</span><span class="field__desc">Per No. | Per Metre | Per Set | Per Floor | Lumpsum</span></li>
+              <li class="field"><span class="field__name">effective_from</span><span class="field__type">DATE</span><span class="field__desc">Rate valid from this date — new record created on change</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- A.06 -->
+        <div class="entity">
+          <div class="entity__hdr">
+            <div>
+              <div class="entity__num">A.06</div>
+              <div class="entity__name">Design Logic Rules Engine</div>
+            </div>
+            <span class="pbadge pbadge--1">Phase 1</span>
+          </div>
+          <div class="entity__body">
+            <p class="entity__purpose">Parametric rules that translate building input parameters into a Bill of Materials. The intelligence core of the module. Rules built and maintained by Greenberg based on IS, NBC, and NFPA requirements.</p>
+            <ul class="fields">
+              <li class="field"><span class="field__name">rule_code</span><span class="field__type">STR</span><span class="field__desc">Unique. E.g. DL-FAS-001, DL-HYD-003, DL-SPR-002</span></li>
+              <li class="field"><span class="field__name">system_type</span><span class="field__type">ENUM</span><span class="field__desc">Which fire system this rule applies to</span></li>
+              <li class="field"><span class="field__name">condition</span><span class="field__type">EXPR</span><span class="field__desc">Trigger — e.g. building_type=Commercial AND floor_area &lt;= 500</span></li>
+              <li class="field"><span class="field__name">output_material_code</span><span class="field__type">FK</span><span class="field__desc">What material this rule produces — links to A.01</span></li>
+              <li class="field"><span class="field__name">quantity_formula</span><span class="field__type">EXPR</span><span class="field__desc">E.g. CEIL(floor_area / 60) for smoke detectors per IS 2189</span></li>
+              <li class="field"><span class="field__name">standard_reference</span><span class="field__type">STR</span><span class="field__desc">Engineering basis — IS clause, NBC table, or NFPA section cited</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- A.07 -->
+        <div class="entity">
+          <div class="entity__hdr">
+            <div>
+              <div class="entity__num">A.07</div>
+              <div class="entity__name">Profit Margin Matrix</div>
+            </div>
+            <span class="pbadge pbadge--1">Phase 1</span>
+          </div>
+          <div class="entity__body">
+            <p class="entity__purpose">Target and floor margins per project tier. Pricing engine applies these automatically. Any estimate falling below floor margin is flagged and cannot be approved without explicit authorization.</p>
+            <ul class="fields">
+              <li class="field"><span class="field__name">tier</span><span class="field__type">ENUM</span><span class="field__desc">1 | 2 | 3 | 4 — mapped from estimated project value</span></li>
+              <li class="field"><span class="field__name">tier_label</span><span class="field__type">STR</span><span class="field__desc">E.g. Tier 1: Sub ₹5L, Tier 2: ₹5L–₹20L</span></li>
+              <li class="field"><span class="field__name">target_margin_pct</span><span class="field__type">NUM</span><span class="field__desc">Default margin applied by the pricing engine</span></li>
+              <li class="field"><span class="field__name">floor_margin_pct</span><span class="field__type">NUM</span><span class="field__desc">Minimum acceptable — below this triggers approval gate</span></li>
+              <li class="field"><span class="field__name">discount_authority</span><span class="field__type">ENUM</span><span class="field__desc">Who can approve below-floor margin — MD | GM | Self</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- A.08 -->
+        <div class="entity">
+          <div class="entity__hdr">
+            <div>
+              <div class="entity__num">A.08</div>
+              <div class="entity__name">Enquiry Input Schema</div>
+            </div>
+            <span class="pbadge pbadge--1">Phase 1</span>
+          </div>
+          <div class="entity__body">
+            <p class="entity__purpose">Standardized input record that triggers the entire generation engine. Every estimate must trace back to a valid, complete enquiry record. Auto-generates the enquiry_id.</p>
+            <ul class="fields">
+              <li class="field"><span class="field__name">enquiry_id</span><span class="field__type">STR</span><span class="field__desc">Auto-generated. Format: GBE-ENQ-2025-001</span></li>
+              <li class="field"><span class="field__name">client_name</span><span class="field__type">STR</span><span class="field__desc">Client or developer name</span></li>
+              <li class="field"><span class="field__name">project_name</span><span class="field__type">STR</span><span class="field__desc">Building or project name</span></li>
+              <li class="field"><span class="field__name">building_type</span><span class="field__type">ENUM</span><span class="field__desc">Residential | Commercial | Industrial | Institutional | Mixed</span></li>
+              <li class="field"><span class="field__name">floors_above</span><span class="field__type">NUM</span><span class="field__desc">Storeys above ground level</span></li>
+              <li class="field"><span class="field__name">floor_area_sqm</span><span class="field__type">NUM</span><span class="field__desc">Per floor — if uneven, per zone with separate inputs</span></li>
+              <li class="field"><span class="field__name">systems_required</span><span class="field__type">ARR</span><span class="field__desc">Array: [FAS, Hydrant, Sprinkler, Extinguisher, Suppression]</span></li>
+              <li class="field"><span class="field__name">make_preference</span><span class="field__type">ENUM</span><span class="field__desc">Premium | Standard | Economy | As per Greenberg</span></li>
+              <li class="field"><span class="field__name">project_tier</span><span class="field__type">ENUM</span><span class="field__desc">1–4 auto-suggested from estimated value, manually editable</span></li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION B: LOGIC ENGINES -->
+    <div class="sec">
+      <div class="sec-head">
+        <span class="sec-head__letter sec-head__letter--purple">B</span>
+        <span class="sec-head__name">Logic Engines</span>
+        <span class="sec-head__meta">3 engines &nbsp;·&nbsp; All Phase 1</span>
+      </div>
+
+      <div class="engine-grid">
+
+        <!-- B.01 -->
+        <div class="engine">
+          <div class="engine__hdr">
+            <div>
+              <div class="engine__num">B.01</div>
+              <div class="engine__name">Design Logic Engine</div>
+            </div>
+            <span class="pbadge pbadge--1">Phase 1</span>
+          </div>
+          <div class="engine__body">
+            <div class="engine__io">
+              <div class="engine__io-label">Inputs</div>
+              <ul class="engine__io-list">
+                <li>Enquiry parameters (A.08)</li>
+                <li>Design Rules database (A.06)</li>
+                <li>Applicable standard selected</li>
+              </ul>
+            </div>
+            <div class="engine__io">
+              <div class="engine__io-label">Process</div>
+              <ul class="engine__io-list">
+                <li>Match building params against rule conditions</li>
+                <li>Execute quantity formula per matched rule</li>
+                <li>Repeat per system type requested</li>
+              </ul>
+            </div>
+            <div class="engine__io">
+              <div class="engine__io-label">Output</div>
+              <ul class="engine__io-list">
+                <li>Bill of Materials: item_code, name, qty, unit — per system</li>
+              </ul>
+            </div>
+            <div class="engine__code">// Example rule execution
+IF system = FAS AND bldg = Commercial
+  smoke_det = CEIL(floor_area / 60)
+  heat_det  = CEIL(floor_area / 30)
+  // per IS 2189 spacing tables</div>
+          </div>
+        </div>
+
+        <!-- B.02 -->
+        <div class="engine">
+          <div class="engine__hdr">
+            <div>
+              <div class="engine__num">B.02</div>
+              <div class="engine__name">Pricing Engine</div>
+            </div>
+            <span class="pbadge pbadge--1">Phase 1</span>
+          </div>
+          <div class="engine__body">
+            <div class="engine__io">
+              <div class="engine__io-label">Inputs</div>
+              <ul class="engine__io-list">
+                <li>BOM from B.01</li>
+                <li>Pricing Database — A.04</li>
+                <li>Installation Rates — A.05</li>
+                <li>Margin Matrix — A.07</li>
+                <li>Make preference from A.08</li>
+              </ul>
+            </div>
+            <div class="engine__io">
+              <div class="engine__io-label">Process</div>
+              <ul class="engine__io-list">
+                <li>Lookup selling rate: item + make tier</li>
+                <li>Lookup install rate per activity</li>
+                <li>Apply tier margin to supply rate</li>
+                <li>Compute line totals</li>
+              </ul>
+            </div>
+            <div class="engine__io">
+              <div class="engine__io-label">Output</div>
+              <ul class="engine__io-list">
+                <li>Line-item estimate: supply amt, install amt, SITC, line total</li>
+              </ul>
+            </div>
+            <div class="engine__code">// Per line computation
+supply_amt  = qty × selling_rate
+install_amt = qty × install_rate
+line_SITC   = supply_amt + install_amt</div>
+          </div>
+        </div>
+
+        <!-- B.03 -->
+        <div class="engine">
+          <div class="engine__hdr">
+            <div>
+              <div class="engine__num">B.03</div>
+              <div class="engine__name">SITC Validation</div>
+            </div>
+            <span class="pbadge pbadge--1">Phase 1</span>
+          </div>
+          <div class="engine__body">
+            <div class="engine__io">
+              <div class="engine__io-label">Inputs</div>
+              <ul class="engine__io-list">
+                <li>Total supply amount from B.02</li>
+                <li>Total SITC amount from B.02</li>
+                <li>Target ratio: 1.43</li>
+              </ul>
+            </div>
+            <div class="engine__io">
+              <div class="engine__io-label">Process</div>
+              <ul class="engine__io-list">
+                <li>Calculate actual blended ratio</li>
+                <li>Compare against 1.43 target</li>
+                <li>Flag if deviation exceeds 5%</li>
+              </ul>
+            </div>
+            <div class="engine__io">
+              <div class="engine__io-label">Output</div>
+              <ul class="engine__io-list">
+                <li>PASS or ALERT status stored on estimate with actual ratio</li>
+              </ul>
+            </div>
+            <div class="engine__code">// Validation gate
+ratio = total_SITC / total_supply
+IF ratio &lt; 1.35 OR ratio &gt; 1.51
+  → FLAG for human review
+  → block auto-approval</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION C: OUTPUT FORMATS -->
+    <div class="sec">
+      <div class="sec-head">
+        <span class="sec-head__letter sec-head__letter--amber">C</span>
+        <span class="sec-head__name">Output Formats</span>
+        <span class="sec-head__meta">Format A: Phase 1 &nbsp;·&nbsp; Format B: Phase 2</span>
+      </div>
+
+      <div class="format-grid">
+
+        <div class="fmt">
+          <div class="fmt__hdr">
+            <div>
+              <div class="fmt__id">FORMAT A &nbsp;·&nbsp; PHASE 1</div>
+              <div class="fmt__name">Greenberg Standard Format</div>
+            </div>
+            <span class="pbadge pbadge--1">Phase 1</span>
+          </div>
+          <div class="fmt__body">
+            <p class="fmt__desc">Greenberg's own BOQ structure, auto-generated from the approved estimate. PDF and Excel output. No manual formatting work required on the team's end.</p>
+            <ul class="fmt__rows">
+              <li class="fmt__row"><span class="fmt__row-n">01</span>Company letterhead — name, CIN, GSTIN, NEBOSH/NFPA credentials, contact</li>
+              <li class="fmt__row"><span class="fmt__row-n">02</span>Estimate header — estimate no., date, validity period, client, project name</li>
+              <li class="fmt__row"><span class="fmt__row-n">03</span>Systems summary — what is included and indicative value</li>
+              <li class="fmt__row"><span class="fmt__row-n">04</span>Line items by system section — one section per system type</li>
+              <li class="fmt__row"><span class="fmt__row-n">05</span>Per line: item code | description | make | qty | unit | supply rate | install rate | SITC rate | line amount</li>
+              <li class="fmt__row"><span class="fmt__row-n">06</span>Sub-total per system section</li>
+              <li class="fmt__row"><span class="fmt__row-n">07</span>Grand summary — total supply, total installation, total SITC, blended ratio</li>
+              <li class="fmt__row"><span class="fmt__row-n">08</span>Final quoted amount with applicable tax breakout</li>
+              <li class="fmt__row"><span class="fmt__row-n">09</span>Commercial terms — payment schedule, validity, scope inclusions and exclusions</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="fmt">
+          <div class="fmt__hdr">
+            <div>
+              <div class="fmt__id">FORMAT B &nbsp;·&nbsp; PHASE 2</div>
+              <div class="fmt__name">Client Provided Format</div>
+            </div>
+            <span class="pbadge pbadge--2">Phase 2</span>
+          </div>
+          <div class="fmt__body">
+            <p class="fmt__desc">Client uploads their own BOQ template. System maps Greenberg's line items into the client's column structure and populates it automatically. Requires a mapping UI built in Phase 2.</p>
+            <ul class="fmt__rows">
+              <li class="fmt__row"><span class="fmt__row-n">01</span>Client uploads their BOQ template — Excel or PDF</li>
+              <li class="fmt__row"><span class="fmt__row-n">02</span>Template parser identifies columns, rows, and structure</li>
+              <li class="fmt__row"><span class="fmt__row-n">03</span>Mapping interface — Greenberg field linked to client column</li>
+              <li class="fmt__row"><span class="fmt__row-n">04</span>Mapping saved as reusable template per client — mapped once, reused always</li>
+              <li class="fmt__row"><span class="fmt__row-n">05</span>Auto-population of client format from approved estimate data</li>
+              <li class="fmt__row"><span class="fmt__row-n">06</span>Human review of mapped output before dispatch</li>
+              <li class="fmt__row"><span class="fmt__row-n">07</span>Export as Excel maintaining client's original formatting and structure</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION D: AUDIT & TRAIL -->
+    <div class="sec">
+      <div class="sec-head">
+        <span class="sec-head__letter sec-head__letter--coral">D</span>
+        <span class="sec-head__name">Audit &amp; Trail</span>
+        <span class="sec-head__meta">Every action logged &nbsp;·&nbsp; Phase 1 &nbsp;·&nbsp; Never deleted</span>
+      </div>
+
+      <div class="audit">
+        <div class="audit__hdr">
+          <div>
+            <div class="audit__title">Complete Event Log — Enquiry Received to Estimate Dispatched</div>
+            <div class="audit__sub">stored per estimate_id &nbsp;·&nbsp; full timeline accessible any time &nbsp;·&nbsp; records never modified or deleted</div>
+          </div>
+          <span class="pbadge pbadge--1">Phase 1</span>
+        </div>
+        <div class="audit__body">
+          <ul class="audit-events">
+            <li class="ae"><span class="ae__code">ENQ_CREATED</span><span class="ae__desc">Enquiry logged with all input parameters, source, received_by, and timestamp.</span></li>
+            <li class="ae"><span class="ae__code">GEN_STARTED</span><span class="ae__desc">Auto-generation triggered. Rules version and pricing snapshot date locked at this moment.</span></li>
+            <li class="ae"><span class="ae__code">RULE_APPLIED</span><span class="ae__desc">Each design rule executed — rule_code, condition matched, qty formula result, material added to BOM.</span></li>
+            <li class="ae"><span class="ae__code">PRICE_APPLIED</span><span class="ae__desc">Rates pulled — price_id used, make selected, buying and selling rates, date effective.</span></li>
+            <li class="ae"><span class="ae__code">SITC_VALIDATED</span><span class="ae__desc">Blended ratio computed and stored. PASS or ALERT status recorded with actual ratio value.</span></li>
+            <li class="ae"><span class="ae__code">DRAFT_v1_CREATED</span><span class="ae__desc">First draft locked as version 1. Immutable after this point — all edits create new version records.</span></li>
+            <li class="ae"><span class="ae__code">REVIEW_STARTED</span><span class="ae__desc">Human reviewer identified. Session start timestamp recorded.</span></li>
+            <li class="ae"><span class="ae__code">LINE_EDITED</span><span class="ae__desc">Field changed — field_name, old_value, new_value, optional reason note, actor, timestamp.</span></li>
+            <li class="ae"><span class="ae__code">LINE_ADDED</span><span class="ae__desc">New line item added manually — full item detail, who added, reason for manual addition.</span></li>
+            <li class="ae"><span class="ae__code">LINE_REMOVED</span><span class="ae__desc">Item removed — item detail preserved in log, reason recorded, item not deleted from database.</span></li>
+            <li class="ae"><span class="ae__code">EST_APPROVED</span><span class="ae__desc">Final version locked by approver. No further edits possible without triggering EST_REVISED.</span></li>
+            <li class="ae"><span class="ae__code">OUTPUT_GENERATED</span><span class="ae__desc">Format type (A or B), output filename, generated_by, generation timestamp.</span></li>
+            <li class="ae"><span class="ae__code">EST_DISPATCHED</span><span class="ae__desc">Sent to client — channel (email / WhatsApp / portal), recipient, dispatch timestamp.</span></li>
+            <li class="ae"><span class="ae__code">EST_REVISED</span><span class="ae__desc">New version triggered — reason (client request / scope change). Prior version archived, new version cycle begins.</span></li>
+          </ul>
+          <div class="audit__schema">
+            Each event record: &nbsp;<span>event_type · estimate_id · version · actor · timestamp · payload</span><br>
+            Timeline view: all events for any estimate in chronological order — from ENQ_CREATED to EST_DISPATCHED.<br>
+            Version compare: any two estimate versions diffable side-by-side — what changed, added, or removed.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="ftr">
+    <div>
+      <div class="ftr__label">pebble v1.0 &nbsp;·&nbsp; module 02</div>
+      <div class="ftr__title"><span>Estimate</span> Crafting Space</div>
+    </div>
+    <div class="ftr__right">
+      <span class="ftr__badge">Pebble v1.0</span>
+      <div class="ftr__credit">Greenberg Enterprises &times; Softpiper Solutions</div>
+    </div>
+  </footer>
+
+</body>
+</html>
