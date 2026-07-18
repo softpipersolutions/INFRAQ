@@ -2,7 +2,21 @@
 
 > **Purpose of this file:** hand off the build to a fresh Claude Code session (local or remote) with zero context loss. Read this top-to-bottom, then follow "How to continue" at the end. The full approved architecture/build plan is in **`docs/PLAN.md`** — read that too before writing code.
 
-Last updated: 2026-07-17 · Branch: `claude/fire-safety-boq-webapp-f5n921` (also pushed to `main` at user request)
+Last updated: 2026-07-18 · Branch: `claude/fire-safety-boq-webapp-f5n921`
+
+> ## ✅ BUILD COMPLETE (2026-07-18)
+> All layers in §7 are built, tested, and pushed. **279 tests pass** (`pnpm -r test`);
+> `pnpm -r typecheck` and `pnpm --filter @pebble/web build` are green.
+> The §6 acceptance gate is verified end-to-end on the running app: an enquiry for
+> *Commercial · 4 floors · 450 sqm · FAS + Extinguisher · tier 2* generates
+> `GBE-EST-2026-001` — **LOCKED v1, SITC PASS (blended 1.43), margin OK, 13 lines,
+> zero warnings**, grand total ₹7,65,320.27 — and the review-fork → approve cycle
+> plus the full append-only audit sequence were confirmed via tRPC.
+> Per-package: shared 35 · expr 123 · db 18 · engines 31 · dispatch 24 · ai 26 ·
+> documents 12 · worker 10. Remaining work is future-phase (ingestion/RAG, chat UI,
+> Firebase wiring, live Chromium PDF + GCS, real letterhead/GSTIN values).
+> The section-2 state tables below describe the *starting* point of this build and
+> are kept for history.
 
 ## 1. What this project is
 
