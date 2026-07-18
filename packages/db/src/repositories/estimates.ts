@@ -475,3 +475,67 @@ export async function updateWorkingLine(
       and(eq(estimateLines.estimateVersionId, versionId), eq(estimateLines.lineUid, lineUid)),
     );
 }
+
+/** Add a manual line to a WORKING version (blocked by trigger if LOCKED). */
+export async function addWorkingLine(db: Db, versionId: string, line: PricedLine): Promise<void> {
+  await db.insert(estimateLines).values(lineValues(versionId, line));
+}
+
+/** Remove a line from a WORKING version by line_uid (blocked by trigger if LOCKED). */
+export async function removeWorkingLine(db: Db, versionId: string, lineUid: string): Promise<void> {
+  await db
+    .delete(estimateLines)
+    .where(and(eq(estimateLines.estimateVersionId, versionId), eq(estimateLines.lineUid, lineUid)));
+}
+
+export interface VersionAggregates {
+  totalSupplyPaise: number;
+  totalInstallPaise: number;
+  totalSitcPaise: number;
+  gstPaise: number;
+  grandTotalPaise: number;
+  blendedRatio: number | null;
+  marginPct: number | null;
+}
+
+/**
+ * Rewrite a WORKING version's recomputed totals after an edit. The web layer
+ * recomputes these with the engines (validateSitc/computeMargin/computeTotals)
+ * from the current working lines and calls this. LOCKED versions are rejected
+ * by the immutability trigger.
+ */
+export async function updateWorkingVersionAggregates(
+  db: Db,
+  versionId: string,
+  agg: VersionAggregates,
+): Promise<void> {
+  await db
+    .update(estimateVersions)
+    .set({
+      totalSupply: paiseToNumericString(agg.totalSupplyPaise),
+      totalInstall: paiseToNumericString(agg.totalInstallPaise),
+      totalSitc: paiseToNumericString(agg.totalSitcPaise),
+      gstAmount: paiseToNumericString(agg.gstPaise),
+      grandTotal: paiseToNumericString(agg.grandTotalPaise),
+      blendedRatio: agg.blendedRatio === null ? null : String(agg.blendedRatio),
+      marginPct: agg.marginPct === null ? null : String(agg.marginPct),
+    })
+    .where(eq(estimateVersions.id, versionId));
+}
+
+/** Update estimate header status fields (SITC/margin/status) after a recompute. */
+export async function setEstimateStatus(
+  db: Db,
+  estimateId: string,
+  fields: {
+    status?: EstimateStatus;
+    sitcStatus?: SitcStatus | null;
+    marginStatus?: MarginStatus | null;
+    requiredAuthority?: DiscountAuthority | null;
+  },
+): Promise<void> {
+  await db
+    .update(estimates)
+    .set({ ...fields, updatedAt: new Date() })
+    .where(eq(estimates.estimateId, estimateId));
+}
