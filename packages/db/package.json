@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.0",
+    "@pebble/expr": "workspace:*",
     "@pebble/shared": "workspace:*",
     "drizzle-orm": "^0.44.0",
     "pg": "^8.13.0",

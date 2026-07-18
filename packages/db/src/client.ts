@@ -21,8 +21,19 @@ export type Db = PgDatabase<PgQueryResultHKT, DbSchema>;
 
 /** Handle returned by createDb — discriminated so migrateDb can pick the right migrator. */
 export type DbHandle =
-  | { db: NodePgDatabase<DbSchema>; kind: "pg"; close(): Promise<void> }
-  | { db: PgliteDatabase<DbSchema>; kind: "pglite"; close(): Promise<void> };
+  | {
+      db: NodePgDatabase<DbSchema>;
+      kind: "pg";
+      /** Run raw, possibly multi-statement SQL (migrations, DDL). */
+      exec(sql: string): Promise<void>;
+      close(): Promise<void>;
+    }
+  | {
+      db: PgliteDatabase<DbSchema>;
+      kind: "pglite";
+      exec(sql: string): Promise<void>;
+      close(): Promise<void>;
+    };
 
 export interface CreateDbOptions {
   /** Force the embedded PGlite driver even when DATABASE_URL is set. */
@@ -51,6 +62,10 @@ export async function createDb(opts: CreateDbOptions = {}): Promise<DbHandle> {
     return {
       db,
       kind: "pg",
+      // Simple query protocol runs a multi-statement batch in one round trip.
+      exec: async (rawSql: string) => {
+        await pool.query(rawSql);
+      },
       close: async () => {
         await pool.end();
       },
@@ -64,6 +79,10 @@ export async function createDb(opts: CreateDbOptions = {}): Promise<DbHandle> {
   return {
     db,
     kind: "pglite",
+    // PGlite's exec() runs multiple statements (incl. dollar-quoted bodies).
+    exec: async (rawSql: string) => {
+      await client.exec(rawSql);
+    },
     close: async () => {
       await client.close();
     },
