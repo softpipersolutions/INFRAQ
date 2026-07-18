@@ -29,9 +29,10 @@ const NODE_ONLY_PACKAGES = [
 ];
 
 const nextConfig: NextConfig = {
-  // Self-contained server bundle for the Cloud Run image (infra/Dockerfile.web
-  // copies .next/standalone). Local `next start` is unaffected.
-  output: "standalone",
+  // NOTE: no `output: "standalone"` — the custom `externals` function below
+  // defeats Next's output file tracing (the traced bundle shipped an empty
+  // node_modules), so the Cloud Run image (infra/Dockerfile.web) runs a
+  // prod-installed workspace with `next start` instead.
   transpilePackages: [
     "@pebble/shared",
     "@pebble/db",

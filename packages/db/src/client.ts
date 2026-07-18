@@ -1,13 +1,15 @@
 import { mkdir } from "node:fs/promises";
-import { PGlite } from "@electric-sql/pglite";
-import { btree_gist } from "@electric-sql/pglite/contrib/btree_gist";
-import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
-import { vector } from "@electric-sql/pglite/vector";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { drizzle as drizzleNodePg, type NodePgDatabase } from "drizzle-orm/node-postgres";
-import { drizzle as drizzlePglite, type PgliteDatabase } from "drizzle-orm/pglite";
+import type { PgliteDatabase } from "drizzle-orm/pglite";
 import pg from "pg";
 import * as schema from "./schema";
+
+// PGlite (and its extensions + drizzle adapter) are loaded lazily inside the
+// pglite branch of createDb. Production runs on node-postgres and must not
+// evaluate — or even ship — the embedded-database WASM bundle; a top-level
+// import here previously crashed the Cloud Run image, where the deploy
+// bundle contains only the pg driver.
 
 /** The full Drizzle schema object (tables + pg enums). */
 export type DbSchema = typeof schema;
@@ -80,6 +82,14 @@ export async function createDb(opts: CreateDbOptions = {}): Promise<DbHandle> {
   if (!dir.includes("://")) {
     await mkdir(dir, { recursive: true });
   }
+  const [{ PGlite }, { btree_gist }, { pg_trgm }, { vector }, { drizzle: drizzlePglite }] =
+    await Promise.all([
+      import("@electric-sql/pglite"),
+      import("@electric-sql/pglite/contrib/btree_gist"),
+      import("@electric-sql/pglite/contrib/pg_trgm"),
+      import("@electric-sql/pglite/vector"),
+      import("drizzle-orm/pglite"),
+    ]);
   const client = new PGlite(dir, { extensions: { vector, pg_trgm, btree_gist } });
   await client.waitReady;
   const db = drizzlePglite(client, { schema });

@@ -3,14 +3,14 @@
 # Pebble Module 02 — @pebble/web (Next.js 15) production image for Cloud Run.
 #
 # Multi-stage pnpm build. Workspace packages ship TypeScript *source* and are
-# transpiled by Next (`transpilePackages` in next.config.ts), so the whole repo
-# must be present at build time. The final image is a Next.js **standalone**
-# bundle (self-contained server + pruned node_modules) which keeps the runtime
-# layer small and cold-starts fast.
+# transpiled by Next (`transpilePackages` in next.config.ts). The runner is a
+# **prod-installed workspace** serving the prebuilt .next via `next start`.
 #
-# NOTE: the standalone output requires `output: "standalone"` in
-# apps/web/next.config.ts (owned by the web app). If that is not set, switch the
-# runner stage to copy the full app and run `pnpm --filter @pebble/web start`.
+# Why not Next's standalone output: the app force-externalises its node-only
+# packages (pglite/pg/exceljs/firebase-admin/google-*) through a custom webpack
+# `externals` function — required to keep them require()-able at runtime — and
+# that defeats Next's output file tracing, which then ships an (almost) empty
+# node_modules. A prod pnpm install is ~200MB heavier but always complete.
 
 # ── Base: Node 22 + pnpm (pinned via corepack to the repo's packageManager) ──
 FROM node:22-slim AS base
@@ -36,7 +36,7 @@ COPY packages/mcp/package.json ./packages/mcp/
 COPY packages/shared/package.json ./packages/shared/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
-# ── Build: bring in the full source and produce the standalone output ──
+# ── Build: bring in the full source and produce .next ──
 FROM deps AS build
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -52,22 +52,42 @@ ENV NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY \
     NEXT_PUBLIC_FIREBASE_APP_ID=$NEXT_PUBLIC_FIREBASE_APP_ID
 RUN pnpm --filter @pebble/web build
 
-# ── Runner: minimal standalone runtime ──
-FROM node:22-slim AS runner
-WORKDIR /app
+# ── Prune: prod-only node_modules for the whole workspace ──
+FROM base AS prune
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/web/package.json ./apps/web/
+COPY apps/worker/package.json ./apps/worker/
+COPY packages/ai/package.json ./packages/ai/
+COPY packages/db/package.json ./packages/db/
+COPY packages/dispatch/package.json ./packages/dispatch/
+COPY packages/documents/package.json ./packages/documents/
+COPY packages/engines/package.json ./packages/engines/
+COPY packages/expr/package.json ./packages/expr/
+COPY packages/mcp/package.json ./packages/mcp/
+COPY packages/shared/package.json ./packages/shared/
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --prod
+
+# ── Runner: prod workspace + prebuilt .next, served by next start ──
+FROM base AS runner
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-# Cloud Run injects PORT; Next's standalone server honours it.
+# Cloud Run injects PORT; apps/web's start script passes it through to next.
 ENV PORT=3000
-# Run as the unprivileged node user.
-USER node
 
-# The standalone bundle already contains a pruned node_modules and the server
-# entrypoint; static assets and public files are copied alongside it.
-COPY --from=build --chown=node:node /app/apps/web/.next/standalone ./
-COPY --from=build --chown=node:node /app/apps/web/.next/static ./apps/web/.next/static
-# Uncomment once apps/web ships a public/ directory:
-# COPY --from=build --chown=node:node /app/apps/web/public ./apps/web/public
+# Prod workspace: manifests + node_modules (root store + per-package symlink
+# dirs), copied as one tree so pnpm's symlink layout stays internally
+# consistent.
+COPY --from=prune /app ./
+
+# App source + built .next (workspace package sources come along for
+# next.config.ts's transpilePackages resolution; the heavy compilation is
+# already inside .next).
+COPY --from=build /app/apps/web/next.config.ts /app/apps/web/postcss.config.mjs /app/apps/web/tsconfig.json /app/apps/web/next-env.d.ts ./apps/web/
+COPY --from=build /app/apps/web/app ./apps/web/app
+COPY --from=build /app/apps/web/src ./apps/web/src
+COPY --from=build /app/apps/web/middleware.ts ./apps/web/middleware.ts
+COPY --from=build /app/apps/web/.next ./apps/web/.next
+COPY --from=build /app/packages ./packages
 
 EXPOSE 3000
-CMD ["node", "apps/web/server.js"]
+CMD ["pnpm", "--filter", "@pebble/web", "start"]
