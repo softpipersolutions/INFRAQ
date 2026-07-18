@@ -39,7 +39,9 @@ FROM deps AS build
 COPY . .
 # `pnpm deploy` produces a self-contained directory (source + hoisted
 # node_modules) for just the worker, which we copy into the runner.
-RUN pnpm --filter @pebble/worker deploy --prod /app/worker-bundle
+# --legacy: pnpm 10 requires it unless workspace packages are "injected"
+# (which we don't use — packages ship TS source and are symlink-safe here).
+RUN pnpm --filter @pebble/worker deploy --legacy --prod /app/worker-bundle
 
 # ── Runner: Node 22 + Chromium ──
 FROM node:22-slim AS runner
