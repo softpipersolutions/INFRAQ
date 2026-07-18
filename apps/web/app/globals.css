@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+:root {
+  --pebble-bg: #f6f7f9;
+  --pebble-panel: #ffffff;
+  --pebble-border: #e2e5ea;
+  --pebble-ink: #1b2430;
+  --pebble-muted: #64748b;
+  --pebble-accent: #b91c1c;
+}
+
+html,
+body {
+  background: var(--pebble-bg);
+  color: var(--pebble-ink);
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Numeric alignment for money / quantity tables. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
