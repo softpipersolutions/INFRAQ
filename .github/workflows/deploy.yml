@@ -1,0 +1,93 @@
+name: Deploy
+
+# Build + push both images to Artifact Registry and deploy to Cloud Run on main,
+# running DB migrations as a pre-deploy gate.
+#
+# ⚠️ SKELETON — DISABLED. This workflow needs GCP wiring (Workload Identity
+# Federation or a service-account key, the project/region/repo names, and the
+# Secret Manager entries in infra/README.md) before it can run. The top-level
+# `if: ${{ vars.DEPLOY_ENABLED == 'true' }}` guard keeps it a no-op until you set
+# the `DEPLOY_ENABLED` repository variable to `true`. Review each TODO first.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Least-privilege token for Workload Identity Federation.
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_REGION: asia-south1
+  AR_REPO: pebble
+  # TODO: set these (or move to repo/environment variables/secrets).
+  GCP_PROJECT: ${{ vars.GCP_PROJECT }}
+  CLOUDSQL_INSTANCE: ${{ vars.CLOUDSQL_INSTANCE }} # $PROJECT:asia-south1:pebble-pg
+
+jobs:
+  deploy:
+    # Guard: stays off until DEPLOY_ENABLED is explicitly set to "true".
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- Authenticate to GCP (Workload Identity Federation preferred) ---
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          # TODO: provide WORKLOAD_IDENTITY_PROVIDER + SERVICE_ACCOUNT secrets.
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "$GCP_REGION-docker.pkg.dev" --quiet
+
+      # --- Build + push images ---
+      - name: Build & push web image
+        run: |
+          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT/$AR_REPO/web:${{ github.sha }}"
+          docker build -f infra/Dockerfile.web -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Build & push worker image
+        run: |
+          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT/$AR_REPO/worker:${{ github.sha }}"
+          docker build -f infra/Dockerfile.worker -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      # --- Pre-deploy: run migrations, gate the rollout on success ---
+      - name: Run DB migrations (pre-deploy job)
+        run: |
+          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT/$AR_REPO/worker:${{ github.sha }}"
+          gcloud run jobs deploy pebble-migrate \
+            --image="$IMAGE" --region="$GCP_REGION" \
+            --set-cloudsql-instances="$CLOUDSQL_INSTANCE" \
+            --set-secrets=DATABASE_URL=DATABASE_URL:latest \
+            --command=node --args=--import,tsx,../packages/db/src/migrate.ts
+          gcloud run jobs execute pebble-migrate --region="$GCP_REGION" --wait
+
+      # --- Deploy services (only reached if migrations succeeded) ---
+      - name: Deploy web
+        run: |
+          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT/$AR_REPO/web:${{ github.sha }}"
+          gcloud run deploy pebble-web \
+            --image="$IMAGE" --region="$GCP_REGION" --allow-unauthenticated \
+            --set-cloudsql-instances="$CLOUDSQL_INSTANCE" \
+            --set-secrets=DATABASE_URL=DATABASE_URL:latest
+
+      - name: Deploy worker
+        run: |
+          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT/$AR_REPO/worker:${{ github.sha }}"
+          gcloud run deploy pebble-worker \
+            --image="$IMAGE" --region="$GCP_REGION" --no-allow-unauthenticated \
+            --memory=2Gi --cpu=1 --min-instances=0 \
+            --set-cloudsql-instances="$CLOUDSQL_INSTANCE" \
+            --set-secrets=DATABASE_URL=DATABASE_URL:latest \
+            --set-env-vars=RENDER_PDF=1

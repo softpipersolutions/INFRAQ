@@ -1,0 +1,68 @@
+# syntax=docker/dockerfile:1
+#
+# Pebble Module 02 — @pebble/worker (Hono service) production image for Cloud Run.
+#
+# The worker rasterises Format A HTML to PDF with headless Chromium via
+# playwright-core (PLAN §4.6), so the runtime needs a real browser + its system
+# libraries. `playwright-core` ships NO browser binaries, so we install Chromium
+# from the distro and point the renderer at it with PLAYWRIGHT_CHROMIUM_EXECUTABLE
+# (see src/pdf.ts). Deterministic path, no per-version browser revision to track.
+#
+# Alternative base: `mcr.microsoft.com/playwright:v1.49.0-jammy` bundles the
+# Playwright-built browsers + all deps; if you use it, set
+# PLAYWRIGHT_CHROMIUM_EXECUTABLE to that image's chromium build instead.
+
+# ── Base: Node 22 + pnpm ──
+FROM node:22-slim AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+WORKDIR /app
+
+# ── Dependencies: frozen install, cached on manifests ──
+FROM base AS deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/web/package.json ./apps/web/
+COPY apps/worker/package.json ./apps/worker/
+COPY packages/ai/package.json ./packages/ai/
+COPY packages/db/package.json ./packages/db/
+COPY packages/dispatch/package.json ./packages/dispatch/
+COPY packages/documents/package.json ./packages/documents/
+COPY packages/engines/package.json ./packages/engines/
+COPY packages/expr/package.json ./packages/expr/
+COPY packages/mcp/package.json ./packages/mcp/
+COPY packages/shared/package.json ./packages/shared/
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+
+# ── Build: prune to the worker + its workspace deps for a lean runtime ──
+FROM deps AS build
+COPY . .
+# `pnpm deploy` produces a self-contained directory (source + hoisted
+# node_modules) for just the worker, which we copy into the runner.
+RUN pnpm --filter @pebble/worker deploy --prod /app/worker-bundle
+
+# ── Runner: Node 22 + Chromium ──
+FROM node:22-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=8080
+# Cloud Run supplies PORT (default 8080). The service binds it in src/server.ts.
+
+# System Chromium + the fonts/libs headless rendering needs. Kept minimal.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    chromium \
+    fonts-liberation \
+    fonts-noto-color-emoji \
+    ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+# Point playwright-core at the distro Chromium (see createPdfRenderer/pdf.ts).
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE=/usr/bin/chromium
+
+# The worker runs on tsx (TS source is shipped by the workspace packages).
+COPY --from=build /app/worker-bundle ./
+
+USER node
+EXPOSE 8080
+CMD ["node", "--import", "tsx", "src/server.ts"]
