@@ -1,3 +1,4 @@
+import { mkdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { btree_gist } from "@electric-sql/pglite/contrib/btree_gist";
 import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
@@ -73,6 +74,12 @@ export async function createDb(opts: CreateDbOptions = {}): Promise<DbHandle> {
   }
 
   const dir = opts.pgliteDir ?? process.env.PGLITE_DIR ?? "memory://";
+  // PGlite does not create parent directories for a filesystem data dir, so a
+  // nested PGLITE_DIR (e.g. ".data/smoke") fails on a fresh checkout. Ensure the
+  // path exists first. Scheme URLs (memory://, idb://, file://) are left alone.
+  if (!dir.includes("://")) {
+    await mkdir(dir, { recursive: true });
+  }
   const client = new PGlite(dir, { extensions: { vector, pg_trgm, btree_gist } });
   await client.waitReady;
   const db = drizzlePglite(client, { schema });
