@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { trpc } from "@/trpc/react";
+import { Badge } from "./ui";
 
 const NAV = [
   { href: "/", label: "Dashboard" },
@@ -14,6 +16,50 @@ const NAV = [
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+async function signOut(): Promise<void> {
+  await fetch("/api/auth/session", { method: "DELETE" });
+  window.location.href = "/login";
+}
+
+/** Sidebar footer: dev-admin badge in dev mode, account + sign-out in firebase mode. */
+function SessionFooter() {
+  const me = trpc.users.me.useQuery();
+  if (!me.data) return null;
+
+  if (me.data.authMode !== "firebase") {
+    return (
+      <div className="flex items-center justify-between gap-2">
+        <span>Dev mode · PGlite</span>
+        <Badge tone="amber">dev admin</Badge>
+      </div>
+    );
+  }
+
+  if (!me.data.user) {
+    return (
+      <Link href="/login" className="hover:text-[var(--pebble-ink)]">
+        Not signed in — sign in
+      </Link>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <div className="truncate" title={me.data.user.email}>
+        {me.data.user.email}
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <Badge tone={me.data.user.role === "admin" ? "red" : me.data.user.role === "approver" ? "green" : "blue"}>
+          {me.data.user.role}
+        </Badge>
+        <button type="button" onClick={signOut} className="hover:text-[var(--pebble-ink)]">
+          Sign out
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -44,7 +90,7 @@ export function Shell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <div className="border-t border-[var(--pebble-border)] px-5 py-3 text-xs text-[var(--pebble-muted)]">
-          Dev mode · PGlite
+          <SessionFooter />
         </div>
       </aside>
 

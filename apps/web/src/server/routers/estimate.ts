@@ -14,7 +14,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { generateForEnquiry } from "../generate";
 import { addLine, editLine, removeLine, type Actor } from "../recompute";
-import { publicProcedure, router } from "../trpc";
+import { protectedProcedure, roleProcedure, router } from "../trpc";
 
 function warningsOf(view: VersionWithLines | null): GenerationWarning[] {
   const raw = view?.version.snapshot?.["warnings"];
@@ -29,7 +29,7 @@ const estimateId = z.object({ estimateId: z.string() });
 
 export const estimateRouter = router({
   /** Estimate header + current version + lines + enquiry context + warnings. */
-  get: publicProcedure.input(estimateId).query(async ({ ctx, input }) => {
+  get: protectedProcedure.input(estimateId).query(async ({ ctx, input }) => {
     const view = await getVersionWithLines(ctx.db, input.estimateId);
     if (!view) throw new TRPCError({ code: "NOT_FOUND", message: "Estimate not found" });
     const enquiry = await getEnquiry(ctx.db, view.estimate.enquiryId);
@@ -44,7 +44,7 @@ export const estimateRouter = router({
     };
   }),
 
-  getVersion: publicProcedure
+  getVersion: protectedProcedure
     .input(estimateId.extend({ versionNo: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       const view = await getVersionWithLines(ctx.db, input.estimateId, input.versionNo);
@@ -61,18 +61,18 @@ export const estimateRouter = router({
       };
     }),
 
-  listVersions: publicProcedure.input(estimateId).query(async ({ ctx, input }) => {
+  listVersions: protectedProcedure.input(estimateId).query(async ({ ctx, input }) => {
     return listVersions(ctx.db, input.estimateId);
   }),
 
   /** Fork the LOCKED current version into a WORKING copy for review/editing. */
-  startReview: publicProcedure.input(estimateId).mutation(async ({ ctx, input }) => {
+  startReview: protectedProcedure.input(estimateId).mutation(async ({ ctx, input }) => {
     const who = actorOf(ctx);
     const version = await forkWorkingVersion(ctx.db, input.estimateId, who.actor, who.actorRole);
     return { versionNo: version.versionNo };
   }),
 
-  editLine: publicProcedure
+  editLine: protectedProcedure
     .input(
       estimateId.extend({
         lineUid: z.string(),
@@ -94,7 +94,7 @@ export const estimateRouter = router({
       return { ok: true };
     }),
 
-  addLine: publicProcedure
+  addLine: protectedProcedure
     .input(
       estimateId.extend({
         materialCode: z.string(),
@@ -114,7 +114,7 @@ export const estimateRouter = router({
       return { ok: true };
     }),
 
-  removeLine: publicProcedure
+  removeLine: protectedProcedure
     .input(estimateId.extend({ lineUid: z.string(), editReason: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       await removeLine(ctx.db, actorOf(ctx), {
@@ -130,7 +130,7 @@ export const estimateRouter = router({
    * unless overrideSitc is set; a BELOW_FLOOR margin does not block but the
    * required discount authority is surfaced back to the caller.
    */
-  approve: publicProcedure
+  approve: roleProcedure("approver")
     .input(estimateId.extend({ overrideSitc: z.boolean().optional() }))
     .mutation(async ({ ctx, input }) => {
       const estimate = await getEstimate(ctx.db, input.estimateId);
@@ -153,7 +153,7 @@ export const estimateRouter = router({
       };
     }),
 
-  audit: publicProcedure.input(estimateId).query(async ({ ctx, input }) => {
+  audit: protectedProcedure.input(estimateId).query(async ({ ctx, input }) => {
     const events = await listAuditForEstimate(ctx.db, input.estimateId);
     return events.map((e) => ({
       id: e.id,
@@ -166,7 +166,7 @@ export const estimateRouter = router({
     }));
   }),
 
-  compare: publicProcedure
+  compare: protectedProcedure
     .input(estimateId.extend({ versionA: z.number().int().positive(), versionB: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       const a = await getVersionWithLines(ctx.db, input.estimateId, input.versionA);
@@ -180,7 +180,7 @@ export const estimateRouter = router({
     }),
 
   /** Optional: re-run generation from the source enquiry into a fresh estimate. */
-  regenerate: publicProcedure.input(estimateId).mutation(async ({ ctx, input }) => {
+  regenerate: protectedProcedure.input(estimateId).mutation(async ({ ctx, input }) => {
     const estimate = await getEstimate(ctx.db, input.estimateId);
     if (!estimate) throw new TRPCError({ code: "NOT_FOUND", message: "Estimate not found" });
     const who = actorOf(ctx);

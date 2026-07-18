@@ -25,7 +25,7 @@ import {
 } from "@pebble/shared";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { publicProcedure, router } from "../trpc";
+import { protectedProcedure, roleProcedure, router } from "../trpc";
 
 function rupToPaise(rupees: number): number {
   return Math.round(rupees * 100);
@@ -92,11 +92,11 @@ function dryRun(conditionExpr: string, quantityFormula: string) {
 
 export const mastersRouter = router({
   /** Full resolved snapshot (materials, makes, prices, install rates, rules, margins). */
-  snapshot: publicProcedure.query(async ({ ctx }) => {
+  snapshot: protectedProcedure.query(async ({ ctx }) => {
     return loadMasterSnapshot(ctx.db);
   }),
 
-  createMaterial: publicProcedure
+  createMaterial: roleProcedure("admin")
     .input(materialSchema)
     .mutation(async ({ ctx, input }) => {
       await insertMaterial(ctx.db, { ...input, sourceProvenance: null });
@@ -111,13 +111,13 @@ export const mastersRouter = router({
       return { ok: true };
     }),
 
-  createMake: publicProcedure.input(makeSchema).mutation(async ({ ctx, input }) => {
+  createMake: roleProcedure("admin").input(makeSchema).mutation(async ({ ctx, input }) => {
     await insertMake(ctx.db, input);
     return { ok: true };
   }),
 
   /** Supersede the current rate for (material, make) with a new open-ended row. */
-  setPrice: publicProcedure
+  setPrice: roleProcedure("admin")
     .input(
       z.object({
         materialCode: z.string().min(1),
@@ -138,7 +138,7 @@ export const mastersRouter = router({
       return { ok: true };
     }),
 
-  createInstallRate: publicProcedure
+  createInstallRate: roleProcedure("admin")
     .input(
       z.object({
         rateCode: z.string().min(1),
@@ -162,13 +162,13 @@ export const mastersRouter = router({
       return { ok: true };
     }),
 
-  createMarginRow: publicProcedure.input(marginRowSchema).mutation(async ({ ctx, input }) => {
+  createMarginRow: roleProcedure("admin").input(marginRowSchema).mutation(async ({ ctx, input }) => {
     await insertMarginRow(ctx.db, input);
     return { ok: true };
   }),
 
   /** Validate condition + formula and dry-run them against sample enquiries. */
-  validateDesignRule: publicProcedure
+  validateDesignRule: roleProcedure("admin")
     .input(z.object({ conditionExpr: z.string(), quantityFormula: z.string() }))
     .mutation(({ input }) => {
       const condition = validateExpression(input.conditionExpr, "condition");
@@ -183,7 +183,7 @@ export const mastersRouter = router({
     }),
 
   /** Validate then persist a new design rule (version 1). */
-  createDesignRule: publicProcedure
+  createDesignRule: roleProcedure("admin")
     .input(
       z.object({
         ruleCode: z.string().min(1),
@@ -221,7 +221,7 @@ export const mastersRouter = router({
     }),
 
   // Expose the enum option lists so admin forms never drift from the contract.
-  options: publicProcedure.query(() => ({
+  options: protectedProcedure.query(() => ({
     systemTypes: SYSTEM_TYPES,
     materialCategories: MATERIAL_CATEGORIES,
     unitsOfMeasure: UNITS_OF_MEASURE,

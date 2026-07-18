@@ -14,9 +14,20 @@ import type { NextConfig } from "next";
  * alone does not keep PGlite out of the bundle; the webpack externals below
  * force it (and its subpath extension imports) to be required at runtime.
  */
-const NODE_ONLY_PACKAGES = ["@electric-sql/pglite", "pg", "exceljs", "playwright-core"];
+const NODE_ONLY_PACKAGES = [
+  "@electric-sql/pglite",
+  "pg",
+  "exceljs",
+  "playwright-core",
+  // Lazy-loaded only when AUTH_MODE=firebase; external keeps it (and its gRPC
+  // deps) out of the bundle so builds need no Firebase env at all.
+  "firebase-admin",
+];
 
 const nextConfig: NextConfig = {
+  // Self-contained server bundle for the Cloud Run image (infra/Dockerfile.web
+  // copies .next/standalone). Local `next start` is unaffected.
+  output: "standalone",
   transpilePackages: [
     "@pebble/shared",
     "@pebble/db",
