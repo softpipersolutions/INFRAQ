@@ -22,6 +22,10 @@ const NODE_ONLY_PACKAGES = [
   // Lazy-loaded only when AUTH_MODE=firebase; external keeps it (and its gRPC
   // deps) out of the bundle so builds need no Firebase env at all.
   "firebase-admin",
+  // Reached via @pebble/worker's storage adapter (GCS) and the HTTP worker
+  // client's OIDC minting — both lazy, both server-only, both heavy.
+  "@google-cloud/storage",
+  "google-auth-library",
 ];
 
 const nextConfig: NextConfig = {
@@ -36,6 +40,7 @@ const nextConfig: NextConfig = {
     "@pebble/documents",
     "@pebble/dispatch",
     "@pebble/expr",
+    "@pebble/worker",
   ],
   serverExternalPackages: NODE_ONLY_PACKAGES,
   webpack: (config, { isServer }) => {

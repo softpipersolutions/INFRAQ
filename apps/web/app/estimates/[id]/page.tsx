@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { PricedLine } from "@pebble/shared";
 import { MarginBadge, SitcBadge } from "@/components/badges";
+import { DocumentsPanel } from "@/components/documents-panel";
 import { Badge, Button, Card, EmptyState, PageHeader, Select, TextInput } from "@/components/ui";
 import { formatINR } from "@/lib/format";
 import { trpc } from "@/trpc/react";
@@ -187,6 +188,14 @@ export default function EstimatePage() {
           {approveMsg ? <span className="text-sm text-[var(--pebble-muted)]">{approveMsg}</span> : null}
         </div>
       </Card>
+
+      {/* Rendered outputs + dispatch (always reflects the CURRENT version) */}
+      <DocumentsPanel
+        estimateId={estimateId}
+        versionState={base.data!.version.state}
+        clientEmail={view.enquiry?.clientEmail ?? null}
+        clientPhone={view.enquiry?.clientPhone ?? null}
+      />
 
       {/* Line grid grouped by system section */}
       {sections.map((section) => (

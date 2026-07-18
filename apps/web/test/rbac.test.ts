@@ -90,6 +90,37 @@ describe("router RBAC", () => {
     expect(result).toBe("NOT_FOUND");
   });
 
+  it("render is estimator+ but dispatch is approver-only", async () => {
+    const estimator = callerFor(userWith("estimator"));
+
+    // Estimator may render (auth passes; fake id fails as NOT_FOUND, not FORBIDDEN).
+    expect(await code(estimator.estimate.render({ estimateId: "does-not-exist" }))).toBe(
+      "NOT_FOUND",
+    );
+    // …but dispatching an estimate to a client is an approver commitment.
+    expect(
+      await code(
+        estimator.estimate.dispatchDocs({
+          estimateId: "does-not-exist",
+          channels: ["email"],
+          recipientEmail: "client@example.com",
+        }),
+      ),
+    ).toBe("FORBIDDEN");
+
+    // Approver passes the dispatch auth gate (NOT_FOUND proves we got past it).
+    const approver = callerFor(userWith("approver"));
+    expect(
+      await code(
+        approver.estimate.dispatchDocs({
+          estimateId: "does-not-exist",
+          channels: ["email"],
+          recipientEmail: "client@example.com",
+        }),
+      ),
+    ).toBe("NOT_FOUND");
+  });
+
   it("admin: passes every role gate", async () => {
     const caller = callerFor(userWith("admin"));
 

@@ -96,8 +96,8 @@ jobs:
             --service-account="pebble-worker@$GCP_PROJECT.iam.gserviceaccount.com" \
             --memory=2Gi --cpu=1 --min-instances=0 --max-instances=2 \
             --set-cloudsql-instances="$CLOUDSQL_INSTANCE" \
-            --set-secrets=DATABASE_URL=DATABASE_URL:latest \
-            --set-env-vars=STORAGE_BACKEND=gcs,GCS_BUCKET=$GCP_PROJECT-pebble-outputs,RENDER_PDF=1
+            --set-secrets=DATABASE_URL=DATABASE_URL:latest,RESEND_API_KEY=RESEND_API_KEY:latest \
+            --set-env-vars=STORAGE_BACKEND=gcs,GCS_BUCKET=$GCP_PROJECT-pebble-outputs,RENDER_PDF=1,DISPATCH_EMAIL_FROM=${{ vars.DISPATCH_EMAIL_FROM }}
 
       - name: Deploy web
         run: |

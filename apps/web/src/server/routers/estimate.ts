@@ -8,13 +8,17 @@ import {
   listVersions,
   type VersionWithLines,
 } from "@pebble/db";
+import type { DispatchAttachment } from "@pebble/dispatch";
 import { diffVersions } from "@pebble/engines";
-import type { GenerationWarning } from "@pebble/shared";
+import { formatINR, type GenerationWarning } from "@pebble/shared";
+import { WorkerError } from "@pebble/worker";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { generateForEnquiry } from "../generate";
+import { listDispatchesForEstimate, listDocumentsForEstimate } from "../queries";
 import { addLine, editLine, removeLine, type Actor } from "../recompute";
 import { protectedProcedure, roleProcedure, router } from "../trpc";
+import { createWorkerClient } from "../worker-client";
 
 function warningsOf(view: VersionWithLines | null): GenerationWarning[] {
   const raw = view?.version.snapshot?.["warnings"];
@@ -26,6 +30,22 @@ function actorOf(ctx: { user: { firebaseUid: string; role: string } }): Actor {
 }
 
 const estimateId = z.object({ estimateId: z.string() });
+
+/**
+ * Translate a worker failure into a typed TRPC error, preserving the worker's
+ * own message (e.g. the "only LOCKED versions can be rendered" 400 guard) so
+ * the UI can surface it verbatim.
+ */
+function fromWorkerError(err: unknown): TRPCError {
+  if (err instanceof WorkerError) {
+    const code =
+      err.status === 404 ? "NOT_FOUND" : err.status < 500 ? "BAD_REQUEST" : "INTERNAL_SERVER_ERROR";
+    return new TRPCError({ code, message: err.message });
+  }
+  if (err instanceof TRPCError) return err;
+  const message = err instanceof Error ? err.message : String(err);
+  return new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
+}
 
 export const estimateRouter = router({
   /** Estimate header + current version + lines + enquiry context + warnings. */
@@ -152,6 +172,122 @@ export const estimateRouter = router({
         requiredAuthority: estimate.requiredAuthority,
       };
     }),
+
+  /**
+   * Render the Format A PDF + XLSX for a LOCKED version via the worker
+   * (in-process in dev, HTTP+OIDC in production). Money is never recomputed
+   * here — the worker renders from the persisted version totals.
+   */
+  render: roleProcedure("estimator", "approver")
+    .input(estimateId.extend({ versionNo: z.number().int().positive().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const worker = createWorkerClient(ctx.db);
+      try {
+        const result = await worker.render({
+          estimateId: input.estimateId,
+          versionNo: input.versionNo,
+          actor: ctx.user.firebaseUid,
+        });
+        return [
+          { id: result.pdf.id, docType: "PDF" as const, uri: result.pdf.uri, sha256: result.pdf.sha256 },
+          { id: result.xlsx.id, docType: "XLSX" as const, uri: result.xlsx.uri, sha256: result.xlsx.sha256 },
+        ];
+      } catch (err) {
+        throw fromWorkerError(err);
+      }
+    }),
+
+  /**
+   * Send the latest rendered documents to the client over the selected
+   * channels. Approver-only: dispatching a priced estimate is an external
+   * commitment. Recipients fall back to the enquiry's contact details.
+   */
+  dispatchDocs: roleProcedure("approver")
+    .input(
+      estimateId.extend({
+        channels: z.array(z.enum(["email", "whatsapp"])).min(1),
+        recipientEmail: z.string().email().optional(),
+        recipientPhone: z.string().min(6).max(20).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const view = await getVersionWithLines(ctx.db, input.estimateId);
+      if (!view) throw new TRPCError({ code: "NOT_FOUND", message: "Estimate not found" });
+      const enquiry = await getEnquiry(ctx.db, view.estimate.enquiryId);
+      if (!enquiry) throw new TRPCError({ code: "NOT_FOUND", message: "Enquiry not found" });
+
+      // Per-channel recipient resolution (explicit input beats enquiry contact).
+      const wantsEmail = input.channels.includes("email");
+      const wantsWhatsApp = input.channels.includes("whatsapp");
+      const toEmail = wantsEmail ? input.recipientEmail ?? enquiry.clientEmail ?? null : null;
+      const toPhone = wantsWhatsApp ? input.recipientPhone ?? enquiry.clientPhone ?? null : null;
+      if (wantsEmail && !toEmail) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Email channel selected but no recipient email (enquiry has none on file)",
+        });
+      }
+      if (wantsWhatsApp && !toPhone) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "WhatsApp channel selected but no recipient phone (enquiry has none on file)",
+        });
+      }
+
+      // Latest rendered artifacts (newest first) — one PDF + one XLSX. The
+      // dispatch references stored uris; nothing is re-rendered or recomputed.
+      const documents = await listDocumentsForEstimate(ctx.db, input.estimateId);
+      const pdf = documents.find((d) => d.docType === "PDF");
+      const xlsx = documents.find((d) => d.docType === "XLSX");
+      if (!pdf && !xlsx) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "No generated documents to send — generate PDF/Excel first",
+        });
+      }
+      const picked = [pdf, xlsx].filter((d) => d !== undefined);
+      const attachments: DispatchAttachment[] = picked.map((d) => ({
+        filename: `${input.estimateId}.${d.docType === "PDF" ? "pdf" : "xlsx"}`,
+        url: d.uri,
+      }));
+
+      const worker = createWorkerClient(ctx.db);
+      try {
+        const results = await worker.dispatch({
+          estimateId: input.estimateId,
+          toEmail: toEmail ?? undefined,
+          toPhone: toPhone ?? undefined,
+          subject: `Estimate ${input.estimateId} — ${enquiry.projectName}`,
+          message:
+            `Dear ${enquiry.clientName},\n\n` +
+            `Please find the fire safety BOQ estimate ${input.estimateId} for ` +
+            `${enquiry.projectName} (grand total ${formatINR(view.version.grandTotalPaise)}, ` +
+            `incl. GST) attached.\n\nRegards,\nGreenberg Engineering`,
+          attachments,
+          documentIds: picked.map((d) => d.id),
+          actor: ctx.user.firebaseUid,
+        });
+        return results.map(({ channel, result }) => ({
+          channel,
+          status: result.status,
+          provider: result.provider,
+          providerMessageId: result.providerMessageId ?? null,
+          error: result.error ?? null,
+        }));
+      } catch (err) {
+        throw fromWorkerError(err);
+      }
+    }),
+
+  /** Rendered outputs (all versions, newest first). */
+  documents: protectedProcedure.input(estimateId).query(async ({ ctx, input }) => {
+    return listDocumentsForEstimate(ctx.db, input.estimateId);
+  }),
+
+  /** Outbox history (newest first). */
+  dispatches: protectedProcedure.input(estimateId).query(async ({ ctx, input }) => {
+    return listDispatchesForEstimate(ctx.db, input.estimateId);
+  }),
 
   audit: protectedProcedure.input(estimateId).query(async ({ ctx, input }) => {
     const events = await listAuditForEstimate(ctx.db, input.estimateId);

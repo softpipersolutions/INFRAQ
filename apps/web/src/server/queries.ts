@@ -1,7 +1,12 @@
 import "server-only";
 
 import { schema, type Db } from "@pebble/db";
-import type { EstimateStatus } from "@pebble/shared";
+import type {
+  DispatchChannel,
+  DispatchStatus,
+  DocumentKind,
+  EstimateStatus,
+} from "@pebble/shared";
 
 /**
  * Small read helpers for list/dashboard screens. These do simple table selects
@@ -102,4 +107,81 @@ export async function dashboardStats(db: Db): Promise<DashboardStats> {
     byStatus,
     recent: estimates.slice(0, 8),
   };
+}
+
+export interface GeneratedDocumentListItem {
+  id: string;
+  versionNo: number;
+  docType: DocumentKind;
+  uri: string;
+  sha256: string;
+  generatedBy: string;
+  createdAt: string;
+}
+
+/**
+ * Rendered outputs for an estimate (all versions), newest first. Documents hang
+ * off versions, so the version rows provide the estimate filter + version
+ * labels; ids are monotonic ULIDs, so sorting by id desc is exact time order.
+ */
+export async function listDocumentsForEstimate(
+  db: Db,
+  estimateId: string,
+): Promise<GeneratedDocumentListItem[]> {
+  const [documents, versions] = await Promise.all([
+    db.select().from(schema.generatedDocuments),
+    db.select().from(schema.estimateVersions),
+  ]);
+  const versionById = new Map(
+    versions.filter((v) => v.estimateId === estimateId).map((v) => [v.id, v]),
+  );
+
+  return documents
+    .filter((d) => versionById.has(d.estimateVersionId))
+    .map((d) => ({
+      id: d.id,
+      versionNo: versionById.get(d.estimateVersionId)!.versionNo,
+      docType: d.kind,
+      uri: d.storageUri,
+      sha256: d.sha256,
+      generatedBy: d.generatedBy,
+      createdAt: d.createdAt.toISOString(),
+    }))
+    .sort((a, b) => (a.id < b.id ? 1 : -1));
+}
+
+export interface DispatchListItem {
+  id: string;
+  channel: DispatchChannel;
+  recipient: string;
+  provider: string;
+  status: DispatchStatus;
+  providerMessageId: string | null;
+  error: string | null;
+  documentIds: string[];
+  createdBy: string;
+  createdAt: string;
+}
+
+/** Outbox history for an estimate, newest first (monotonic ULID ids). */
+export async function listDispatchesForEstimate(
+  db: Db,
+  estimateId: string,
+): Promise<DispatchListItem[]> {
+  const rows = await db.select().from(schema.dispatches);
+  return rows
+    .filter((r) => r.estimateId === estimateId)
+    .map((r) => ({
+      id: r.id,
+      channel: r.channel,
+      recipient: r.recipient,
+      provider: r.provider,
+      status: r.status,
+      providerMessageId: r.providerMessageId ?? null,
+      error: r.error ?? null,
+      documentIds: r.documentIds,
+      createdBy: r.createdBy,
+      createdAt: r.createdAt.toISOString(),
+    }))
+    .sort((a, b) => (a.id < b.id ? 1 : -1));
 }
