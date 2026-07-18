@@ -3,11 +3,19 @@ name: Deploy
 # Build + push both images to Artifact Registry and deploy to Cloud Run on main,
 # running DB migrations as a pre-deploy gate.
 #
-# ⚠️ SKELETON — DISABLED. This workflow needs GCP wiring (Workload Identity
-# Federation or a service-account key, the project/region/repo names, and the
-# Secret Manager entries in infra/README.md) before it can run. The top-level
-# `if: ${{ vars.DEPLOY_ENABLED == 'true' }}` guard keeps it a no-op until you set
-# the `DEPLOY_ENABLED` repository variable to `true`. Review each TODO first.
+# GCP wiring (project infraq-greenberg, asia-south1):
+#   - Auth: Workload Identity Federation — pool `github`, provider `github-oidc`,
+#     restricted to this repository; deploys as pebble-deploy@ SA.
+#   - Repo secrets: WORKLOAD_IDENTITY_PROVIDER, DEPLOY_SERVICE_ACCOUNT.
+#   - Repo vars: GCP_PROJECT, CLOUDSQL_INSTANCE, DEPLOY_ENABLED, WORKER_URL
+#     (set after the worker's first deploy), NEXT_PUBLIC_FIREBASE_* (client
+#     config — public identifiers, safe as vars; they are inlined into the web
+#     bundle at image build time).
+#   - Runtime identities: pebble-web@ / pebble-worker@ (least-privilege — SQL
+#     client, outputs-bucket access, signed-URL token creator on worker).
+#
+# The top-level `if: vars.DEPLOY_ENABLED == 'true'` guard keeps this a no-op
+# until the repository variable is set.
 
 on:
   push:
@@ -22,7 +30,6 @@ permissions:
 env:
   GCP_REGION: asia-south1
   AR_REPO: pebble
-  # TODO: set these (or move to repo/environment variables/secrets).
   GCP_PROJECT: ${{ vars.GCP_PROJECT }}
   CLOUDSQL_INSTANCE: ${{ vars.CLOUDSQL_INSTANCE }} # $PROJECT:asia-south1:pebble-pg
 
@@ -35,11 +42,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # --- Authenticate to GCP (Workload Identity Federation preferred) ---
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          # TODO: provide WORKLOAD_IDENTITY_PROVIDER + SERVICE_ACCOUNT secrets.
           workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.DEPLOY_SERVICE_ACCOUNT }}
 
@@ -50,10 +55,17 @@ jobs:
         run: gcloud auth configure-docker "$GCP_REGION-docker.pkg.dev" --quiet
 
       # --- Build + push images ---
+      # NEXT_PUBLIC_* are inlined into the client bundle by `next build`, so
+      # they ride as build args, not runtime env.
       - name: Build & push web image
         run: |
           IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT/$AR_REPO/web:${{ github.sha }}"
-          docker build -f infra/Dockerfile.web -t "$IMAGE" .
+          docker build -f infra/Dockerfile.web -t "$IMAGE" \
+            --build-arg NEXT_PUBLIC_FIREBASE_API_KEY="${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID="${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_APP_ID="${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }}" \
+            .
           docker push "$IMAGE"
 
       - name: Build & push worker image
@@ -68,26 +80,32 @@ jobs:
           IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT/$AR_REPO/worker:${{ github.sha }}"
           gcloud run jobs deploy pebble-migrate \
             --image="$IMAGE" --region="$GCP_REGION" \
+            --service-account="pebble-worker@$GCP_PROJECT.iam.gserviceaccount.com" \
             --set-cloudsql-instances="$CLOUDSQL_INSTANCE" \
             --set-secrets=DATABASE_URL=DATABASE_URL:latest \
-            --command=node --args=--import,tsx,../packages/db/src/migrate.ts
+            --command=node --args=--import,tsx,node_modules/@pebble/db/src/migrate.ts
           gcloud run jobs execute pebble-migrate --region="$GCP_REGION" --wait
 
       # --- Deploy services (only reached if migrations succeeded) ---
-      - name: Deploy web
-        run: |
-          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT/$AR_REPO/web:${{ github.sha }}"
-          gcloud run deploy pebble-web \
-            --image="$IMAGE" --region="$GCP_REGION" --allow-unauthenticated \
-            --set-cloudsql-instances="$CLOUDSQL_INSTANCE" \
-            --set-secrets=DATABASE_URL=DATABASE_URL:latest
-
+      # Worker first so a fresh WORKER_URL is live before web rolls.
       - name: Deploy worker
         run: |
           IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT/$AR_REPO/worker:${{ github.sha }}"
           gcloud run deploy pebble-worker \
             --image="$IMAGE" --region="$GCP_REGION" --no-allow-unauthenticated \
-            --memory=2Gi --cpu=1 --min-instances=0 \
+            --service-account="pebble-worker@$GCP_PROJECT.iam.gserviceaccount.com" \
+            --memory=2Gi --cpu=1 --min-instances=0 --max-instances=2 \
             --set-cloudsql-instances="$CLOUDSQL_INSTANCE" \
             --set-secrets=DATABASE_URL=DATABASE_URL:latest \
-            --set-env-vars=RENDER_PDF=1
+            --set-env-vars=STORAGE_BACKEND=gcs,GCS_BUCKET=$GCP_PROJECT-pebble-outputs,RENDER_PDF=1
+
+      - name: Deploy web
+        run: |
+          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT/$AR_REPO/web:${{ github.sha }}"
+          gcloud run deploy pebble-web \
+            --image="$IMAGE" --region="$GCP_REGION" --allow-unauthenticated \
+            --service-account="pebble-web@$GCP_PROJECT.iam.gserviceaccount.com" \
+            --memory=1Gi --max-instances=3 \
+            --set-cloudsql-instances="$CLOUDSQL_INSTANCE" \
+            --set-secrets=DATABASE_URL=DATABASE_URL:latest \
+            --set-env-vars=AUTH_MODE=firebase,STORAGE_BACKEND=gcs,GCS_BUCKET=$GCP_PROJECT-pebble-outputs,WORKER_URL=${{ vars.WORKER_URL }},PEBBLE_ALLOWED_EMAILS=${{ vars.PEBBLE_ALLOWED_EMAILS }}

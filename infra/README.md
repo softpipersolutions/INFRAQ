@@ -42,7 +42,9 @@ Images: `asia-south1-docker.pkg.dev/$GCP_PROJECT/pebble/web` and `.../pebble/wor
 ```bash
 gcloud sql instances create pebble-pg \
   --database-version=POSTGRES_16 --region=asia-south1 \
-  --tier=db-g1-small --storage-type=SSD --storage-size=10GB
+  --edition=enterprise --tier=db-g1-small \
+  --storage-type=SSD --storage-size=10GB \
+  --backup --enable-point-in-time-recovery
 gcloud sql databases create pebble --instance=pebble-pg
 gcloud sql users create pebble --instance=pebble-pg --password="$DB_PASSWORD"
 ```
@@ -70,7 +72,7 @@ gcloud run jobs create pebble-migrate \
   --region=asia-south1 \
   --set-cloudsql-instances="$GCP_PROJECT:asia-south1:pebble-pg" \
   --set-secrets=DATABASE_URL=DATABASE_URL:latest \
-  --command=node --args=--import,tsx,../packages/db/src/migrate.ts
+  --command=node --args=--import,tsx,node_modules/@pebble/db/src/migrate.ts
 gcloud run jobs execute pebble-migrate --region=asia-south1 --wait
 ```
 

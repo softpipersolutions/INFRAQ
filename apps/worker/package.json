@@ -17,7 +17,8 @@
     "@pebble/documents": "workspace:*",
     "@pebble/shared": "workspace:*",
     "hono": "^4.6.0",
-    "playwright-core": "^1.49.0"
+    "playwright-core": "^1.49.0",
+    "tsx": "^4.19.0"
   },
   "devDependencies": {
     "tsx": "^4.19.0",
