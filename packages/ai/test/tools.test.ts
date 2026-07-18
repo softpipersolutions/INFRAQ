@@ -1,4 +1,4 @@
-import type { EnquiryInput } from "@pebble/shared";
+import type { EnquiryInput, Material } from "@pebble/shared";
 import { describe, expect, it, vi } from "vitest";
 import { buildPebbleTools, type PebbleAiServices } from "../src/index";
 
@@ -7,14 +7,16 @@ const OPTS = { toolCallId: "t1", messages: [] } as never;
 
 function stubServices(over: Partial<PebbleAiServices> = {}): PebbleAiServices {
   return {
-    lookupMaterial: vi.fn(async (code: string) => ({
-      materialCode: code,
-      materialName: "Smoke Detector",
-      systemType: "FAS",
-      category: "Detector",
-      unitOfMeasure: "No.",
-      active: true,
-    })),
+    lookupMaterial: vi.fn(
+      async (code: string): Promise<Material> => ({
+        materialCode: code,
+        materialName: "Smoke Detector",
+        systemType: "FAS",
+        category: "Detector",
+        unitOfMeasure: "No.",
+        active: true,
+      }),
+    ),
     listMakesForMaterial: vi.fn(async () => []),
     getCurrentPrice: vi.fn(async () => null),
     searchPastEstimates: vi.fn(async () => []),
