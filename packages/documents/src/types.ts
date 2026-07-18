@@ -7,6 +7,10 @@ import type {
   SystemType,
 } from "@pebble/shared";
 import { ESTIMATE_VALIDITY_DAYS, sumPaise } from "@pebble/shared";
+import {
+  GREENBERG_MONOGRAM_DATA_URI,
+  GREENBERG_WORDMARK_DATA_URI,
+} from "./assets/logo";
 
 /**
  * Format A is the single professional Greenberg fire-safety BOQ/quotation that
@@ -52,6 +56,16 @@ export interface BankDetails {
 export interface CompanyConfig {
   /** Legal / trading name shown in the letterhead. */
   name: string;
+  /** Brand strapline printed under the wordmark (e.g. "Exploring Synergy, Empowering Lives!"). */
+  tagline?: string | null;
+  /**
+   * Square brand mark as a data URI (rendered top-left of the letterhead).
+   * Data URIs keep the template a pure function — no file/network I/O at
+   * render time. `null`/absent falls back to the text-only letterhead.
+   */
+  logoDataUri?: string | null;
+  /** Wordmark image as a data URI (rendered beside the mark); optional. */
+  wordmarkDataUri?: string | null;
   /** One address line per array element (rendered stacked). */
   addressLines: string[];
   /** GST identification number. */
@@ -135,48 +149,62 @@ export interface FormatAInput {
 // ─── Company defaults ───────────────────────────────────────────────────────
 
 /**
- * Greenberg house defaults. These are *defaults*, not the only option — every
- * field is overridable via `CompanyConfig` (see the entity-rename note above).
+ * Greenberg house defaults — the *real* letterhead of the current legal entity.
+ *
+ * Sources (2026-07): GST Registration Certificate Form REG-06 (GSTIN, legal
+ * name, principal place of business; effective 15/06/2025) and the official
+ * company letterhead (brand marks, tagline, contact block). Bank block carried
+ * from the latest issued proposals (FF-149, Dec 2025). Every field remains
+ * overridable via `CompanyConfig` (see the entity-rename note above).
  */
 export const DEFAULT_COMPANY: CompanyConfig = {
-  name: "Greenberg Enterprises",
+  name: "Greenberg Engineering Private Limited",
+  tagline: "Exploring Synergy, Empowering Lives!",
+  logoDataUri: GREENBERG_MONOGRAM_DATA_URI,
+  wordmarkDataUri: GREENBERG_WORDMARK_DATA_URI,
   addressLines: [
-    "1st Floor, Vishal Complex, Gomti Nagar",
-    "Lucknow, Uttar Pradesh 226010",
+    "5/178, Vikas Nagar Thana Road, Vikas Nagar",
+    "Lucknow, Uttar Pradesh 226022",
   ],
-  gstin: "09ABCDE1234F1Z5",
-  phone: "+91 98765 43210",
-  email: "estimates@greenbergenterprises.in",
-  website: "www.greenbergenterprises.in",
+  gstin: "09AAMCG0423A1Z3",
+  phone: "+91 9555 820 193",
+  email: "greenberg.connect@gmail.com",
+  website: "www.greenberg.engineering",
   bank: {
     bankName: "HDFC Bank",
     accountName: "Greenberg Enterprises",
-    accountNumber: "50200012345678",
-    ifsc: "HDFC0001234",
-    branch: "Gomti Nagar, Lucknow",
+    accountNumber: "50200078849625",
+    ifsc: "HDFC0004492",
+    branch: "Vikas Nagar, Lucknow",
   },
-  signatoryName: "For Greenberg Enterprises",
-  signatoryCredentials: "NEBOSH / NFPA certified Fire Safety Engineer",
+  signatoryName: "Devansh Gulati",
+  signatoryCredentials:
+    "IDip NEBOSH (M.Tech Env) | BV Certified IMS (9001, 14001, 18001) Internal Auditor | UK NFPA CFPS Trained",
   termsAndConditions: DEFAULT_TERMS(),
 };
 
 /**
- * The house 10-point Terms & Conditions. Returned by a factory (not a shared
+ * The house 10-point Terms & Conditions, transcribed verbatim from the latest
+ * issued proposals (FF-149, Dec 2025). Returned by a factory (not a shared
  * mutable array) so every `CompanyConfig` gets an independent copy. Callers may
  * replace the list wholesale via `CompanyConfig.termsAndConditions`.
  */
 export function DEFAULT_TERMS(): string[] {
   return [
-    "This estimate is valid for 7 days from the date of issue, subject to fluctuation in raw-material prices thereafter.",
-    "Prices quoted are on a SITC (Supply, Installation, Testing & Commissioning) basis unless stated otherwise.",
-    "GST @ 18% is charged extra as shown and is payable as applicable at the time of billing.",
-    "Payment terms: 50% advance along with the work order, 40% against delivery at site, and 10% after successful testing & commissioning.",
-    "Delivery / completion period will be confirmed on receipt of a firm work order and technically-cleared drawings.",
-    "Any civil work, scaffolding, shutdown, safe storage at site, and 3-phase power supply are to be provided free of cost by the client.",
-    "Items, makes, and quantities not expressly listed in this estimate are excluded and will be charged as extra.",
-    "All statutory approvals, NOCs, and liaison charges with the local Fire Department are outside the scope of this estimate.",
-    "Materials supplied remain the property of Greenberg Enterprises until payment is received in full.",
-    "This quotation is a budgetary estimate; final BOQ and rates are subject to a joint site survey and detailed engineering.",
+    "Payment Plan — (a) 15% of the total contract value will be charged as advance for MOBILIZATION; " +
+      "(b) Interim Invoicing: 65% Delivery & Verification | 20% Erection & Verification | " +
+      "10% Testing & Verification | 5% Handover & Verification; (c) GST @ 18%.",
+    "Estimated Duration of works — Supply Chain will be designed and managed as per the approved Project Schedule: To be discussed.",
+    "Any regulatory / market price changes affecting the Contract Cost will be duly communicated to the Client; " +
+      "Contractor shall clarify for a revision to accommodate the price change.",
+    "Any change in quantities as mentioned above will be duly notified prior to procurement.",
+    "This rate list shall apply to actual quantities consumed at site for fulfilling the desired mission and " +
+      "Invoicing will be done based on the same.",
+    "Provision of Overhead & Underground tanks will be under the Client's scope.",
+    "Provision of electricity will be under the Client's scope.",
+    "Client to allow team to stay at the under-construction premises for swift execution.",
+    "Rates and Payment Terms are negotiable.",
+    "This quotation is valid for 7 days only from the date of issue due to constant fluctuations of raw material prices.",
   ];
 }
 

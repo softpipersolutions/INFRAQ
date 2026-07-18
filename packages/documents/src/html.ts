@@ -74,12 +74,32 @@ function renderLetterhead(company: CompanyConfig): string {
     .filter(Boolean)
     .join(" &nbsp;•&nbsp; ");
 
+  // Brand block: monogram + wordmark images when configured (the house
+  // letterhead), otherwise the text-only fallback. Data URIs only — the
+  // template performs no I/O.
+  const tagline = company.tagline
+    ? `<div class="letterhead__tag">${escapeHtml(company.tagline)}</div>`
+    : "";
+  const brand = company.logoDataUri
+    ? `
+      <div class="letterhead__brandrow">
+        <img class="letterhead__logo" src="${company.logoDataUri}" alt="" />
+        <div>
+          ${
+            company.wordmarkDataUri
+              ? `<img class="letterhead__wordmark" src="${company.wordmarkDataUri}" alt="${escapeHtml(company.name)}" />`
+              : `<div class="letterhead__name">${escapeHtml(company.name)}</div>`
+          }
+          ${tagline}
+        </div>
+      </div>`
+    : `
+      <div class="letterhead__name">${escapeHtml(company.name)}</div>
+      ${tagline || `<div class="letterhead__tag">Fire &amp; Life-Safety Systems — Design, Supply, Installation &amp; Commissioning</div>`}`;
+
   return `
     <header class="letterhead" role="banner">
-      <div class="letterhead__brand">
-        <div class="letterhead__name">${escapeHtml(company.name)}</div>
-        <div class="letterhead__tag">Fire &amp; Life-Safety Systems — Design, Supply, Installation &amp; Commissioning</div>
-      </div>
+      <div class="letterhead__brand">${brand}</div>
       <div class="letterhead__meta">
         <div>${address}</div>
         <div class="letterhead__gstin">GSTIN: ${escapeHtml(company.gstin)}</div>
@@ -88,22 +108,35 @@ function renderLetterhead(company: CompanyConfig): string {
     </header>`;
 }
 
-/** Repeating footer band: bank/payment strip + generated-note. */
-function renderFooter(company: CompanyConfig): string {
+/**
+ * End-of-document CONTACT DETAILS | PAYMENT DETAILS strip. This mirrors the
+ * real Format A corpus (e.g. FF-149): the letterhead prints once at the top of
+ * page 1 and the signatory-contact + bank boxes close the document — there is
+ * no repeating page footer band (page numbers ride in the renderer's footer
+ * template instead).
+ */
+function renderContactPayment(company: CompanyConfig): string {
   const { bank } = company;
-  const bankLine = [
-    `${escapeHtml(bank.bankName)}`,
-    `A/c: ${escapeHtml(bank.accountName)} (${escapeHtml(bank.accountNumber)})`,
-    `IFSC: ${escapeHtml(bank.ifsc)}`,
-    bank.branch ? `Branch: ${escapeHtml(bank.branch)}` : "",
-  ]
-    .filter(Boolean)
-    .join(" &nbsp;|&nbsp; ");
-
   return `
-    <footer class="running-foot" role="contentinfo">
-      <div class="running-foot__bank"><strong>Bank / Payment:</strong> ${bankLine}</div>
-      <div class="running-foot__note">This is a system-generated quotation and is valid without signature.</div>
+    <footer class="endblock" role="contentinfo">
+      <div class="endblock__boxes">
+        <div class="endblock__box">
+          <div class="endblock__title">Contact Details</div>
+          <div class="endblock__name">${escapeHtml(company.signatoryName)}</div>
+          <div class="endblock__cred">${escapeHtml(company.signatoryCredentials)}</div>
+          <div>MOB: ${escapeHtml(company.phone)}</div>
+          <div>EMAIL: ${escapeHtml(company.email)}</div>
+        </div>
+        <div class="endblock__box">
+          <div class="endblock__title">Payment Details</div>
+          <div>Account Name: ${escapeHtml(bank.accountName)}</div>
+          <div>Account Number: ${escapeHtml(bank.accountNumber)}</div>
+          <div>Bank: ${escapeHtml(bank.bankName)}</div>
+          ${bank.branch ? `<div>Branch: ${escapeHtml(bank.branch)}</div>` : ""}
+          <div>IFSC Code: ${escapeHtml(bank.ifsc)}</div>
+        </div>
+      </div>
+      <div class="endblock__note">This is a system-generated quotation and is valid without signature.</div>
     </footer>`;
 }
 
@@ -247,15 +280,8 @@ function renderTerms(company: CompanyConfig): string {
     </section>`;
 }
 
-/** Signatory block with credentials. */
-function renderSignatory(company: CompanyConfig): string {
-  return `
-    <section class="signatory">
-      <div class="signatory__space"></div>
-      <div class="signatory__name">${escapeHtml(company.signatoryName)}</div>
-      <div class="signatory__cred">${escapeHtml(company.signatoryCredentials)}</div>
-    </section>`;
-}
+// (The signatory's name/credentials print inside the CONTACT DETAILS box —
+// the corpus Format A has no separate signature line.)
 
 /** The embedded print/screen stylesheet (A4, repeating header/footer). */
 function styles(): string {
@@ -277,19 +303,19 @@ function styles(): string {
       font-size: 11px;
       line-height: 1.45;
     }
+    /* Page box: A4; the print margins come from the renderer's pdf() options
+       (the pdf footer template carries the page numbers). The letterhead is
+       in-flow at the top of page 1 — matching the issued corpus (FF-149),
+       whose letterhead does not repeat on continuation pages. */
     @page {
       size: A4;
-      margin: 26mm 12mm 22mm 12mm;
     }
     .letterhead {
-      position: fixed;
-      top: -22mm;
-      left: 0;
-      right: 0;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       gap: 12px;
+      margin-bottom: 12px;
       padding-bottom: 6px;
       border-bottom: 2px solid var(--accent);
     }
@@ -300,20 +326,35 @@ function styles(): string {
       color: var(--accent);
     }
     .letterhead__tag { font-size: 10px; color: var(--muted); }
+    .letterhead__brandrow { display: flex; align-items: center; gap: 8px; }
+    .letterhead__logo { width: 34px; height: 34px; }
+    .letterhead__wordmark { height: 20px; display: block; margin-bottom: 2px; }
     .letterhead__meta { text-align: right; font-size: 10px; color: var(--muted); }
     .letterhead__gstin { font-weight: 600; color: var(--ink); }
-    .running-foot {
-      position: fixed;
-      bottom: -18mm;
-      left: 0;
-      right: 0;
-      border-top: 1px solid var(--line);
-      padding-top: 4px;
-      font-size: 9px;
+    .endblock { margin-top: 18px; page-break-inside: avoid; }
+    .endblock__boxes { display: flex; gap: 0; border: 1px solid var(--ink); }
+    .endblock__box {
+      flex: 1 1 50%;
+      padding: 6px 10px 8px;
+      font-size: 9.5px;
+    }
+    .endblock__box + .endblock__box { border-left: 1px solid var(--ink); }
+    .endblock__title {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 2px;
+      margin-bottom: 4px;
+    }
+    .endblock__name { font-weight: 700; }
+    .endblock__cred { font-size: 8.5px; color: var(--muted); margin-bottom: 3px; }
+    .endblock__note {
+      margin-top: 6px;
+      font-size: 8.5px;
       color: var(--muted);
       text-align: center;
     }
-    .running-foot__bank { margin-bottom: 2px; }
     main { display: block; }
     .doc-title {
       text-align: center;
@@ -409,21 +450,15 @@ function styles(): string {
     }
     .terms ol { margin: 0; padding-left: 18px; }
     .terms li { margin-bottom: 3px; font-size: 9.5px; }
-    .signatory { margin-top: 26px; page-break-inside: avoid; }
-    .signatory__space { height: 40px; }
-    .signatory__name { font-weight: 700; border-top: 1px solid var(--ink); display: inline-block; padding-top: 3px; }
-    .signatory__cred { font-size: 9.5px; color: var(--muted); }
     @media screen {
       body { background: #ececec; }
       main {
         background: #fff;
         max-width: 210mm;
         margin: 18mm auto;
-        padding: 30mm 14mm 26mm;
+        padding: 16mm 14mm 20mm;
         box-shadow: 0 2px 12px rgba(0,0,0,0.15);
       }
-      .letterhead { position: static; top: auto; margin-bottom: 10px; }
-      .running-foot { position: static; bottom: auto; margin-top: 24px; }
     }`;
 }
 
@@ -450,16 +485,15 @@ export function renderFormatAHtml(input: FormatAInput): string {
   <style>${styles()}</style>
 </head>
 <body>
-  ${renderLetterhead(company)}
-  ${renderFooter(company)}
   <main>
+    ${renderLetterhead(company)}
     <h1 class="doc-title">Budgetary Estimate / Quotation</h1>
     <div class="doc-subtitle">${modeLabel}</div>
     ${renderHeaderBlock(input)}
     ${renderBoqTable(sections)}
     ${renderRollup(input)}
     ${renderTerms(company)}
-    ${renderSignatory(company)}
+    ${renderContactPayment(company)}
   </main>
 </body>
 </html>`;

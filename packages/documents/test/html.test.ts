@@ -57,7 +57,11 @@ describe("renderFormatAHtml", () => {
 
   it("prints the T&C and signatory credentials", () => {
     expect(html).toContain("Terms &amp; Conditions");
-    expect(html).toContain("NEBOSH / NFPA certified Fire Safety Engineer");
+    expect(html).toContain("Devansh Gulati");
+    expect(html).toContain("IDip NEBOSH");
+    // Real letterhead facts (GST REG-06 certificate).
+    expect(html).toContain("09AAMCG0423A1Z3");
+    expect(html).toContain("Greenberg Engineering Private Limited");
   });
 
   it("escapes a <script> injection in a text field", () => {
