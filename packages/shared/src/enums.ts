@@ -135,6 +135,7 @@ export const AUDIT_EVENT_TYPES = [
   "OUTPUT_GENERATED",
   "EST_DISPATCHED",
   "EST_REVISED",
+  "STAGED_COMMITTED", // Phase B — a reviewed staged_record committed to a master.
 ] as const;
 export type AuditEventType = (typeof AUDIT_EVENT_TYPES)[number];
 
@@ -155,3 +156,31 @@ export const STAGED_RECORD_STATUSES = [
   "MERGED",
 ] as const;
 export type StagedRecordStatus = (typeof STAGED_RECORD_STATUSES)[number];
+
+/**
+ * Phase B ingestion pipeline — a resumable per-document status machine. A
+ * source_document advances REGISTERED → META_DONE → LINES_DONE → STAGED → DONE;
+ * FAILED is terminal until the document is re-registered. The stages are
+ * idempotent so a crashed run can resume from the last completed stage.
+ */
+export const SOURCE_DOC_STATUSES = [
+  "REGISTERED",
+  "META_DONE",
+  "LINES_DONE",
+  "STAGED",
+  "DONE",
+  "FAILED",
+] as const;
+export type SourceDocStatus = (typeof SOURCE_DOC_STATUSES)[number];
+
+/** Lifecycle of one LLM extraction pass over a source document. */
+export const EXTRACTION_RUN_STATUSES = ["RUNNING", "SUCCEEDED", "FAILED"] as const;
+export type ExtractionRunStatus = (typeof EXTRACTION_RUN_STATUSES)[number];
+
+/** Which master a staged_record proposes to write when committed. */
+export const TARGET_MASTERS = ["materials", "makes", "prices", "install_rates"] as const;
+export type TargetMaster = (typeof TARGET_MASTERS)[number];
+
+/** Kind of retrieval chunk emitted for a source document (rag_chunks.chunk_kind). */
+export const CHUNK_KINDS = ["doc_summary", "boq_section", "terms"] as const;
+export type ChunkKind = (typeof CHUNK_KINDS)[number];

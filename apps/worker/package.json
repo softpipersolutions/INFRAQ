@@ -15,11 +15,16 @@
   "dependencies": {
     "@google-cloud/storage": "^7.14.0",
     "@hono/node-server": "^1.13.0",
+    "@pebble/ai": "workspace:*",
     "@pebble/db": "workspace:*",
     "@pebble/dispatch": "workspace:*",
     "@pebble/documents": "workspace:*",
     "@pebble/shared": "workspace:*",
+    "exceljs": "^4.4.0",
+    "google-auth-library": "^10.9.0",
     "hono": "^4.6.0",
+    "p-limit": "^7.1.1",
+    "pdf-lib": "^1.17.1",
     "playwright-core": "^1.49.0",
     "tsx": "^4.19.0"
   },

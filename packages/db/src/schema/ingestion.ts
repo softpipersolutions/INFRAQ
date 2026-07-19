@@ -1,5 +1,6 @@
 import { integer, jsonb, numeric, pgTable, text, timestamp, vector } from "drizzle-orm/pg-core";
 import { stagedRecordStatusEnum } from "./enums";
+import { materials } from "./masters";
 
 /**
  * Ingestion pipeline: registered source documents → LLM extraction runs →
@@ -69,4 +70,19 @@ export const ragChunks = pgTable("rag_chunks", {
   embedding: vector("embedding", { dimensions: 768 }),
   metadata: jsonb("metadata").$type<Record<string, unknown>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Per-material name embedding (768-dim) for dedup / fuzzy material matching at
+ * commit time — kept 1:1 with materials and dropped when a material is deleted.
+ * The vector index is added by hand-written migration SQL (drizzle cannot
+ * express it), mirroring rag_chunks.
+ */
+export const materialNameEmbeddings = pgTable("material_name_embeddings", {
+  materialCode: text("material_code")
+    .primaryKey()
+    .references(() => materials.materialCode, { onDelete: "cascade" }),
+  embedding: vector("embedding", { dimensions: 768 }).notNull(),
+  model: text("model").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

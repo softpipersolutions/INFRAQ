@@ -65,6 +65,8 @@ export const makes = pgTable("makes", {
   tier: makeTierEnum("tier").notNull(),
   approvalStatus: approvalStatusEnum("approval_status").notNull(),
   notes: text("notes"),
+  /** Ingestion provenance (source document / staged record refs); null for hand-entered rows. */
+  sourceProvenance: jsonb("source_provenance").$type<Record<string, unknown>>(),
 });
 
 /**
@@ -86,6 +88,8 @@ export const prices = pgTable("prices", {
   /** NULL = open-ended (current) rate. */
   validTo: timestamp("valid_to", { withTimezone: true }),
   createdBy: text("created_by").notNull(),
+  /** Ingestion provenance (source document / staged record refs); null for hand-entered rows. */
+  sourceProvenance: jsonb("source_provenance").$type<Record<string, unknown>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -103,6 +107,8 @@ export const installRates = pgTable("install_rates", {
   unit: installRateUnitEnum("unit").notNull(),
   validFrom: timestamp("valid_from", { withTimezone: true }).notNull(),
   validTo: timestamp("valid_to", { withTimezone: true }),
+  /** Ingestion provenance (source document / staged record refs); null for hand-entered rows. */
+  sourceProvenance: jsonb("source_provenance").$type<Record<string, unknown>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
