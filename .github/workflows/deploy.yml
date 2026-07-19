@@ -108,5 +108,5 @@ jobs:
             --service-account="pebble-web@$GCP_PROJECT.iam.gserviceaccount.com" \
             --memory=1Gi --max-instances=3 \
             --set-cloudsql-instances="$CLOUDSQL_INSTANCE" \
-            --set-secrets=DATABASE_URL=DATABASE_URL:latest \
-            --set-env-vars="^|^AUTH_MODE=firebase|FIREBASE_PROJECT_ID=$GCP_PROJECT|STORAGE_BACKEND=gcs|GCS_BUCKET=$GCP_PROJECT-pebble-outputs|WORKER_URL=${{ vars.WORKER_URL }}|PEBBLE_ALLOWED_EMAILS=${{ vars.PEBBLE_ALLOWED_EMAILS }}|PEBBLE_AI_PROVIDER=vertex|GOOGLE_VERTEX_PROJECT=$GCP_PROJECT|GOOGLE_VERTEX_LOCATION=global|INGEST_GCS_BUCKET=$GCP_PROJECT-pebble-ingest"
+            --set-secrets=DATABASE_URL=DATABASE_URL:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest \
+            --set-env-vars="^|^AUTH_MODE=firebase|FIREBASE_PROJECT_ID=$GCP_PROJECT|STORAGE_BACKEND=gcs|GCS_BUCKET=$GCP_PROJECT-pebble-outputs|WORKER_URL=${{ vars.WORKER_URL }}|PEBBLE_ALLOWED_EMAILS=${{ vars.PEBBLE_ALLOWED_EMAILS }}|PEBBLE_AI_PROVIDER=vertex|GOOGLE_VERTEX_PROJECT=$GCP_PROJECT|GOOGLE_VERTEX_LOCATION=global|INGEST_GCS_BUCKET=$GCP_PROJECT-pebble-ingest|PEBBLE_CLAUDE_DEFAULT_MODEL=claude-sonnet-5"

@@ -45,14 +45,28 @@ export function createVertexProvider(env: Record<string, string | undefined>) {
   });
 }
 
-export function createIngestModelFromEnv(
+/**
+ * Build a Gemini `LanguageModel` for an explicit model id via the same
+ * env-driven lane selection the ingestion worker uses (Vertex postpaid, else
+ * Developer-API prepaid, else null). Extracted so the chat classifier lane
+ * (`createChatModelsFromEnv`) reuses this exact selection instead of
+ * duplicating it. Returns null when neither Google lane is configured.
+ */
+export function createGeminiModelFromEnv(
   env: Record<string, string | undefined>,
+  modelId: string,
 ): LanguageModel | null {
-  const modelId = env.PEBBLE_INGEST_MODEL ?? modelConfigFromEnv(env).gemini;
   if (wantsVertex(env)) {
     return createVertexProvider(env)(modelId);
   }
   const apiKey = env.GOOGLE_GENERATIVE_AI_API_KEY;
   if (!apiKey) return null;
   return createGoogleGenerativeAI({ apiKey })(modelId);
+}
+
+export function createIngestModelFromEnv(
+  env: Record<string, string | undefined>,
+): LanguageModel | null {
+  const modelId = env.PEBBLE_INGEST_MODEL ?? modelConfigFromEnv(env).gemini;
+  return createGeminiModelFromEnv(env, modelId);
 }

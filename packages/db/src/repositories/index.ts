@@ -6,3 +6,4 @@ export * from "./enquiries";
 export * from "./estimates";
 export * from "./ingestion";
 export * from "./rag";
+export * from "./chat";

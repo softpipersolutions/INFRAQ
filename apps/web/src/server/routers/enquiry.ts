@@ -1,7 +1,7 @@
-import { createEnquiry, getEnquiry } from "@pebble/db";
+import { getEnquiry } from "@pebble/db";
 import { enquiryInputSchema } from "@pebble/shared";
 import { z } from "zod";
-import { generateForEnquiry } from "../generate";
+import { createEnquiryAndGenerate } from "../generate";
 import { listEnquiries } from "../queries";
 import { protectedProcedure, router } from "../trpc";
 
@@ -12,14 +12,7 @@ export const enquiryRouter = router({
    * the draft grid.
    */
   create: protectedProcedure.input(enquiryInputSchema).mutation(async ({ ctx, input }) => {
-    const enquiry = await createEnquiry(ctx.db, input, ctx.user.firebaseUid);
-    const estimateId = await generateForEnquiry(
-      ctx.db,
-      enquiry.enquiryId,
-      ctx.user.firebaseUid,
-      ctx.user.role,
-    );
-    return { enquiryId: enquiry.enquiryId, estimateId };
+    return createEnquiryAndGenerate(ctx.db, input, ctx.user.firebaseUid, ctx.user.role);
   }),
 
   get: protectedProcedure.input(z.object({ enquiryId: z.string() })).query(async ({ ctx, input }) => {
