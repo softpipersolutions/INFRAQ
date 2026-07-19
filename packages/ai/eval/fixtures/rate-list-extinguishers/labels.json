@@ -1,0 +1,93 @@
+{
+  "sourceFile": "Amitabh Fire Safety BOQ Data/Fire Extinguishers Rate List (22052024 R0).pdf",
+  "totalPages": 1,
+  "labeledPages": [1],
+  "notes": "docKind = rate_list (a published Sales-vs-Purchase extinguisher price list, not a project proposal). Two structural quirks: (1) Two-level Sl. No. hierarchy - category rows (A1, A2, ...) carry the extinguisher Type + Make and NO rate; the priced rate rows are the children A1.1, A1.2, ... which carry only 'Capacity - X Kgs/Ltrs' + prices. (2) The rate row has TWO price columns 'Unit Price - Purchase' and 'Unit Price - Sale' plus a 'Profit Amount' column (there is no single line-amount column). unitRateRupees is labeled as the SALE price (the canonical published/list rate). To keep row-recall robust against which price column the model picks, unitRateRupees is OMITTED on rows whose capacity is unique on the page (1/6/9 kg ABC, 4.5 kg CO2) and is asserted (sale price) only on same-capacity rows that need it to disambiguate across types (2 kg, 4 kg, 45 ltrs). If the model extracts Purchase prices instead of Sale, those rate-gated rows will read as missing - a genuine, intended signal about the dual-price layout. makeRaw omitted on all rows because the make ('Elitech OR Safepro (ISI Marked)') is printed on the parent category row, and whether the model carries it down to each capacity sub-row is exactly what is under test. rateKind SUPPLY: every description begins 'Supply of Fire Extinguisher' and there is no install/SITC component. No grand total is printed.",
+  "expectMeta": {
+    "attention": "Mr. Mitin Gulati",
+    "projectName": "FIRE EXTINGUISHER RATE LIST (Sales VS Purchase)",
+    "docDateISO": "2024-05-22",
+    "revision": "00",
+    "sourceEntityGuess": "Greenberg Enterprises",
+    "docKind": "rate_list",
+    "gstMentioned": true
+  },
+  "expectedLines": [
+    {
+      "page": 1,
+      "slNo": "A1.1",
+      "descriptionContains": "capacity - 1 kgs",
+      "qty": 1,
+      "unitRaw": "pcs",
+      "rateKind": "SUPPLY",
+      "section": "A. FIRE EXTINGUISHERS:"
+    },
+    {
+      "page": 1,
+      "slNo": "A1.3",
+      "descriptionContains": "capacity - 4 kgs",
+      "qty": 1,
+      "unitRaw": "pcs",
+      "unitRateRupees": 1750,
+      "rateKind": "SUPPLY",
+      "section": "A. FIRE EXTINGUISHERS:"
+    },
+    {
+      "page": 1,
+      "slNo": "A1.4",
+      "descriptionContains": "capacity - 6 kgs",
+      "qty": 1,
+      "unitRaw": "pcs",
+      "rateKind": "SUPPLY",
+      "section": "A. FIRE EXTINGUISHERS:"
+    },
+    {
+      "page": 1,
+      "slNo": "A1.5",
+      "descriptionContains": "capacity - 9 kgs",
+      "qty": 1,
+      "unitRaw": "pcs",
+      "rateKind": "SUPPLY",
+      "section": "A. FIRE EXTINGUISHERS:"
+    },
+    {
+      "page": 1,
+      "slNo": "A2.1",
+      "descriptionContains": "capacity - 2 kgs",
+      "qty": 1,
+      "unitRaw": "pcs",
+      "unitRateRupees": 3900,
+      "rateKind": "SUPPLY",
+      "section": "A. FIRE EXTINGUISHERS:"
+    },
+    {
+      "page": 1,
+      "slNo": "A2.2",
+      "descriptionContains": "capacity - 4.5 kgs",
+      "qty": 1,
+      "unitRaw": "pcs",
+      "rateKind": "SUPPLY",
+      "section": "A. FIRE EXTINGUISHERS:"
+    },
+    {
+      "page": 1,
+      "slNo": "A5.1",
+      "descriptionContains": "capacity - 45 ltrs",
+      "qty": 1,
+      "unitRaw": "pcs",
+      "unitRateRupees": 12750,
+      "rateKind": "SUPPLY",
+      "section": "A. FIRE EXTINGUISHERS:"
+    },
+    {
+      "page": 1,
+      "slNo": "A7.1",
+      "descriptionContains": "capacity - 4 kgs",
+      "qty": 1,
+      "unitRaw": "pcs",
+      "unitRateRupees": 7000,
+      "rateKind": "SUPPLY",
+      "section": "A. FIRE EXTINGUISHERS:"
+    }
+  ]
+}

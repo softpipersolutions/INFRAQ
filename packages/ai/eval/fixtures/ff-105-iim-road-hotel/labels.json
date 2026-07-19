@@ -1,0 +1,161 @@
+{
+  "sourceFile": "Amitabh Fire Safety BOQ Data/FF-105 Vipin Agarwal IIM Road Hotel (08122024 R1).pdf",
+  "totalPages": 6,
+  "labeledPages": [1, 2, 3, 4, 5],
+  "expectMeta": {
+    "attention": "Mr. Vipin Agarwaal",
+    "projectName": "VIPIN AGARWAL HOTEL, IIM ROAD, LUCKNOW, U.P. -226020",
+    "docDateISO": "2024-12-08",
+    "revision": "01",
+    "sourceEntityGuess": "Greenberg Enterprises",
+    "docKind": "proposal",
+    "gstMentioned": true,
+    "grandTotalRupees": 2767454
+  },
+  "expectedLines": [
+    {
+      "page": 1,
+      "slNo": "A1",
+      "descriptionContains": "class 'b' 100 mm for the ring line",
+      "makeRaw": "Jindal (ISI)",
+      "qty": 12,
+      "unitRaw": "mtr",
+      "unitRateRupees": 1395,
+      "amountRupees": 16740,
+      "rateKind": "SITC",
+      "section": "A. RING LINE & EXTERNAL YARD HYDRANTS:"
+    },
+    {
+      "page": 1,
+      "slNo": "A8",
+      "descriptionContains": "s.s. fire hydrant landing valve",
+      "makeRaw": "SafePro OR Elitech OR TulsiFire OR Exflame (ISI Marked)",
+      "qty": 1,
+      "unitRaw": "pcs",
+      "unitRateRupees": 4600,
+      "amountRupees": 4600,
+      "rateKind": "SITC",
+      "section": "A. RING LINE & EXTERNAL YARD HYDRANTS:"
+    },
+    {
+      "page": 1,
+      "slNo": "B1",
+      "descriptionContains": "main fire pump",
+      "makeRaw": "Kirloskar OR Lubi",
+      "qty": 1,
+      "unitRaw": "set",
+      "unitRateRupees": 255000,
+      "amountRupees": 255000,
+      "rateKind": "SITC",
+      "section": "B. PUMP ROOM:"
+    },
+    {
+      "page": 2,
+      "slNo": "B2",
+      "descriptionContains": "diesel fire pump",
+      "makeRaw": "Kirloskar OR Lubi",
+      "qty": 1,
+      "unitRaw": "set",
+      "unitRateRupees": 495000,
+      "amountRupees": 495000,
+      "rateKind": "SITC",
+      "section": "B. PUMP ROOM:"
+    },
+    {
+      "page": 2,
+      "slNo": "C1",
+      "descriptionContains": "class 'b' 100 mm for the hydrant wet riser",
+      "makeRaw": "Jindal (ISI)",
+      "qty": 18,
+      "unitRaw": "mtr",
+      "unitRateRupees": 1395,
+      "amountRupees": 25110,
+      "rateKind": "SITC",
+      "section": "C. WET RISER & FIRE DUCTS:"
+    },
+    {
+      "page": 3,
+      "slNo": "C3",
+      "descriptionContains": "fire hydrant landing valve",
+      "makeRaw": "SafePro OR Elitech OR TulsiFire OR Exflame (ISI Marked)",
+      "qty": 6,
+      "unitRaw": "pcs",
+      "unitRateRupees": 4600,
+      "amountRupees": 27600,
+      "rateKind": "SITC",
+      "section": "C. WET RISER & FIRE DUCTS:"
+    },
+    {
+      "page": 3,
+      "slNo": "D1",
+      "descriptionContains": "class 'b' 150 mm for the ring line",
+      "makeRaw": "Jindal (ISI)",
+      "qty": 18,
+      "unitRaw": "mtr",
+      "unitRateRupees": 1935,
+      "amountRupees": 34830,
+      "rateKind": "SITC",
+      "section": "D. SPRINKLER SYSTEM:"
+    },
+    {
+      "page": 3,
+      "slNo": "D10",
+      "descriptionContains": "pendent type sprinkler",
+      "makeRaw": "Tyco OR Omaxe OR Kartar (ISI Marked + FM Approved + UL Listed)",
+      "qty": 105,
+      "unitRaw": "pcs",
+      "unitRateRupees": 380,
+      "amountRupees": 39900,
+      "rateKind": "SITC",
+      "section": "D. SPRINKLER SYSTEM:"
+    },
+    {
+      "page": 4,
+      "slNo": "E1",
+      "descriptionContains": "terrace fire pump",
+      "makeRaw": "Kirloskar OR Lubi",
+      "qty": 1,
+      "unitRaw": "set",
+      "unitRateRupees": 55000,
+      "amountRupees": 55000,
+      "rateKind": "SITC",
+      "section": "E. TERRACE TANK CONNECTION:"
+    },
+    {
+      "page": 4,
+      "slNo": "F1",
+      "descriptionContains": "co2 type 4.5 kgs",
+      "makeRaw": "Elitech OR Safepro (ISI Marked)",
+      "qty": 6,
+      "unitRaw": "pcs",
+      "unitRateRupees": 3900,
+      "amountRupees": 23400,
+      "rateKind": "SITC",
+      "section": "F. FIRE EXTINGUISHERS & OTHERS:"
+    },
+    {
+      "page": 5,
+      "slNo": "1",
+      "descriptionContains": "2-loop addressable fire alarm control panel",
+      "makeRaw": "Agni Fyrlast",
+      "qty": 1,
+      "unitRaw": "set",
+      "unitRateRupees": 62000,
+      "amountRupees": 62000,
+      "rateKind": "SITC",
+      "section": "PART II. ALARMS & ASSITANCE:"
+    },
+    {
+      "page": 5,
+      "slNo": "4",
+      "descriptionContains": "addressable smoke detector",
+      "makeRaw": "Agni Fyrlast",
+      "qty": 58,
+      "unitRaw": "pcs",
+      "unitRateRupees": 2125,
+      "amountRupees": 123250,
+      "rateKind": "SITC",
+      "section": "PART II. ALARMS & ASSITANCE:"
+    }
+  ]
+}

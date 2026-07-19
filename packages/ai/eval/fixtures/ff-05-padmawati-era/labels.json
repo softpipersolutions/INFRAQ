@@ -1,0 +1,147 @@
+{
+  "sourceFile": "Amitabh Fire Safety BOQ Data/FF-05 PSPL Lucknow Distilled Water Plant - SITC FireFighting (25022023 R2).pdf",
+  "totalPages": 4,
+  "labeledPages": [1, 2, 3, 4],
+  "notes": "2023-era proposal issued on the PADMAWATI ENTERPRISES letterhead (GSTIN 09AOWPP9824K1ZS, Indira Nagar address, email gulatidevansh@gmail.com) rather than Greenberg Enterprises - so sourceEntityGuess is Padmawati Enterprises. Rate column header is only 'Unit Price'; rateKind SITC is asserted only for lines whose description is explicitly prefixed 'SITC' and omitted for non-SITC-prefixed lines (F1 fire extinguisher, G1 signage). Section F fire extinguishers are all printed at qty 0 (provisioned but not ordered); F1 is match-gated on its printed unit rate 5500 with qty intentionally omitted.",
+  "expectMeta": {
+    "attention": "Arch. Sumit",
+    "projectName": "PSPL Lucknow Distilled Water Plant (POCT), Nadarganj Industrial Area, Lucknow - UP",
+    "docDateISO": "2023-02-25",
+    "revision": "02",
+    "sourceEntityGuess": "Padmawati Enterprises",
+    "docKind": "proposal",
+    "gstMentioned": true,
+    "grandTotalRupees": 1857410.86
+  },
+  "expectedLines": [
+    {
+      "page": 1,
+      "slNo": "A1",
+      "descriptionContains": "class 'c' 100 mm",
+      "makeRaw": "Jindal (ISI)",
+      "qty": 144,
+      "unitRaw": "mtr",
+      "unitRateRupees": 1950,
+      "amountRupees": 280800,
+      "rateKind": "SITC",
+      "section": "A. MAIN PIPING WORKS AND VALVES:"
+    },
+    {
+      "page": 1,
+      "slNo": "A6",
+      "descriptionContains": "butterfly valve 100 mm",
+      "makeRaw": "Swastik Technocat OR Kartar OR Zoloto (ISI)",
+      "qty": 5,
+      "unitRaw": "pcs",
+      "unitRateRupees": 5650,
+      "amountRupees": 28250,
+      "rateKind": "SITC",
+      "section": "A. MAIN PIPING WORKS AND VALVES:"
+    },
+    {
+      "page": 1,
+      "slNo": "B1",
+      "descriptionContains": "fire hydrant landing valve",
+      "makeRaw": "Swastik Technocat OR Elitech OR TulsiFire OR Exflame (ISI Marked)",
+      "qty": 6,
+      "unitRaw": "pcs",
+      "unitRateRupees": 5700,
+      "amountRupees": 34200,
+      "rateKind": "SITC",
+      "section": "B. FIRE HYDRANTS & HOSE REELS:"
+    },
+    {
+      "page": 2,
+      "slNo": "B5",
+      "descriptionContains": "hose drum with 30 mtrs hose reel",
+      "makeRaw": "Swastik Technocat OR Elitech OR TulsiFire OR Exflame (ISI Marked)",
+      "qty": 5,
+      "unitRaw": "pcs",
+      "unitRateRupees": 9800,
+      "amountRupees": 49000,
+      "rateKind": "SITC",
+      "section": "B. FIRE HYDRANTS & HOSE REELS:"
+    },
+    {
+      "page": 2,
+      "slNo": "C1",
+      "descriptionContains": "class 'c' 80 mm - for sprinkler",
+      "makeRaw": "Jindal (ISI)",
+      "qty": 72,
+      "unitRaw": "mtr",
+      "unitRateRupees": 1650,
+      "amountRupees": 118800,
+      "rateKind": "SITC",
+      "section": "C. BASEMENT SPRINKLER SYSTEM:"
+    },
+    {
+      "page": 2,
+      "slNo": "C9",
+      "descriptionContains": "pendent type sprinkler",
+      "makeRaw": "Tyco OR Kartar OR Omaxe (ISI Marked)",
+      "qty": 116,
+      "unitRaw": "pcs",
+      "unitRateRupees": 600,
+      "amountRupees": 69600,
+      "rateKind": "SITC",
+      "section": "C. BASEMENT SPRINKLER SYSTEM:"
+    },
+    {
+      "page": 2,
+      "slNo": "D1",
+      "descriptionContains": "main fire pump",
+      "makeRaw": "Crompton Greeves OR Kirloskar OR Lubi",
+      "qty": 1,
+      "unitRaw": "set",
+      "unitRateRupees": 135550,
+      "amountRupees": 135550,
+      "rateKind": "SITC",
+      "section": "D. PUMP SETUP:"
+    },
+    {
+      "page": 3,
+      "slNo": "E1",
+      "descriptionContains": "four-zone conventional fire alarm panel",
+      "makeRaw": "Agni",
+      "qty": 1,
+      "unitRaw": "set",
+      "unitRateRupees": 22700,
+      "amountRupees": 22700,
+      "rateKind": "SITC",
+      "section": "E. ALARMS & ASSITANCE:"
+    },
+    {
+      "page": 3,
+      "slNo": "E4",
+      "descriptionContains": "smoke detectors with base",
+      "makeRaw": "Agni",
+      "qty": 45,
+      "unitRaw": "pcs",
+      "unitRateRupees": 1200,
+      "amountRupees": 54000,
+      "rateKind": "SITC",
+      "section": "E. ALARMS & ASSITANCE:"
+    },
+    {
+      "page": 3,
+      "slNo": "F1",
+      "descriptionContains": "co2 type 4.5 kgs",
+      "makeRaw": "Elitech OR Safepro (ISI Marked)",
+      "unitRaw": "pcs",
+      "unitRateRupees": 5500,
+      "amountRupees": 0,
+      "section": "F. FIRE EXTINGUISHERS:"
+    },
+    {
+      "page": 4,
+      "slNo": "G1",
+      "descriptionContains": "safety & informative signage",
+      "makeRaw": null,
+      "qty": 1,
+      "unitRaw": "Lump Sum",
+      "unitRateRupees": 14000,
+      "amountRupees": 14000,
+      "section": "G. OTHERS:"
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "sourceFile": "Amitabh Fire Safety BOQ Data/FF-01 Shri Narayan Plaza - SITC Active Fire Fighting (21092022 R0).pdf",
+  "totalPages": 3,
+  "labeledPages": [1, 2, 3],
+  "notes": "Earliest-era (2022) proposal. No GSTIN printed on the letterhead (later docs add it). Rate column header is only 'Unit Price' (no '(SITC)' qualifier like later docs), but every line description is prefixed 'SITC' and the title is 'Supply, Installation, Testing & Commissioning (SITC)', so rateKind ground truth is SITC. Note the Two-Way Valve row on page 1 is mis-numbered '4' instead of 'A7' in the printed Sl. No. column (not labeled here).",
+  "expectMeta": {
+    "attention": "Mr. Agarwaal",
+    "projectName": "Narayan Plaza, CP-65, Lucknow - Sitapur Rd, SBI Colony, Sector E, Aliganj, Lucknow, Uttar Pradesh 226018",
+    "docDateISO": "2022-09-21",
+    "revision": "00",
+    "sourceEntityGuess": "Greenberg Enterprises",
+    "docKind": "proposal",
+    "gstMentioned": true,
+    "grandTotalRupees": 343191.2
+  },
+  "expectedLines": [
+    {
+      "page": 1,
+      "slNo": "A1",
+      "descriptionContains": "class 'b' 100 mm",
+      "makeRaw": "Jindal (ISI)",
+      "qty": 48,
+      "unitRaw": "mtr",
+      "unitRateRupees": 1550,
+      "amountRupees": 74400,
+      "rateKind": "SITC",
+      "section": "A. MAIN PIPING WORKS AND VALVES:"
+    },
+    {
+      "page": 1,
+      "slNo": "A5",
+      "descriptionContains": "butterfly valve 100 mm",
+      "makeRaw": "Kartar (ISI)",
+      "qty": 2,
+      "unitRaw": "pcs",
+      "unitRateRupees": 5000,
+      "amountRupees": 10000,
+      "rateKind": "SITC",
+      "section": "A. MAIN PIPING WORKS AND VALVES:"
+    },
+    {
+      "page": 2,
+      "slNo": "B1",
+      "descriptionContains": "fire hydrant landing valve",
+      "makeRaw": "Swastik Technocat OR Elitech OR TulsiFire OR Exflame (ISI Marked)",
+      "qty": 4,
+      "unitRaw": "pcs",
+      "unitRateRupees": 5000,
+      "amountRupees": 20000,
+      "rateKind": "SITC",
+      "section": "B. FIRE HYDRANTS & HOSE REELS:"
+    },
+    {
+      "page": 2,
+      "slNo": "B5",
+      "descriptionContains": "hose drum with 30 mtrs hose reel",
+      "makeRaw": "Swastik Technocat OR Elitech OR TulsiFire OR Exflame (ISI Marked)",
+      "qty": 4,
+      "unitRaw": "pcs",
+      "unitRateRupees": 8000,
+      "amountRupees": 32000,
+      "rateKind": "SITC",
+      "section": "B. FIRE HYDRANTS & HOSE REELS:"
+    },
+    {
+      "page": 2,
+      "slNo": "C1",
+      "descriptionContains": "main fire pump",
+      "makeRaw": "Crompton Greeves OR Kirloskar OR Lubi",
+      "qty": 1,
+      "unitRaw": "set",
+      "unitRateRupees": 42000,
+      "amountRupees": 42000,
+      "rateKind": "SITC",
+      "section": "C. PUMP SETUP:"
+    },
+    {
+      "page": 2,
+      "slNo": "C6",
+      "descriptionContains": "auto system panel",
+      "makeRaw": null,
+      "qty": 1,
+      "unitRaw": "set",
+      "unitRateRupees": 10000,
+      "amountRupees": 10000,
+      "rateKind": "SITC",
+      "section": "C. PUMP SETUP:"
+    },
+    {
+      "page": 3,
+      "slNo": "D1",
+      "descriptionContains": "exit signage",
+      "makeRaw": null,
+      "qty": 12,
+      "unitRaw": "pcs",
+      "unitRateRupees": 350,
+      "amountRupees": 4200,
+      "rateKind": "SITC",
+      "section": "D. OTHERS:"
+    },
+    {
+      "page": 3,
+      "slNo": "D2",
+      "descriptionContains": "civil works",
+      "makeRaw": null,
+      "qty": 1,
+      "unitRaw": "Lump Sum",
+      "unitRateRupees": 7500,
+      "amountRupees": 7500,
+      "rateKind": "SITC",
+      "section": "D. OTHERS:"
+    }
+  ]
+}

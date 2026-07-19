@@ -1,0 +1,148 @@
+{
+  "sourceFile": "Amitabh Fire Safety BOQ Data/GBE-71 POCT C7 Fire Protection Systems (25052024 R5) - Supply Only.pdf",
+  "totalPages": 4,
+  "labeledPages": [1, 2, 3],
+  "notes": "SUPPLY-ONLY variant. The rate column header on every page is 'Unit Price (Supply Only)' and the title says 'Supply Only', so rateKind is SUPPLY for ALL lines even though each line description is still prefixed 'SITC' (the SITC wording is boilerplate carried over from the full-scope quote; the column header is what classifies the rate). Letterhead entity is Greenberg Enterprises (GSTIN 09AAYFG9587A1ZM); the CLIENT is Q-Line Healthcare Pvt. Ltd. clientName/projectName omitted (long client string, exact-match risk). grandTotalRupees omitted: the document prints two separate section totals (Part I 'Total with GST' 2722346.13 and Part II 'Total with GST' 368685.10) but no single combined grand total. Page 4 has no line items.",
+  "expectMeta": {
+    "attention": "Mr. Amit",
+    "docDateISO": "2024-05-25",
+    "revision": "05",
+    "sourceEntityGuess": "Greenberg Enterprises",
+    "docKind": "proposal",
+    "gstMentioned": true
+  },
+  "expectedLines": [
+    {
+      "page": 1,
+      "slNo": "A1",
+      "descriptionContains": "class 'c' 150 mm",
+      "makeRaw": "Jindal (ISI)",
+      "qty": 54,
+      "unitRaw": "mtr",
+      "unitRateRupees": 1573.11,
+      "amountRupees": 84947.94,
+      "rateKind": "SUPPLY",
+      "section": "A. MAIN PIPING WORKS AND VALVES:"
+    },
+    {
+      "page": 1,
+      "slNo": "A6",
+      "descriptionContains": "butterfly valve 150 mm",
+      "makeRaw": "Swastik Technocat OR Kartar OR Zoloto (ISI)",
+      "qty": 9,
+      "unitRaw": "pcs",
+      "unitRateRupees": 3880.8,
+      "amountRupees": 34927.2,
+      "rateKind": "SUPPLY",
+      "section": "A. MAIN PIPING WORKS AND VALVES:"
+    },
+    {
+      "page": 1,
+      "slNo": "B1",
+      "descriptionContains": "fire hydrant landing valve",
+      "makeRaw": "Swastik Technocat OR Elitech OR TulsiFire OR Exflame (ISI Marked)",
+      "qty": 14,
+      "unitRaw": "pcs",
+      "unitRateRupees": 3465,
+      "amountRupees": 48510,
+      "rateKind": "SUPPLY",
+      "section": "B. FIRE HYDRANTS & HOSE REELS:"
+    },
+    {
+      "page": 2,
+      "slNo": "B5",
+      "descriptionContains": "hose drum with 30 mtrs hose reel",
+      "makeRaw": "Swastik Technocat OR Elitech OR TulsiFire OR Exflame (ISI Marked)",
+      "qty": 6,
+      "unitRaw": "pcs",
+      "unitRateRupees": 5405.4,
+      "amountRupees": 32432.4,
+      "rateKind": "SUPPLY",
+      "section": "B. FIRE HYDRANTS & HOSE REELS:"
+    },
+    {
+      "page": 2,
+      "slNo": "C1",
+      "descriptionContains": "class 'c' 40 mm - for sprinkler",
+      "makeRaw": "Jindal (ISI)",
+      "qty": 1,
+      "unitRaw": "mtr",
+      "unitRateRupees": 602.91,
+      "amountRupees": 602.91,
+      "rateKind": "SUPPLY",
+      "section": "C. BASEMENT SPRINKLER SYSTEM:"
+    },
+    {
+      "page": 2,
+      "slNo": "C6",
+      "descriptionContains": "pendent type sprinkler",
+      "makeRaw": "Tyco OR Kartar OR Omaxe OR Agni OR Safepro (ISI Marked + FM Approved + UL Listed)",
+      "qty": 124,
+      "unitRaw": "pcs",
+      "unitRateRupees": 311.85,
+      "amountRupees": 38669.4,
+      "rateKind": "SUPPLY",
+      "section": "C. BASEMENT SPRINKLER SYSTEM:"
+    },
+    {
+      "page": 2,
+      "slNo": "D1",
+      "descriptionContains": "main fire pump",
+      "makeRaw": "Crompton Greeves OR Kirloskar OR Lubi",
+      "qty": 1,
+      "unitRaw": "set",
+      "unitRateRupees": 199474.09,
+      "amountRupees": 199474.09,
+      "rateKind": "SUPPLY",
+      "section": "D. PUMP SETUP:"
+    },
+    {
+      "page": 3,
+      "slNo": "E1",
+      "descriptionContains": "co2 type 4.5 kgs",
+      "makeRaw": "Elitech OR Safepro (ISI Marked)",
+      "qty": 2,
+      "unitRaw": "pcs",
+      "unitRateRupees": 4500,
+      "amountRupees": 9000,
+      "rateKind": "SUPPLY",
+      "section": "E. FIRE EXTINGUISHERS:"
+    },
+    {
+      "page": 3,
+      "slNo": "F1",
+      "descriptionContains": "safety & informative signage",
+      "makeRaw": null,
+      "qty": 1,
+      "unitRaw": "Lump Sum",
+      "unitRateRupees": 14000,
+      "amountRupees": 14000,
+      "rateKind": "SUPPLY",
+      "section": "F. OTHERS:"
+    },
+    {
+      "page": 3,
+      "slNo": "1",
+      "descriptionContains": "8-zone conventional fire alarm panel",
+      "makeRaw": "Agni",
+      "qty": 1,
+      "unitRaw": "set",
+      "unitRateRupees": 15400,
+      "amountRupees": 15400,
+      "rateKind": "SUPPLY",
+      "section": "PART II. ALARMS & ASSITANCE:"
+    },
+    {
+      "page": 3,
+      "slNo": "4",
+      "descriptionContains": "smoke detectors with base",
+      "makeRaw": "Agni",
+      "qty": 150,
+      "unitRaw": "pcs",
+      "unitRateRupees": 717.5,
+      "amountRupees": 107625,
+      "rateKind": "SUPPLY",
+      "section": "PART II. ALARMS & ASSITANCE:"
+    }
+  ]
+}
