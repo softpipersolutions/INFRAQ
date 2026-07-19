@@ -4,6 +4,24 @@
 
 Last updated: 2026-07-18 · Branch: `claude/fire-safety-boq-webapp-f5n921`
 
+> ## 💬 PHASE C COMPLETE — CHAT LIVE (2026-07-19)
+> The conversational lane is deployed: /chat streams through the
+> deterministic-first router — Gemini (Vertex) fills A.08 slots with
+> enum-constrained extraction (per-floor semantics + shared vocabularies,
+> both fixed after real-model E2E caught free-text/total-area failures),
+> **Claude Sonnet 5** (env: PEBBLE_CLAUDE_DEFAULT_MODEL) handles
+> interpret/explain/recall with the Pebble tools, Opus 4.8 on escalation
+> triggers, COMPUTE never touches a model. Verified live: one message →
+> all slots canonical → confirm → GBE-EST-2026-001 via the same validated
+> generate path; "why 30 smoke detectors?" → DL-FAS-001 + IS 2189 +
+> CEIL(1800/60)=30 with resolved rates, all from tool facts. Per-user
+> daily budget guard (PEBBLE_DAILY_LLM_BUDGET_USD, 429), clean 503
+> without keys, every model call in the llm_calls ledger + dashboard
+> tile. Explain buttons on estimate lines; master-digest prompt caching
+> keyed on masterDigestHash. Suites: ai 111 · db 58 · web 41 (+ shared 88,
+> worker 114, engines 31, expr 123, dispatch 24, documents 12 = 602).
+> Remaining: Gate G6 queue review with Greenberg staff; Phase D UAT.
+>
 > ## 📚 PHASE B COMPLETE — CORPUS INGESTED (2026-07-19)
 > All 145 historical proposals (142 PDF + 3 XLSX) extracted, normalized,
 > dedup-routed and staged in production: **145/145 DONE**, ≈3.6k staged line
