@@ -34,10 +34,22 @@ async function run(ctx: EvalCtx): Promise<CaseResult> {
   const mentionsCorrection = /\b6\b/.test(turn4.text) && /floor/i.test(turn4.text);
   notes.push(mentionsCorrection ? "reply mentions the correction" : "reply does NOT clearly mention the correction");
 
-  // Soft heuristic per spec: the reply should not re-ask for already-captured
-  // fields (e.g. client) just because a correction came in.
-  const doesNotReask = !/\bclient\b/i.test(turn4.text);
-  notes.push(doesNotReask ? "reply does not re-ask for client" : "reply appears to RE-ASK for client");
+  // Soft heuristic per spec: the reply should not re-ASK for already-captured
+  // fields just because a correction came in. Merely MENTIONING the client is
+  // fine — the persona requires restating the full record once capture is
+  // complete ("Client: Rajesh Traders…"), and that restatement is desired
+  // behaviour, not a re-ask. A re-ask is an interrogative about the client:
+  // either a question-word phrasing or a sentence about the client ending in ?
+  const asksForClient =
+    /(?:who is|who's|what(?:'s| is)|could you (?:share|provide|tell)|please (?:share|provide))[^.?!]{0,40}\bclient\b/i.test(
+      turn4.text,
+    ) || /\bclient\b[^.?!]{0,60}\?/i.test(turn4.text);
+  const doesNotReask = !asksForClient;
+  notes.push(
+    doesNotReask
+      ? "reply does not re-ask for client (restating it is fine)"
+      : `reply appears to RE-ASK for client: "${turn4.text.slice(0, 160)}"`,
+  );
 
   const contradictionsStayZero = (session?.contradictions ?? -1) === 0;
   notes.push(
