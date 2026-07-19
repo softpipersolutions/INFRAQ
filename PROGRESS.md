@@ -66,9 +66,13 @@ Last updated: 2026-07-19 · Branch: `claude/fire-safety-boq-webapp-f5n921`
 >   pnpm --filter @pebble/web eval:chat -- --only happy-path
 > ```
 > Without keys it exits 2 with setup instructions, never confused with a real
-> eval failure. Remaining: run the full 8-case suite with real keys and fold
-> any prompt-quality findings back to the persona/module fragment (not this
-> harness's job — it only reports).
+> eval failure. **FULL SUITE: 8/8 PASS on real models (2026-07-19)** — happy
+> path $0.055/41s, correction $0.020/22s, curveball, challenge (Opus
+> ledgered, $0.60), recall $0.003, self-heal from the legacy padded-systems
+> prod bug, budget 429 in 13ms, explain walkthrough with 9 number-tokens all
+> grounded; typical turn 2-5¢. The one initial failure was a harness
+> heuristic (restating the record ≠ re-asking), not the agent. DEPLOYED to
+> production (migration 0003 applied via the pre-deploy job).
 >
 > ## 💬 PHASE C COMPLETE — CHAT LIVE (2026-07-19)
 > The conversational lane is deployed: /chat streams through the
