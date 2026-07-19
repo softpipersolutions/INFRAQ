@@ -18,8 +18,8 @@ export { renderEstimateDocuments } from "./render";
 export type { RenderArgs, RenderDeps, RenderResult, RenderedDoc } from "./render";
 export { dispatchEstimateDocuments } from "./dispatch-handler";
 export type { DispatchArgs, DispatchDeps } from "./dispatch-handler";
-export { ingestDocument } from "./ingest";
-export type { IngestArgs, IngestResult } from "./ingest";
+export { ingestDocument, ingestSourceDocument, parseIngestArgs } from "./ingest";
+export type { IngestArgs, IngestDeps, IngestAiDeps, IngestReport } from "./ingest";
 
 // Storage abstraction + factory.
 export { createStorage, LocalStorageAdapter, GcsStorageAdapter } from "./storage";

@@ -1,4 +1,5 @@
 import { serve } from "@hono/node-server";
+import { createEmbedder, createIngestModelFromEnv } from "@pebble/ai";
 import { createDb, migrateDb } from "@pebble/db";
 import { createEmailProvider, createWhatsAppProvider } from "@pebble/dispatch";
 import { createApp } from "./app";
@@ -28,6 +29,12 @@ async function main(): Promise<void> {
     providers: {
       email: createEmailProvider(process.env),
       whatsapp: createWhatsAppProvider(process.env),
+    },
+    ingestAi: {
+      // Gemini extraction model when GOOGLE_GENERATIVE_AI_API_KEY is set, else null
+      // (PDF ingestion errors 503; XLSX still ingest deterministically).
+      model: createIngestModelFromEnv(process.env),
+      embedder: createEmbedder(process.env),
     },
   };
 

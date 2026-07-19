@@ -1,4 +1,5 @@
 import type { Db } from "@pebble/db";
+import { listSourceDocuments } from "@pebble/db";
 import type { DispatchProviders } from "@pebble/dispatch";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -6,6 +7,7 @@ import { dispatchEstimateDocuments } from "./dispatch-handler";
 import type { DispatchArgs } from "./dispatch-handler";
 import { WorkerError } from "./errors";
 import { ingestDocument } from "./ingest";
+import type { IngestAiDeps } from "./ingest";
 import type { HtmlToPdf } from "./pdf";
 import { renderEstimateDocuments } from "./render";
 import type { RenderArgs } from "./render";
@@ -26,6 +28,8 @@ export interface AppDeps {
   storage: StorageAdapter;
   pdf: HtmlToPdf;
   providers: DispatchProviders;
+  /** Extraction model + embedder for the ingestion pipeline (`/tasks/ingest`). */
+  ingestAi: IngestAiDeps;
 }
 
 /** Translate a thrown error into a JSON body + status. */
@@ -120,12 +124,34 @@ export function createApp(deps: AppDeps): Hono {
     }
   });
 
-  /** Ingestion task — stub until PLAN §4.5 lands (see ingest.ts). */
+  /**
+   * Ingestion task (PLAN §4.5): register + extract + stage + chunk one source
+   * document, resumably. Body: { sourceUri? , sourceDocumentId? , force? }.
+   */
   app.post("/tasks/ingest", async (c) => {
     try {
       const body = await readJsonBody(c);
-      const result = await ingestDocument(body);
+      const result = await ingestDocument(
+        { db: deps.db, storage: deps.storage, ai: deps.ingestAi },
+        body,
+      );
       return c.json(result);
+    } catch (err) {
+      const { body, status } = errorResponse(err);
+      return c.json(body, status);
+    }
+  });
+
+  /**
+   * Ingestion status listing — every registered source document with its
+   * pipeline status, staged-record tally and chunk count. Used by the backfill
+   * driver's `--resume` to skip documents already DONE. Behind the same Cloud
+   * Run OIDC/IAM layer as the task endpoints.
+   */
+  app.get("/tasks/ingest/status", async (c) => {
+    try {
+      const documents = await listSourceDocuments(deps.db);
+      return c.json({ documents });
     } catch (err) {
       const { body, status } = errorResponse(err);
       return c.json(body, status);

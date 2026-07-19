@@ -1,6 +1,7 @@
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { StubEmbedder } from "@pebble/ai";
 import type { DbHandle } from "@pebble/db";
 import {
   createDb,
@@ -11,6 +12,7 @@ import {
   seedDatabase,
 } from "@pebble/db";
 import type { EnquiryInput, GenerationResult, PricedLine } from "@pebble/shared";
+import type { IngestAiDeps } from "../src/ingest";
 
 /** A freshly migrated + seeded in-memory PGlite database for a single test file. */
 export async function freshDb(): Promise<DbHandle> {
@@ -23,6 +25,11 @@ export async function freshDb(): Promise<DbHandle> {
 /** A unique OS temp dir for a `LocalStorageAdapter` under test. */
 export async function tempStorageDir(): Promise<string> {
   return mkdtemp(join(tmpdir(), "pebble-worker-"));
+}
+
+/** Model-less ingest AI deps (deterministic stub embedder) for app-level tests. */
+export function stubIngestAi(): IngestAiDeps {
+  return { model: null, embedder: new StubEmbedder() };
 }
 
 /** A minimal valid enquiry to hang an estimate off. */

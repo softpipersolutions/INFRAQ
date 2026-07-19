@@ -22,3 +22,4 @@ export * from "./ingest/schemas";
 export * from "./ingest/prompts";
 export * from "./ingest/extract";
 export * from "./ingest/eval-score";
+export * from "./ingest/model";

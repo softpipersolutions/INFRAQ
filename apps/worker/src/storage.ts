@@ -37,6 +37,15 @@ export interface StorageAdapter {
   /** Fetch a stored object's bytes back — used by ingestion to re-read a
    *  registered source document (PDF/XLSX) for windowing/parsing. */
   get(uri: string): Promise<Buffer>;
+  /**
+   * Resolve a storage KEY (as passed to `put`) to the opaque uri it is stored
+   * under, WITHOUT writing. `put` is the only thing that hands back a uri, so a
+   * resumable pipeline that persists a work file (`ingest-work/<id>/meta.json`)
+   * in one invocation and must re-read it in a later one needs a pure
+   * key→uri mapping — that is this. It is the exact inverse of the key→uri that
+   * `put` returns for the same key.
+   */
+  keyToUri(key: string): string;
 }
 
 /** Hex sha256 of the exact bytes we are about to (or did) store. */
@@ -95,6 +104,11 @@ export class LocalStorageAdapter implements StorageAdapter {
   async get(uri: string): Promise<Buffer> {
     return this.read(uri);
   }
+
+  /** `file://<baseDir>/<key>` — the same uri `put(key, …)` returns. */
+  keyToUri(key: string): string {
+    return pathToFileURL(resolve(this.baseDir, key)).href;
+  }
 }
 
 /**
@@ -147,11 +161,31 @@ export class GcsStorageAdapter implements StorageAdapter {
     return url;
   }
 
-  /** Fetch stored bytes back via the GCS SDK's `file.download()`. */
+  /**
+   * Fetch stored bytes back via the GCS SDK's `file.download()`. Honors the
+   * uri's OWN bucket when it names one — ingestion reads source documents from
+   * the corpus bucket (`gs://$INGEST_GCS_BUCKET/...`) through the same adapter
+   * that writes work files to the outputs bucket, so `get` must never silently
+   * re-root a foreign `gs://` uri onto the configured bucket.
+   */
   async get(uri: string): Promise<Buffer> {
+    if (uri.startsWith("gs://") && !uri.startsWith(`gs://${this.bucketName}/`)) {
+      const { bucket: foreignBucket, key } = parseGsUri(uri);
+      if (!this.client) {
+        const { Storage } = await import("@google-cloud/storage");
+        this.client = new Storage();
+      }
+      const [buf] = await this.client.bucket(foreignBucket).file(key).download();
+      return buf;
+    }
     const bucket = await this.bucket();
     const [buf] = await bucket.file(this.keyFromUri(uri)).download();
     return buf;
+  }
+
+  /** `gs://<bucket>/<key>` — the same uri `put(key, …)` returns. */
+  keyToUri(key: string): string {
+    return `gs://${this.bucketName}/${key}`;
   }
 }
 

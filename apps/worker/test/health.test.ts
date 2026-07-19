@@ -4,7 +4,7 @@ import type { DbHandle } from "@pebble/db";
 import { createApp } from "../src/app";
 import { StubPdfRenderer } from "../src/pdf";
 import { LocalStorageAdapter } from "../src/storage";
-import { freshDb, tempStorageDir } from "./helpers";
+import { freshDb, stubIngestAi, tempStorageDir } from "./helpers";
 
 describe("worker app", () => {
   let handle: DbHandle;
@@ -23,6 +23,7 @@ describe("worker app", () => {
       storage: new LocalStorageAdapter(await tempStorageDir()),
       pdf: new StubPdfRenderer(),
       providers: { email: new StubEmailProvider(), whatsapp: new StubWhatsAppProvider() },
+      ingestAi: stubIngestAi(),
     });
 
     const res = await app.request("/health");

@@ -8,7 +8,7 @@ import type { AppDeps } from "../src/app";
 import { StubPdfRenderer } from "../src/pdf";
 import { renderEstimateDocuments } from "../src/render";
 import { LocalStorageAdapter } from "../src/storage";
-import { createLockedEstimate, freshDb, makeCurrentVersionWorking, tempStorageDir } from "./helpers";
+import { createLockedEstimate, freshDb, makeCurrentVersionWorking, stubIngestAi, tempStorageDir } from "./helpers";
 
 describe("renderEstimateDocuments", () => {
   let handle: DbHandle;
@@ -23,6 +23,7 @@ describe("renderEstimateDocuments", () => {
       storage,
       pdf: new StubPdfRenderer(),
       providers: { email: new StubEmailProvider(), whatsapp: new StubWhatsAppProvider() },
+      ingestAi: stubIngestAi(),
     };
   });
 
