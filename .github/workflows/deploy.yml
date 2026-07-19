@@ -108,4 +108,4 @@ jobs:
             --memory=1Gi --max-instances=3 \
             --set-cloudsql-instances="$CLOUDSQL_INSTANCE" \
             --set-secrets=DATABASE_URL=DATABASE_URL:latest \
-            --set-env-vars="^|^AUTH_MODE=firebase|STORAGE_BACKEND=gcs|GCS_BUCKET=$GCP_PROJECT-pebble-outputs|WORKER_URL=${{ vars.WORKER_URL }}|PEBBLE_ALLOWED_EMAILS=${{ vars.PEBBLE_ALLOWED_EMAILS }}"
+            --set-env-vars="^|^AUTH_MODE=firebase|FIREBASE_PROJECT_ID=$GCP_PROJECT|STORAGE_BACKEND=gcs|GCS_BUCKET=$GCP_PROJECT-pebble-outputs|WORKER_URL=${{ vars.WORKER_URL }}|PEBBLE_ALLOWED_EMAILS=${{ vars.PEBBLE_ALLOWED_EMAILS }}"
