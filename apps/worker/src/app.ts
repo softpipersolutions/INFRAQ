@@ -3,6 +3,7 @@ import { listSourceDocuments } from "@pebble/db";
 import type { DispatchProviders } from "@pebble/dispatch";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { autoApproveBatch, parseAutoApproveArgs } from "./auto-approve";
 import { dispatchEstimateDocuments } from "./dispatch-handler";
 import type { DispatchArgs } from "./dispatch-handler";
 import { WorkerError } from "./errors";
@@ -136,6 +137,26 @@ export function createApp(deps: AppDeps): Hono {
         body,
       );
       return c.json(result);
+    } catch (err) {
+      const { body, status } = errorResponse(err);
+      return c.json(body, status);
+    }
+  });
+
+  /**
+   * Gemini FULL AUTO-APPROVE pass over PROPOSED staged records (Phase B).
+   * Body: { limit? , dryRun? , concurrency? }. Verifies each row and directly
+   * commits / rejects it (or leaves it PROPOSED when unsure), returning the
+   * split report. Behind the same Cloud Run OIDC/IAM layer as the other tasks.
+   */
+  app.post("/tasks/auto-approve", async (c) => {
+    try {
+      const body = await readJsonBody(c);
+      const report = await autoApproveBatch(
+        { db: deps.db, ai: deps.ingestAi },
+        parseAutoApproveArgs(body),
+      );
+      return c.json(report);
     } catch (err) {
       const { body, status } = errorResponse(err);
       return c.json(body, status);
