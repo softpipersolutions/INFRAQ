@@ -15,7 +15,7 @@ import { z } from "zod";
  */
 
 /** Bump on EVERY change to `buildVerifyPrompt` so a decision can be traced to its prompt. */
-export const STAGED_VERIFY_PROMPT_VERSION = "staged-verify-v1";
+export const STAGED_VERIFY_PROMPT_VERSION = "staged-verify-v2";
 
 /**
  * The verdict a verification pass returns. `issues` is expected to be empty when
@@ -52,18 +52,28 @@ export interface BuildVerifyPromptArgs {
  */
 export function buildVerifyPrompt(args: BuildVerifyPromptArgs): string {
   return [
-    "You are auditing a machine-extracted record against its source line from a historical fire-safety proposal.",
-    "A previous pass read the source line below and produced the PROPOSED record below. Your job is to decide whether that record should be committed to the clean master data. You are a GATE, not an editor.",
+    "You are auditing a machine-extracted record against its source DESCRIPTION from a historical fire-safety proposal.",
+    "A previous pass read a BOQ table row and produced the PROPOSED record below. Your job is to decide whether that record should be committed to the clean master data. You are a GATE, not an editor.",
+    "",
+    "IMPORTANT — what you can and cannot see: the source text below is ONLY the row's",
+    "DESCRIPTION cell. The row's quantity, unit and price were read from separate table",
+    "COLUMNS that are NOT included here. Therefore:",
+    "- NEVER reject or mark unsure merely because a price, quantity or unit value does not",
+    "  appear in the source text — it came from a column you cannot see.",
+    "- Judge the price ONLY for plausibility given what the item is (order of magnitude):",
+    "  a smoke detector at ₹4,50,000 or a fire pump at ₹12 is wrong; a detector at ₹1,450",
+    "  or an MS pipe metre at ₹675 is plausible.",
     "",
     "Approve ONLY if ALL of these hold:",
-    "- the material / name in the record faithfully matches the source text (no invented items, no drifted meaning);",
-    "- the unit is consistent with the source text;",
-    "- any brand claimed in the record actually appears in the source text;",
-    "- the price is plausible for the item category — flag absurd magnitudes (a smoke detector priced at ₹4,50,000, or a pump priced at ₹12, is wrong);",
-    "- the enum / classification fields (system, category, rate kind, tier, unit) are sensible for the description.",
+    "- the material / name in the record faithfully matches the source description (no invented items, no drifted meaning);",
+    "- any brand claimed in the record actually appears in the source description;",
+    "- the classification fields (system, category) are sensible for the description — e.g. a",
+    "  '150 mm dia' pipe/valve item categorised as 'Pump' is WRONG even if it sits in a pump-room section;",
+    "- the unit, where the description implies one (e.g. 'per metre', 'set of'), does not contradict it;",
+    "- the price passes the plausibility test above.",
     "",
-    "Reject when the record clearly misrepresents the source text (wrong item, invented brand, a value that cannot be reconciled with the line).",
-    "Choose unsure when you genuinely cannot tell from the text you are given — a borderline price, an ambiguous description, a unit the source does not state. Unsure is not a failure; it routes the row to a human.",
+    "Reject when the record clearly misrepresents the description (wrong item, invented brand, absurd price, wrong category).",
+    "Choose unsure only for genuine ambiguity — a description too thin to identify the item at all, or a price you cannot judge either way. Unsure is not a failure; it routes the row to a human.",
     "",
     "Return: verdict (approve | reject | unsure), confidence in [0,1], and issues (a list of short reasons; leave it empty when you approve).",
     "You are a gate, not an editor: approve, reject, or mark unsure — never invent corrections, never rewrite fields, never propose a better value.",

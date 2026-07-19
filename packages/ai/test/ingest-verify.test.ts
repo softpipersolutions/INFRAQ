@@ -83,10 +83,14 @@ describe("buildVerifyPrompt", () => {
     expect(prompt).toMatch(/unsure/);
     // Absurd-magnitude guidance with the concrete examples from the spec.
     expect(prompt).toContain("₹4,50,000");
-    expect(prompt).toMatch(/pump priced at ₹12/);
+    expect(prompt).toMatch(/fire pump at ₹12/);
     // Brand/unit checks are present.
-    expect(prompt).toMatch(/brand claimed .* appears in the source text/i);
-    expect(prompt).toMatch(/unit is consistent/i);
+    expect(prompt).toMatch(/brand claimed .* appears in the source description/i);
+    // v2: units/prices come from unseen table columns — the prompt must say so
+    // and constrain unit checks to description-implied contradictions only.
+    expect(prompt).toMatch(/columns? that are not included/i);
+    expect(prompt).toMatch(/does not contradict/i);
+    expect(prompt).toMatch(/never reject or mark unsure merely because a price/i);
   });
 
   it("embeds the target master, filename, date, source line and pretty JSON record", () => {
