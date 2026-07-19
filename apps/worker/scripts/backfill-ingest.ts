@@ -37,7 +37,7 @@
  * Env: INGEST_GCS_BUCKET (upload/remote), WORKER_URL (remote),
  *      GOOGLE_GENERATIVE_AI_API_KEY + storage/db env (local — see .env.example).
  */
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createEmbedder, createIngestModelFromEnv } from "@pebble/ai";
@@ -225,18 +225,25 @@ interface StatusDoc {
   status: string;
 }
 
-async function runRemote(args: CliArgs): Promise<void> {
+async function runRemote(args: CliArgs, corpusDir: string | null): Promise<void> {
   const bucketName = process.env.INGEST_GCS_BUCKET;
   const workerUrl = process.env.WORKER_URL?.replace(/\/$/, "");
   if (!bucketName) throw new Error("--remote requires INGEST_GCS_BUCKET");
   if (!workerUrl) throw new Error("--remote requires WORKER_URL");
 
-  const { Storage } = await import("@google-cloud/storage");
-  const [gcsFiles] = await new Storage().bucket(bucketName).getFiles({ prefix: CORPUS_PREFIX });
-  const uris = applyOnly(
-    gcsFiles.map((f) => f.name).filter((n) => n.length > CORPUS_PREFIX.length),
-    args.only,
-  ).map((name) => `gs://${bucketName}/${name}`);
+  // Build the object list from the LOCAL corpus dir when present (the worker
+  // reads GCS under its own service account, so the driver never needs bucket
+  // access itself — this keeps --remote independent of local ADC state).
+  // Falls back to a GCS listing when no local corpus exists (e.g. CI).
+  let objectNames: string[];
+  if (corpusDir !== null) {
+    objectNames = listCorpusFilenames(corpusDir).map((f) => `${CORPUS_PREFIX}${f}`);
+  } else {
+    const { Storage } = await import("@google-cloud/storage");
+    const [gcsFiles] = await new Storage().bucket(bucketName).getFiles({ prefix: CORPUS_PREFIX });
+    objectNames = gcsFiles.map((f) => f.name).filter((n) => n.length > CORPUS_PREFIX.length);
+  }
+  const uris = applyOnly(objectNames, args.only).map((name) => `gs://${bucketName}/${name}`);
 
   if (args.dryRun) {
     printTable(
@@ -432,7 +439,8 @@ async function main(): Promise<void> {
   const corpusDir = join(repoRoot, CORPUS_DIR_NAME);
 
   if (args.mode === "upload") await runUpload(args, corpusDir);
-  else if (args.mode === "remote") await runRemote(args);
+  else if (args.mode === "remote")
+    await runRemote(args, existsSync(corpusDir) ? corpusDir : null);
   else await runLocal(args, corpusDir);
 }
 

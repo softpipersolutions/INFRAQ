@@ -186,3 +186,26 @@ describe("normalizeLine — system/category keyword guesses", () => {
     expect(n.categoryGuess).toBeNull();
   });
 });
+
+
+describe("scrubText via normalizeLine", () => {
+  it("strips NUL and C0 control bytes Gemini emits for unmappable glyphs", () => {
+    const n = normalizeLine({
+      slNo: "1",
+      description: "heat detector operating at 54\u0000C/57\u0000C fixed temp",
+      makeRaw: "Agni\u0000",
+      qty: 2,
+      unitRaw: "Nos",
+      unitRateRupees: 100,
+      rateKind: "SITC",
+      amountRupees: 200,
+      section: "PART\u0001I",
+      page: 1,
+      confidence: 0.9,
+    });
+    expect(n.description).toBe("heat detector operating at 54 C/57 C fixed temp");
+    expect(n.description).not.toContain("\u0000");
+    expect(n.brand.raw).toBe("Agni");
+    expect(n.section).toBe("PART I");
+  });
+});

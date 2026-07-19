@@ -86,7 +86,36 @@ function safeToPaise(rupees: number | null, ctx: string, warnings: string[]): nu
   }
 }
 
-export function normalizeLine(raw: RawLine): NormalizedLine {
+/**
+ * Strip characters PostgreSQL cannot store in text/jsonb. Gemini occasionally
+ * transcribes glyphs it can't map (e.g. the degree symbol in "54°C") as a NUL
+ * byte — PGlite silently tolerates that in bound params, but real Postgres
+ * rejects the statement, which failed a Cloud SQL ingest mid-corpus. NUL and
+ * other C0 controls (except tab/newline) become spaces; whitespace collapses.
+ */
+function scrubText(s: string): string {
+  // eslint-disable-next-line no-control-regex
+  return s
+    .replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .trim();
+}
+
+function scrubTextOrNull(s: string | null): string | null {
+  if (s === null) return null;
+  const scrubbed = scrubText(s);
+  return scrubbed.length > 0 ? scrubbed : null;
+}
+
+export function normalizeLine(input: RawLine): NormalizedLine {
+  const raw: RawLine = {
+    ...input,
+    description: scrubText(input.description),
+    makeRaw: scrubTextOrNull(input.makeRaw),
+    unitRaw: scrubTextOrNull(input.unitRaw),
+    section: scrubTextOrNull(input.section),
+    slNo: scrubTextOrNull(input.slNo),
+  };
   const warnings: string[] = [];
 
   const unitNormalized = raw.unitRaw !== null ? tryNormalizeUnit(raw.unitRaw) : null;
