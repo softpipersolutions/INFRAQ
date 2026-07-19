@@ -12,9 +12,11 @@ import {
   type QueueItem,
 } from "@pebble/db";
 import { STAGED_RECORD_STATUSES, TARGET_MASTERS } from "@pebble/shared";
+import { WorkerError } from "@pebble/worker";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure, roleProcedure, router } from "../trpc";
+import { createWorkerClient } from "../worker-client";
 
 /**
  * Ingestion + RAG router (Phase B, WP6). Reads (documents/queue/search/dedup)
@@ -272,6 +274,34 @@ export const ingestionRouter = router({
         }
       }
       return results;
+    }),
+
+  /**
+   * Re-run the ingestion pipeline for one document (admin, e.g. after a
+   * failed extraction or a prompt-version bump). `force` drops still-PROPOSED
+   * staged rows + chunks and replays from scratch; without it, a FAILED doc
+   * resumes from its last completed stage. Runs in-process in dev and over
+   * OIDC HTTP against the worker service in production (same seam as
+   * render/dispatch).
+   */
+  reingest: roleProcedure("admin")
+    .input(z.object({ sourceDocumentId: z.string(), force: z.boolean().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const worker = createWorkerClient(ctx.db);
+      try {
+        return await worker.ingest({
+          sourceDocumentId: input.sourceDocumentId,
+          force: input.force,
+        });
+      } catch (err) {
+        if (err instanceof WorkerError) {
+          throw new TRPCError({
+            code: err.status === 404 ? "NOT_FOUND" : err.status < 500 ? "BAD_REQUEST" : "INTERNAL_SERVER_ERROR",
+            message: err.message,
+          });
+        }
+        throw err;
+      }
     }),
 
   /** Staged-record counts by status and by target master (corpus dashboard tiles). */

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createEmbedder, createIngestModelFromEnv } from "@pebble/ai";
 import type { Db } from "@pebble/db";
 import { createEmailProvider, createWhatsAppProvider } from "@pebble/dispatch";
 import type { ChannelDispatchResult, DispatchAttachment } from "@pebble/dispatch";
@@ -7,10 +8,11 @@ import {
   createPdfRenderer,
   createStorage,
   dispatchEstimateDocuments,
+  ingestSourceDocument,
   renderEstimateDocuments,
   WorkerError,
 } from "@pebble/worker";
-import type { RenderResult } from "@pebble/worker";
+import type { IngestReport, RenderResult } from "@pebble/worker";
 
 /**
  * The web app's single seam to the render/dispatch worker (PLAN §4.6–4.7).
@@ -57,9 +59,17 @@ export interface WorkerDispatchRequest {
   actor?: string;
 }
 
+export interface WorkerIngestRequest {
+  sourceUri?: string;
+  sourceDocumentId?: string;
+  /** Drop still-PROPOSED staged rows + chunks and replay from scratch. */
+  force?: boolean;
+}
+
 export interface WorkerClient {
   render(args: WorkerRenderRequest): Promise<RenderResult>;
   dispatch(args: WorkerDispatchRequest): Promise<ChannelDispatchResult[]>;
+  ingest(args: WorkerIngestRequest): Promise<IngestReport>;
 }
 
 /**
@@ -104,6 +114,23 @@ export class InProcessWorkerClient implements WorkerClient {
       args,
     );
   }
+
+  async ingest(args: WorkerIngestRequest): Promise<IngestReport> {
+    // Same env-driven deps the worker service boots with: local (or GCS)
+    // storage, Gemini model only when a key is configured (XLSX still works
+    // without one), stub embedder unless a key + non-stub selection.
+    return ingestSourceDocument(
+      {
+        db: this.db,
+        storage: createStorage(process.env),
+        ai: {
+          model: createIngestModelFromEnv(process.env),
+          embedder: createEmbedder(process.env),
+        },
+      },
+      args,
+    );
+  }
 }
 
 /** True when running on GCP (Cloud Run sets K_SERVICE; ADC file counts too). */
@@ -124,9 +151,11 @@ export class HttpWorkerClient implements WorkerClient {
   readonly kind = "http";
   private readonly baseUrl: string;
 
-  /** Timeouts per task: rendering may launch Chromium; dispatch is API calls. */
+  /** Timeouts per task: rendering may launch Chromium; dispatch is API calls;
+   * a document ingest spans multiple model calls over a long PDF. */
   private static readonly RENDER_TIMEOUT_MS = 120_000;
   private static readonly DISPATCH_TIMEOUT_MS = 60_000;
+  private static readonly INGEST_TIMEOUT_MS = 900_000;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl.replace(/\/+$/, "");
@@ -184,6 +213,10 @@ export class HttpWorkerClient implements WorkerClient {
       HttpWorkerClient.DISPATCH_TIMEOUT_MS,
     );
     return results;
+  }
+
+  async ingest(args: WorkerIngestRequest): Promise<IngestReport> {
+    return this.post<IngestReport>("/tasks/ingest", args, HttpWorkerClient.INGEST_TIMEOUT_MS);
   }
 }
 
