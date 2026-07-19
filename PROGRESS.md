@@ -4,6 +4,22 @@
 
 Last updated: 2026-07-18 · Branch: `claude/fire-safety-boq-webapp-f5n921`
 
+> ## 🚀 PHASE A DEPLOYED TO PRODUCTION (2026-07-19)
+> Live on Cloud Run (project **infraq-greenberg**, asia-south1):
+> **web** https://pebble-web-4xnkcvcksa-el.a.run.app (public, AUTH_MODE=firebase,
+> Google sign-in, allowlist `PEBBLE_ALLOWED_EMAILS` repo var) · **worker**
+> pebble-worker (private, OIDC-invoked, Chromium PDF, GCS outputs).
+> Real letterhead (GSTIN 09AAMCG0423A1Z3, brand marks, FF-149 T&C) ships in
+> `packages/documents`. RBAC live (admin/estimator/approver). Cloud SQL
+> `pebble-pg` (PG16, backups+PITR) migrated + seeded; DATABASE_URL/RESEND keys
+> in Secret Manager; WIF deploys from GitHub Actions on push to main
+> (`DEPLOY_ENABLED` repo var). Uptime check on /login + 5xx alert policy.
+> Deploy lessons burned into the tree: pnpm action version conflict, pnpm 10
+> `deploy --legacy`, gcloud env-var quoting (`^|^`), lazy PGlite (prod is pg
+> only), no Next standalone (custom externals defeat tracing), PORT honored in
+> the start script. Next phases: B ingestion+RAG, C chat, D UAT/goldens
+> (see the roadmap plan; ~/.claude/plans/now-plan-me-what-graceful-tide.md).
+>
 > ## ✅ BUILD COMPLETE (2026-07-18)
 > All layers in §7 are built, tested, and pushed. **279 tests pass** (`pnpm -r test`);
 > `pnpm -r typecheck` and `pnpm --filter @pebble/web build` are green.
