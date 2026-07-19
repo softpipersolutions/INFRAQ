@@ -3,7 +3,7 @@ import {
   BUILDING_TYPES,
   enquiryInputSchema,
   MAKE_PREFERENCES,
-  SYSTEM_TYPES,
+  REQUESTABLE_SYSTEM_TYPES,
   type EnquiryInput,
 } from "@pebble/shared";
 import { z } from "zod";
@@ -96,21 +96,30 @@ export const extractionSchema = z
       .optional()
       .describe("Area of ONE typical floor in square metres (per-floor, never the building total)"),
     systemsRequired: z
-      .array(z.enum(SYSTEM_TYPES))
+      .array(z.enum(REQUESTABLE_SYSTEM_TYPES))
       .optional()
       .describe(
-        'Canonical system codes: fire alarm/detection → "FAS"; hydrant/riser/hose → "Hydrant"; ' +
-          'sprinklers → "Sprinkler"; extinguishers → "Extinguisher"; gas/clean-agent suppression → "Suppression"',
+        "ONLY the systems the client explicitly asked for — the exact set, nothing added. " +
+          'Map their words: fire alarm/detection → "FAS", hydrant/riser/hose reel → "Hydrant", ' +
+          'sprinkler → "Sprinkler", fire extinguisher → "Extinguisher", ' +
+          'gas/clean-agent suppression → "Suppression". Never list a system they did not mention; ' +
+          "if they named exactly two, return exactly those two. Restate the complete requested set when it changes.",
       ),
     makePreference: z
       .enum(MAKE_PREFERENCES)
       .optional()
-      .describe('No stated preference / "as per Greenberg" / "your choice" → "As per Greenberg"'),
-    projectTier: z.number().int().min(1).max(4).optional(),
+      .describe('Only if stated. "standard makes" → "Standard"; "as per Greenberg"/"your choice" → "As per Greenberg"'),
+    projectTier: z
+      .number()
+      .int()
+      .min(1)
+      .max(4)
+      .optional()
+      .describe("Only when the user states a tier (1-4). Omit entirely if they have not said one — never default to 1."),
     applicableStandard: z
       .enum(APPLICABLE_STANDARDS)
       .optional()
-      .describe('IS / Indian standards → "IS"'),
+      .describe('Only if stated. IS / Indian standards → "IS"'),
     clientEmail: z.string().optional(),
     clientPhone: z.string().optional(),
     notes: z.string().optional(),

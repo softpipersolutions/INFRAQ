@@ -2,6 +2,7 @@ import {
   applyExtracted,
   buildClassificationPrompt,
   buildExtractionPrompt,
+  guardExtractedFields,
   createChatModelsFromEnv,
   extractionSchema,
   INTENTS,
@@ -195,9 +196,10 @@ export async function POST(req: Request): Promise<Response> {
           const { object, usage } = await generateObject({
             model: chatModels.classifier,
             schema: extractionSchema,
+            temperature: 0, // deterministic transcription — no enum "completion"
             prompt: buildExtractionPrompt(message, slotState),
           });
-          extracted = object;
+          extracted = guardExtractedFields(object, message);
           await insertLlmCall(
             db,
             toLlmCallLog({

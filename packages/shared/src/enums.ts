@@ -14,6 +14,22 @@ export const SYSTEM_TYPES = [
 ] as const;
 export type SystemType = (typeof SYSTEM_TYPES)[number];
 
+/**
+ * The systems a client can actually request on an enquiry. `Common` is an
+ * internal system type for general/shared line items the engines add — it is
+ * never something a client asks for, so it is excluded here. Both the enquiry
+ * schema and the chat extractor constrain to THIS list (single source of
+ * truth) so the AI can never propose `Common` as a requested system.
+ */
+export const REQUESTABLE_SYSTEM_TYPES = [
+  "FAS",
+  "Hydrant",
+  "Sprinkler",
+  "Extinguisher",
+  "Suppression",
+] as const;
+export type RequestableSystemType = (typeof REQUESTABLE_SYSTEM_TYPES)[number];
+
 export const MATERIAL_CATEGORIES = [
   "Detector",
   "Panel",

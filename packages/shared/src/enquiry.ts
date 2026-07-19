@@ -4,7 +4,7 @@ import {
   BUILDING_TYPES,
   ENQUIRY_SOURCES,
   MAKE_PREFERENCES,
-  SYSTEM_TYPES,
+  REQUESTABLE_SYSTEM_TYPES,
 } from "./enums";
 
 /**
@@ -18,7 +18,7 @@ export const enquiryInputSchema = z.object({
   floorsAbove: z.number().int().min(0).max(200),
   floorAreaSqm: z.number().positive().max(1_000_000),
   systemsRequired: z
-    .array(z.enum(SYSTEM_TYPES).exclude(["Common"]))
+    .array(z.enum(REQUESTABLE_SYSTEM_TYPES))
     .min(1)
     .refine((arr) => new Set(arr).size === arr.length, "Duplicate systems"),
   makePreference: z.enum(MAKE_PREFERENCES),
