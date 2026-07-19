@@ -1,20 +1,23 @@
 import type { Lane, ModelConfig } from "./models";
+import { shouldEscalateToOpus, type EscalationSignals } from "./agent/escalation";
 
 /**
- * Turn router (spec §4.4) — deterministic-first.
+ * @deprecated Turn router (spec §4.4) — the pre-agent, lane-based routing.
+ *
+ * Phase C.5 makes the chat a single Sonnet-5 agent that routes itself via tool
+ * choice (see `agent/`), so lanes and this router are on the way out. It is kept
+ * working — and marked deprecated — only until WP3 rewires the /api/chat route;
+ * WP3 deletes it. The escalation types/helpers it once owned now live in
+ * `agent/escalation.ts` and are re-exported below for compat.
  *
  * The cheapest correct decision wins, in order:
  *   1. slot-filling in progress   → stay in the Claude lane (SLOT_FILL)
  *   2. an explicit UI button action → direct route, no model at all
  *   3. otherwise                    → one cheap Gemini enum classification
- *
- * Intent → lane:
- *   LOOKUP / EXTRACT / RECALL        → gemini
- *   INTERPRET / DRAFT_ASSIST / EXPLAIN / SLOT_FILL → claude
- *   COMPUTE                          → engine   (never a model — pricing is deterministic)
- *
- * Opus 4.8 escalation happens only within the Claude lane, on explicit triggers.
  */
+
+// Re-export the escalation surface that used to live here (moved to agent/escalation.ts).
+export * from "./agent/escalation";
 
 export const INTENTS = [
   "LOOKUP",
@@ -53,54 +56,6 @@ const UI_ACTION_INTENT: Record<UiAction, Intent> = {
   lookup_material: "LOOKUP",
   search_history: "RECALL",
 };
-
-/** Signals that justify escalating the Claude lane to Opus 4.8. */
-export interface EscalationSignals {
-  /** Classifier confidence in [0,1]; low confidence → escalate. */
-  routerConfidence?: number;
-  /** Slots still contradictory after this many clarification rounds. */
-  contradictionsAfterClarifications?: number;
-  /** The user is challenging a draft decision. */
-  userChallengedDecision?: boolean;
-  /** Length of the current review conversation (assistant turns). */
-  conversationTurns?: number;
-}
-
-export interface EscalationThresholds {
-  minConfidence: number;
-  maxContradictions: number;
-  maxTurns: number;
-}
-export const DEFAULT_ESCALATION: EscalationThresholds = {
-  minConfidence: 0.55,
-  maxContradictions: 2,
-  maxTurns: 12,
-};
-
-export interface EscalationDecision {
-  escalate: boolean;
-  reasons: string[];
-}
-
-export function shouldEscalateToOpus(
-  signals: EscalationSignals,
-  thresholds: EscalationThresholds = DEFAULT_ESCALATION,
-): EscalationDecision {
-  const reasons: string[] = [];
-  if (signals.routerConfidence !== undefined && signals.routerConfidence < thresholds.minConfidence) {
-    reasons.push(`low router confidence (${signals.routerConfidence.toFixed(2)})`);
-  }
-  if ((signals.contradictionsAfterClarifications ?? 0) >= thresholds.maxContradictions) {
-    reasons.push("slots remain contradictory after clarification");
-  }
-  if (signals.userChallengedDecision) {
-    reasons.push("user challenged a draft decision");
-  }
-  if ((signals.conversationTurns ?? 0) > thresholds.maxTurns) {
-    reasons.push("long review conversation");
-  }
-  return { escalate: reasons.length > 0, reasons };
-}
 
 export interface RouteInput {
   /** Free-text user message (absent for pure UI actions). */

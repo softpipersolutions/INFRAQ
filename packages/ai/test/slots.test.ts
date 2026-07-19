@@ -5,6 +5,7 @@ import {
   buildEnquiryInput,
   confirmAllProposed,
   confirmSlot,
+  detectConfirmedOverwrite,
   initSlotState,
   nextAction,
   type ExtractedFields,
@@ -96,5 +97,43 @@ describe("slot-filling state machine", () => {
     s = applyExtracted(s, { clientName: "Acme" });
     s = confirmSlot(s, "clientName");
     expect(s.clientName.status).toBe("confirmed");
+  });
+});
+
+describe("detectConfirmedOverwrite", () => {
+  function confirmed(fields: ExtractedFields) {
+    return confirmAllProposed(applyExtracted(initSlotState(), fields));
+  }
+
+  it("flags a confirmed slot whose value would change", () => {
+    const s = confirmed({ clientName: "Acme", floorsAbove: 4 });
+    expect(detectConfirmedOverwrite(s, { floorsAbove: 6 })).toEqual(["floorsAbove"]);
+  });
+
+  it("does not flag re-confirming the same value", () => {
+    const s = confirmed({ floorsAbove: 4 });
+    expect(detectConfirmedOverwrite(s, { floorsAbove: 4 })).toEqual([]);
+  });
+
+  it("ignores proposed/missing slots — only confirmed values count", () => {
+    let s = applyExtracted(initSlotState(), { clientName: "Acme" }); // proposed, not confirmed
+    s = applyExtracted(s, { floorsAbove: 4 });
+    // clientName is proposed (not confirmed) → changing it is not an overwrite
+    expect(detectConfirmedOverwrite(s, { clientName: "Beta", buildingType: "Commercial" })).toEqual([]);
+  });
+
+  it("compares arrays element-wise and reports multiple changed fields", () => {
+    const s = confirmed({ systemsRequired: ["FAS"], projectTier: 2, clientName: "Acme" });
+    const changed = detectConfirmedOverwrite(s, {
+      systemsRequired: ["FAS", "Sprinkler"],
+      projectTier: 3,
+      clientName: "Acme", // unchanged → not reported
+    });
+    expect(changed.sort()).toEqual(["projectTier", "systemsRequired"]);
+  });
+
+  it("ignores omitted fields", () => {
+    const s = confirmed({ clientName: "Acme", floorsAbove: 4 });
+    expect(detectConfirmedOverwrite(s, {})).toEqual([]);
   });
 });

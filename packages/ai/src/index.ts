@@ -1,15 +1,29 @@
 /**
- * @pebble/ai — two-lane AI orchestration (spec §4.4), Vercel AI SDK.
+ * @pebble/ai — the module-agnostic agent core + AI orchestration, Vercel AI SDK.
  *
- * Gemini Flash = retrieval/extraction; Claude (Sonnet default, Opus 4.8
- * escalation) = interpretation/drafting. A deterministic-first router assigns
- * each turn; COMPUTE-class work always goes to @pebble/engines, never a model.
- * The model can read, retrieve, explain and PROPOSE — it can never compute a
- * price or mutate an estimate.
+ * Phase C.5: the chat is a single Claude-Sonnet-5 agent that owns every reply and
+ * orchestrates the workflow through tools (see `agent/`). Gemini Flash keeps
+ * three jobs — field extraction, embeddings, and running-summary compaction; the
+ * deterministic engines still compute all money. The agent can read, retrieve,
+ * explain and PROPOSE, but never computes a figure, mutates an estimate, or
+ * approves/dispatches.
  *
- * Everything here is dependency-injected (models, classifier, services) so the
- * orchestration logic is unit-testable without any API key.
+ * `agent/registry.ts` is the ERP seam: modules plug in as `ModuleToolset`s and
+ * `composeAgent` folds them into one turn. The pre-agent lane router/classifier
+ * remain exported (deprecated) until WP3 rewires the /api/chat route.
+ *
+ * Everything is dependency-injected (models, services) so the orchestration is
+ * unit-testable without any API key.
  */
+
+// Agent core (Phase C.5).
+export * from "./agent/registry";
+export * from "./agent/persona";
+export * from "./agent/module02";
+export * from "./agent/escalation";
+export * from "./agent/compaction";
+export * from "./agent/context";
+
 export * from "./models";
 export * from "./router";
 export * from "./slots";

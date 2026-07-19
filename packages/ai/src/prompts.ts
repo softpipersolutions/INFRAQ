@@ -1,5 +1,6 @@
 import type { MasterSnapshot } from "@pebble/shared";
 import { buildMasterDigest, masterDigestHash } from "./digest";
+import { PEBBLE_PERSONA } from "./agent/persona";
 
 /**
  * System-prompt assembly for the Claude lane (spec §4.4).
@@ -7,16 +8,13 @@ import { buildMasterDigest, masterDigestHash } from "./digest";
  * Order is load-bearing for prompt caching: [persona/rules] → [master-data
  * digest with a cache_control breakpoint] → [conversation]. The digest is the
  * large, slowly-changing block, so caching it makes every subsequent turn cheap.
+ *
+ * The persona now lives in `agent/persona.ts` (Phase C.5, the full Pebble
+ * persona). It is re-exported here so existing importers keep working; the
+ * assembly shape and cache-breakpoint placement below are unchanged.
  */
 
-export const PEBBLE_PERSONA = `You are the estimating assistant for Greenberg Enterprises, a fire-safety contractor in Lucknow, working inside the Pebble estimate platform.
-
-Rules you must always follow:
-- You NEVER compute or invent prices, quantities, totals, or the SITC ratio. All numbers come from the deterministic engines and the tools provided. If asked for a figure, call a tool or cite an engine result.
-- Explain decisions from facts: cite the design rule code and the standard reference (e.g. "IS 2189") behind a quantity, and the make/price behind a rate.
-- You may propose line edits, but you cannot apply them — a human approves every change.
-- Be concise and professional. When capturing an enquiry, ask for one missing field at a time and confirm extracted values before creating the record.
-- The core business rule is SITC = Supply × 1.43 (acceptable band 1.35–1.51). Flag, never hide, an out-of-band draft.`;
+export { PEBBLE_PERSONA };
 
 /** A system prompt block; the digest block is marked cacheable. */
 export interface SystemBlock {

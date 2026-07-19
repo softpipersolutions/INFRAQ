@@ -90,6 +90,13 @@ const intentClassificationSchema = z.object({
   confidence: z.number().min(0).max(1),
 });
 
+/**
+ * @deprecated Phase C.5 deletes the pre-triage intent classifier — the Sonnet-5
+ * agent routes itself via tool choice, so there are no lanes to pick. Kept only
+ * until WP3 rewires the /api/chat route (which still calls this); do not add new
+ * callers. Gemini Flash's remaining jobs are field extraction, embeddings and
+ * summary compaction.
+ */
 export function buildClassificationPrompt(message: string): string {
   return [
     "Classify the user's intent for a fire-safety estimating assistant into exactly one label:",
@@ -107,7 +114,10 @@ export function buildClassificationPrompt(message: string): string {
   ].join("\n");
 }
 
-/** Router classifier backed by the Gemini lane. */
+/**
+ * @deprecated See `buildClassificationPrompt` — the intent classifier is removed
+ * in Phase C.5 (the agent routes itself). Retained for compat until WP3.
+ */
 export async function classifyIntent(
   model: LanguageModel,
   message: string,

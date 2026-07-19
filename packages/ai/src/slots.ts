@@ -145,6 +145,29 @@ export function applyExtracted(state: SlotState, extracted: ExtractedFields): Sl
   return next;
 }
 
+/**
+ * Fields where a CONFIRMED slot would change to a different value under the
+ * newly-extracted fields — the contradiction signal (Phase C.5).
+ *
+ * A user re-stating a value they already confirmed, with a DIFFERENT value, is
+ * the thing worth counting: it drives the persisted contradiction counter and
+ * (at ≥2) the Opus escalation. Re-confirming the same value, touching a
+ * proposed/missing slot, or omitting a field are all non-events. Pure — reads
+ * `prev`, mutates nothing.
+ */
+export function detectConfirmedOverwrite(prev: SlotState, extracted: ExtractedFields): SlotField[] {
+  const changed: SlotField[] = [];
+  for (const f of SLOT_FIELDS) {
+    const raw = extracted[f];
+    if (raw === undefined) continue;
+    const existing = prev[f];
+    if (existing.status === "confirmed" && !slotEquals(existing.value, raw as SlotValue)) {
+      changed.push(f);
+    }
+  }
+  return changed;
+}
+
 /** Mark a specific slot confirmed (must already have a value). */
 export function confirmSlot(state: SlotState, field: SlotField): SlotState {
   const next = structuredCloneState(state);

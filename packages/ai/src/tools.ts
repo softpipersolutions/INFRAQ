@@ -10,7 +10,7 @@ import type {
 import { SYSTEM_TYPES, enquiryInputSchema } from "@pebble/shared";
 import { tool } from "ai";
 import { z } from "zod";
-import type { ExtractedFields } from "./slots";
+import type { ExtractedFields, SlotField, SlotStatus, SlotValue } from "./slots";
 
 /**
  * Tool definitions for the AI lanes (spec §4.4) — thin wrappers over injected
@@ -19,6 +19,14 @@ import type { ExtractedFields } from "./slots";
  *   - the model can PROPOSE a line edit but never apply one (propose_line_edit
  *     returns a suggestion; a human clicks to apply).
  * Injecting the services keeps the tools testable without a database.
+ *
+ * NOTE (Phase C.5): the canonical toolset is now `agent/module02.ts`
+ * (`module02Toolset`). `buildPebbleTools` below is kept as a deprecated compat
+ * shim over the SAME `PebbleAiServices` surface until WP3 rewires the route.
+ * The new state-machine service methods (extractFields, createEnquiryFromState,
+ * getEnquiryState, repairEnquiryState, resetEnquiryCapture, prepareDocuments)
+ * are declared here as OPTIONAL so the existing apps/web impl still satisfies
+ * the interface; WP3 implements them.
  */
 
 export interface PastEstimateHit {
@@ -61,6 +69,50 @@ export interface LineEditSuggestion {
   applied: false;
 }
 
+/**
+ * A snapshot of enquiry-capture state a tool returns for the agent to narrate.
+ * Per-field status + value, the confirmed/proposed/missing splits, the
+ * `buildEnquiryInput` validation issues, readiness, and any linked records.
+ */
+export interface EnquiryStateSnapshot {
+  slots: Record<SlotField, { status: SlotStatus; value: SlotValue }>;
+  confirmed: SlotField[];
+  proposed: SlotField[];
+  missingRequired: SlotField[];
+  /** Validation issues from `buildEnquiryInput` (empty when the record validates). */
+  issues: string[];
+  readyToConfirm: boolean;
+  enquiryId: string | null;
+  estimateId: string | null;
+  /** Advisory (not prescriptive) suggestion for what to do next. */
+  advisoryNextStep: string;
+}
+
+/** Result of `createEnquiryFromState` — refuses (ok:false, issues) when invalid or already linked. */
+export type CreateEnquiryResult =
+  | { ok: true; enquiryId: string; estimateId: string | null }
+  | { ok: false; issues: string[] };
+
+/** Typed corrections for `repairEnquiryState`: overwrite `set` fields, clear `clear` fields. */
+export interface RepairEnquiryArgs {
+  set?: ExtractedFields;
+  clear?: SlotField[];
+}
+
+/** Result of `repairEnquiryState` — refuses (ok:false, issues) once an enquiry is linked. */
+export type RepairEnquiryResult =
+  | { ok: true; snapshot: EnquiryStateSnapshot }
+  | { ok: false; issues: string[] };
+
+/** Result of `prepareDocuments` — the worker-client render outcome (LOCKED-only errors pass through). */
+export interface PrepareDocumentsResult {
+  ok: boolean;
+  estimateId: string;
+  jobId?: string;
+  status?: string;
+  issues?: string[];
+}
+
 /** The service surface the tools call — implemented in apps/web against db + engines. */
 export interface PebbleAiServices {
   lookupMaterial(materialCode: string): Promise<Material | null>;
@@ -80,8 +132,31 @@ export interface PebbleAiServices {
     note?: string;
     editReason: string;
   }): Promise<LineEditSuggestion>;
+
+  // ── Phase C.5 state-machine ops (Module-02 toolset). Optional so the current
+  // apps/web impl still satisfies the interface; WP3 implements them. ──────────
+
+  /** Extract enquiry fields from long pasted text (Gemini Flash), auto-apply as proposed, return the snapshot. */
+  extractFields?(text: string): Promise<EnquiryStateSnapshot>;
+  /** Derive the enquiry record from confirmed slot state and create it; refuses when invalid or already linked. */
+  createEnquiryFromState?(sessionId: string): Promise<CreateEnquiryResult>;
+  /** Full capture state + validation issues + readiness + linked enquiry/estimate — the self-heal diagnosis tool. */
+  getEnquiryState?(sessionId: string): Promise<EnquiryStateSnapshot>;
+  /** Typed corrections to the capture state; blocked once an enquiry is linked. */
+  repairEnquiryState?(sessionId: string, args: RepairEnquiryArgs): Promise<RepairEnquiryResult>;
+  /** Agent-callable start-over (explicit user request only). */
+  resetEnquiryCapture?(sessionId: string): Promise<EnquiryStateSnapshot>;
+  /** Queue PDF/Excel render for a LOCKED estimate version via the worker-client. */
+  prepareDocuments?(estimateId: string): Promise<PrepareDocumentsResult>;
 }
 
+/**
+ * @deprecated Phase C.5 replaces this with `module02Toolset` (agent/module02.ts),
+ * which adds the typed `update_enquiry_draft`, the safety-upgraded `create_enquiry`
+ * (`{userConfirmed}` → create-from-state), and the self-heal tools. Kept as a
+ * compat shim (identical old tool set + behaviour) so the existing /api/chat
+ * route keeps working until WP3 rewires it; do not build new callers on this.
+ */
 export function buildPebbleTools(services: PebbleAiServices) {
   return {
     lookup_material: tool({
