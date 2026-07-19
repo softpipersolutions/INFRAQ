@@ -27,9 +27,9 @@ export function ConfirmationCard({
 
   return (
     <Card className="p-4">
-      <div className="mb-1 text-sm font-semibold">Ready to create the enquiry</div>
+      <div className="mb-1 text-sm font-semibold">Prefer a button?</div>
       <p className="mb-3 text-sm text-[var(--pebble-muted)]">
-        Review the details below, then confirm to generate a priced draft.
+        Review the captured details and confirm here — or just tell Pebble to go ahead in the chat.
       </p>
       <table className="w-full text-sm">
         <tbody>

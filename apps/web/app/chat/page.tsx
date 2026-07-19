@@ -17,7 +17,7 @@ export default function ChatPage() {
     <div>
       <PageHeader
         title="Chat"
-        subtitle="Capture an enquiry conversationally, or ask about an existing estimate."
+        subtitle="Pebble, Greenberg's estimating assistant — capture an enquiry conversationally, or ask about an existing estimate."
       />
       <Suspense fallback={<EmptyState>Loading chat…</EmptyState>}>
         <ChatPanel />
