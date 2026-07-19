@@ -12,10 +12,12 @@ const SECTIONS = [
   { href: "/admin/design-rules", label: "Design rules", desc: "A.06 rule library + dry-run" },
   { href: "/admin/margins", label: "Margin matrix", desc: "A.07 tier margins & authority" },
   { href: "/admin/users", label: "Users & roles", desc: "Sign-in access & role assignment" },
+  { href: "/admin/ingestion", label: "Ingestion", desc: "Historical corpus + verification queue" },
 ];
 
 export default function AdminHome() {
   const snapshot = trpc.masters.snapshot.useQuery();
+  const ingestionStats = trpc.ingestion.stats.useQuery();
   const s = snapshot.data;
 
   return (
@@ -27,7 +29,9 @@ export default function AdminHome() {
             <Card className="h-full p-4 transition hover:border-[var(--pebble-accent)]">
               <div className="text-sm font-semibold">{sec.label}</div>
               <div className="mt-1 text-xs text-[var(--pebble-muted)]">{sec.desc}</div>
-              <div className="mt-3 text-2xl font-semibold tabular">{count(sec.href, s) ?? "—"}</div>
+              <div className="mt-3 text-2xl font-semibold tabular">
+                {count(sec.href, s, ingestionStats.data) ?? "—"}
+              </div>
             </Card>
           </Link>
         ))}
@@ -48,9 +52,11 @@ function count(
         marginMatrix: unknown[];
       }
     | undefined,
+  ingestion: { total: number; byStatus: Record<string, number> } | undefined,
 ): number | null {
   // The users section has no snapshot-backed count — render a dash instead.
   if (href === "/admin/users") return null;
+  if (href === "/admin/ingestion") return ingestion ? (ingestion.byStatus.PROPOSED ?? 0) : null;
   if (!s) return 0;
   switch (href) {
     case "/admin/materials":

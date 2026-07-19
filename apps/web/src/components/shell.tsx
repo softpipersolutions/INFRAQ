@@ -6,12 +6,22 @@ import type { ReactNode } from "react";
 import { trpc } from "@/trpc/react";
 import { Badge } from "./ui";
 
-const NAV = [
+interface NavItem {
+  href: string;
+  label: string;
+}
+
+/** Visible to every signed-in role. */
+const BASE_NAV: NavItem[] = [
   { href: "/", label: "Dashboard" },
   { href: "/enquiries/new", label: "New Enquiry" },
   { href: "/admin", label: "Masters" },
+  { href: "/history", label: "History" },
   { href: "/chat", label: "Chat" },
 ];
+
+/** Admin-only — appended when users.me resolves the current user's role to admin. */
+const ADMIN_NAV: NavItem[] = [{ href: "/admin/ingestion", label: "Ingestion" }];
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
@@ -64,6 +74,8 @@ function SessionFooter() {
 
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "/";
+  const me = trpc.users.me.useQuery();
+  const NAV: NavItem[] = me.data?.user?.role === "admin" ? [...BASE_NAV, ...ADMIN_NAV] : BASE_NAV;
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-60 shrink-0 flex-col border-r border-[var(--pebble-border)] bg-white md:flex">
