@@ -26,6 +26,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@google-cloud/storage':
+        specifier: ^7.14.0
+        version: 7.21.0
       '@pebble/ai':
         specifier: workspace:*
         version: link:../../packages/ai

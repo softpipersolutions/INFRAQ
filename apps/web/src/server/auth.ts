@@ -1,6 +1,6 @@
 import "server-only";
 
-import { ensureDevUser, getUser, upsertUser, type AppUser, type Db } from "@pebble/db";
+import { DEV_USER, ensureDevUser, getUser, schema, upsertUser, type AppUser, type Db } from "@pebble/db";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { SESSION_COOKIE_NAME } from "../lib/session";
@@ -38,6 +38,21 @@ export function isEmailAllowed(email: string): boolean {
   return false;
 }
 
+/**
+ * Bootstrap check: does any active, real (non-dev) admin exist? Until one
+ * does, the first allowlisted sign-in is provisioned/promoted as admin —
+ * otherwise a fresh deployment has working auth but nobody who can reach
+ * /admin/users to grant roles. The allowlist is the security boundary here;
+ * the users table is small, so a full read + JS filter matches the codebase's
+ * list-query style.
+ */
+async function hasRealAdmin(db: Db): Promise<boolean> {
+  const rows = await db.select().from(schema.users);
+  return rows.some(
+    (u) => u.role === "admin" && u.active && u.firebaseUid !== DEV_USER.firebaseUid,
+  );
+}
+
 async function firebaseUser(db: Db): Promise<AppUser | null> {
   // Test escape hatch (kept from the placeholder): act as a stored user by uid
   // without a cookie. Only honoured in firebase mode; never set in production.
@@ -61,16 +76,28 @@ async function firebaseUser(db: Db): Promise<AppUser | null> {
   if (!email || !isEmailAllowed(email)) return null;
 
   const existing = await getUser(db, decoded.uid);
-  if (existing) return existing.active ? existing : null;
+  if (existing) {
+    if (!existing.active) return null;
+    // Bootstrap: an allowlisted account signed in while the deployment still
+    // has no real admin (e.g. it was provisioned as estimator before this
+    // rule existed) — promote it so role management is reachable at all.
+    if (existing.role !== "admin" && !(await hasRealAdmin(db))) {
+      const promoted: AppUser = { ...existing, role: "admin" };
+      await upsertUser(db, promoted);
+      return promoted;
+    }
+    return existing;
+  }
 
-  // First login of an allowlisted account: provision with least privilege.
-  // Admins promote via /admin/users.
+  // First login of an allowlisted account: least privilege once a real admin
+  // exists (promotion happens via /admin/users); the very first account
+  // becomes admin so the deployment is administrable.
   const displayName = typeof decoded.name === "string" && decoded.name ? decoded.name : email;
   const user: AppUser = {
     firebaseUid: decoded.uid,
     email,
     displayName,
-    role: "estimator",
+    role: (await hasRealAdmin(db)) ? "estimator" : "admin",
     active: true,
   };
   await upsertUser(db, user);

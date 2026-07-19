@@ -102,8 +102,13 @@ async function bootstrap(): Promise<DbBundle> {
     await seedDatabase(db);
   }
 
-  // Always guarantee the dev admin exists so every screen has an actor.
-  await ensureDevUser(db);
+  // Guarantee the dev admin exists so every screen has an actor — but only
+  // outside firebase mode: production's users table should hold real accounts
+  // only (the dev row is inert there, but it muddies /admin/users and the
+  // first-admin bootstrap check).
+  if ((process.env.AUTH_MODE ?? "dev") !== "firebase") {
+    await ensureDevUser(db);
+  }
 
   return { handle, db };
 }

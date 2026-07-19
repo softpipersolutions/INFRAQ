@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.14.0",
     "@pebble/ai": "workspace:*",
     "@pebble/db": "workspace:*",
     "@pebble/dispatch": "workspace:*",

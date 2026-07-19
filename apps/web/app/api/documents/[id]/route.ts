@@ -10,12 +10,12 @@ import { getDb } from "@/server/db";
  *
  * The `generated_documents` row is the source of truth: its `storage_uri`
  * says where the bytes live. Local `file://` uris (the dev/default storage
- * backend) are streamed straight from disk with the right content type and an
- * attachment disposition. `gs://` uris will redirect to a GCS signed URL once
- * the production storage path is wired end-to-end; until then they get an
- * explicit 501 rather than a misleading 404.
+ * backend) are streamed straight from disk; `gs://` uris are downloaded via
+ * the GCS SDK (lazy import; the runtime service account has objectViewer on
+ * the outputs bucket) and streamed through with the same headers — the auth
+ * gate above is the access control, so no signed URLs are needed.
  *
- * Node runtime: reads local disk and shares the PGlite-backed db singleton.
+ * Node runtime: reads disk/GCS and shares the PGlite-backed db singleton.
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,29 +42,38 @@ export async function GET(
   const doc = rows.find((r) => r.id === id);
   if (!doc) return json({ error: `Document ${id} not found` }, 404);
 
-  if (doc.storageUri.startsWith("gs://")) {
-    return json(
-      {
-        error:
-          "GCS-backed downloads are not wired yet — this deployment should redirect to a signed URL. Use local storage (STORAGE_BACKEND=local) for now.",
-      },
-      501,
-    );
-  }
+  let bytes: Buffer;
+  let filename: string;
 
-  if (!doc.storageUri.startsWith("file://")) {
+  if (doc.storageUri.startsWith("gs://")) {
+    // gs://bucket/key… — download via the GCS SDK under the runtime service
+    // account (objectViewer on the outputs bucket). Lazy import keeps the
+    // heavy client out of dev/local paths entirely.
+    const match = /^gs:\/\/([^/]+)\/(.+)$/.exec(doc.storageUri);
+    const bucket = match?.[1];
+    const key = match?.[2];
+    if (!bucket || !key) return json({ error: `Malformed gs:// uri on document ${id}` }, 500);
+    try {
+      const { Storage } = await import("@google-cloud/storage");
+      const [downloaded] = await new Storage().bucket(bucket).file(key).download();
+      bytes = downloaded;
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      return json({ error: `Fetching document ${id} from storage failed: ${detail}` }, 502);
+    }
+    filename = basename(key) || `document.${doc.kind.toLowerCase()}`;
+  } else if (doc.storageUri.startsWith("file://")) {
+    const abspath = fileURLToPath(doc.storageUri);
+    try {
+      bytes = await readFile(abspath);
+    } catch {
+      return json({ error: `Stored file for document ${id} is missing on disk` }, 404);
+    }
+    filename = basename(abspath) || `document.${doc.kind.toLowerCase()}`;
+  } else {
     return json({ error: `Unsupported storage uri scheme on document ${id}` }, 501);
   }
 
-  const abspath = fileURLToPath(doc.storageUri);
-  let bytes: Buffer;
-  try {
-    bytes = await readFile(abspath);
-  } catch {
-    return json({ error: `Stored file for document ${id} is missing on disk` }, 404);
-  }
-
-  const filename = basename(abspath) || `document.${doc.kind.toLowerCase()}`;
   return new Response(new Uint8Array(bytes), {
     status: 200,
     headers: {
