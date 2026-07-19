@@ -4,3 +4,5 @@ export * from "./users";
 export * from "./audit";
 export * from "./enquiries";
 export * from "./estimates";
+export * from "./ingestion";
+export * from "./rag";
