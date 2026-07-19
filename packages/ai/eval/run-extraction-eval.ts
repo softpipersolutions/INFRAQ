@@ -28,10 +28,10 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { LanguageModel } from "ai";
 import { extractDocMeta, extractPageWindow } from "../src/ingest/extract";
 import { scoreExtraction, type EvalExpectation, type ScoreResult } from "../src/ingest/eval-score";
+import { createIngestModelFromEnv } from "../src/ingest/model";
 import { estimateCostUsd, modelConfigFromEnv } from "../src/models";
 import type { DocMeta, ExtractedLine } from "../src/ingest/schemas";
 
@@ -130,12 +130,20 @@ async function main(): Promise<void> {
   }
   console.log(`Loaded ${fixtures.length} fixture(s): ${fixtures.map((f) => f.slug).join(", ")}`);
 
-  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  if (!apiKey) {
+  // Model via the same env seam production uses: Vertex AI when
+  // PEBBLE_AI_PROVIDER=vertex / GOOGLE_VERTEX_PROJECT is set (locally pass a
+  // short-lived GOOGLE_VERTEX_ACCESS_TOKEN from `gcloud auth
+  // print-access-token`), else the Developer API key.
+  const model = createIngestModelFromEnv(process.env);
+  if (!model) {
     console.error(
-      "\nGOOGLE_GENERATIVE_AI_API_KEY is not set. This harness calls the real Gemini API and " +
-        "cannot run without it (and is never run in CI). Set it and re-run:\n" +
-        "  GOOGLE_GENERATIVE_AI_API_KEY=... pnpm --filter @pebble/ai eval:extraction",
+      "\nNo extraction model configured. This harness calls the real Gemini API and " +
+        "cannot run without one (and is never run in CI). Either:\n" +
+        "  GOOGLE_GENERATIVE_AI_API_KEY=... pnpm --filter @pebble/ai eval:extraction\n" +
+        "or (Vertex):\n" +
+        "  PEBBLE_AI_PROVIDER=vertex GOOGLE_VERTEX_PROJECT=<project> \\\n" +
+        "  GOOGLE_VERTEX_ACCESS_TOKEN=$(gcloud auth print-access-token) \\\n" +
+        "  pnpm --filter @pebble/ai eval:extraction",
     );
     process.exit(2);
     return;
@@ -143,8 +151,6 @@ async function main(): Promise<void> {
 
   const repoRoot = findRepoRoot(HERE);
   const models = modelConfigFromEnv(process.env);
-  const google = createGoogleGenerativeAI({ apiKey });
-  const model = google(models.gemini);
 
   const results: Array<{ slug: string; score: ScoreResult; costUsd: number }> = [];
   for (const { slug, fixture } of fixtures) {
@@ -172,24 +178,40 @@ async function main(): Promise<void> {
     (acc, r) => ({
       matched: acc.matched + r.score.matched,
       expectedCount: acc.expectedCount + r.score.expectedCount,
-      extractedOnLabeledPages: acc.extractedOnLabeledPages + r.score.extractedOnLabeledPages,
       costUsd: acc.costUsd + r.costUsd,
     }),
-    { matched: 0, expectedCount: 0, extractedOnLabeledPages: 0, costUsd: 0 },
+    { matched: 0, expectedCount: 0, costUsd: 0 },
   );
+  // Precision is only honest where the labeler enumerated EVERY line on the
+  // labeled pages (fullyLabeled) — partially labeled fixtures systematically
+  // count correct extractions as "extra". Recall is meaningful everywhere.
+  const fullSlugs = new Set(
+    fixtures.filter((f) => f.fixture.fullyLabeled === true).map((f) => f.slug),
+  );
+  const fullTotals = results
+    .filter((r) => fullSlugs.has(r.slug))
+    .reduce(
+      (acc, r) => ({
+        matched: acc.matched + r.score.matched,
+        extractedOnLabeledPages: acc.extractedOnLabeledPages + r.score.extractedOnLabeledPages,
+      }),
+      { matched: 0, extractedOnLabeledPages: 0 },
+    );
   const aggregatePrecision =
-    totals.extractedOnLabeledPages === 0
-      ? totals.expectedCount === 0
-        ? 1
-        : 0
-      : totals.matched / totals.extractedOnLabeledPages;
+    fullTotals.extractedOnLabeledPages === 0 ? 0 : fullTotals.matched / fullTotals.extractedOnLabeledPages;
   const aggregateRecall = totals.expectedCount === 0 ? 1 : totals.matched / totals.expectedCount;
 
   console.log("\n=== Aggregate ===");
-  console.log(`precision=${fmtPct(aggregatePrecision)} (gate >= ${fmtPct(PRECISION_GATE)})`);
-  console.log(`recall=${fmtPct(aggregateRecall)} (gate >= ${fmtPct(RECALL_GATE)})`);
+  console.log(
+    `precision=${fmtPct(aggregatePrecision)} over ${fullSlugs.size} fully-labeled fixture(s) (gate >= ${fmtPct(PRECISION_GATE)})`,
+  );
+  console.log(`recall=${fmtPct(aggregateRecall)} over all fixtures (gate >= ${fmtPct(RECALL_GATE)})`);
   console.log(`total estimated cost=$${totals.costUsd.toFixed(6)}`);
 
+  if (fullSlugs.size === 0) {
+    console.error("\nFAIL: no fully-labeled fixture — the precision gate has no honest signal.");
+    process.exit(1);
+  }
   if (aggregatePrecision < PRECISION_GATE || aggregateRecall < RECALL_GATE) {
     console.error("\nFAIL: aggregate precision/recall below gate.");
     process.exit(1);

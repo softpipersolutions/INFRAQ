@@ -1,4 +1,5 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createVertex } from "@ai-sdk/google-vertex";
 import type { LanguageModel } from "ai";
 import { modelConfigFromEnv } from "../models";
 
@@ -6,27 +7,52 @@ import { modelConfigFromEnv } from "../models";
  * The single env → Gemini-extraction-model seam for the Phase B ingestion
  * worker.
  *
- * The `@ai-sdk/google` provider factory is a dependency of THIS package, not of
+ * The provider factories are dependencies of THIS package, not of
  * `apps/worker` — so the worker cannot (and must not) build the model itself.
- * This helper is the one place that turns `GOOGLE_GENERATIVE_AI_API_KEY` (plus
- * the `PEBBLE_INGEST_MODEL` / `PEBBLE_GEMINI_MODEL` overrides) into a concrete
- * `LanguageModel`, returning `null` when no key is configured so callers can
- * degrade deterministically (PDFs error with a clear 503; XLSX still ingest,
- * since their extraction is model-free).
+ * Two lanes, selected by env:
  *
- * Construction is side-effect free and never touches the network — the returned
- * model only calls out when `generateObject` is invoked — so it is safe to call
- * on every boot regardless of whether extraction is actually configured.
+ *  - **Vertex AI** (`PEBBLE_AI_PROVIDER=vertex`, or `GOOGLE_VERTEX_PROJECT`
+ *    set): bills the GCP project postpaid via IAM — ambient ADC on Cloud Run,
+ *    and locally either real ADC or a short-lived `GOOGLE_VERTEX_ACCESS_TOKEN`
+ *    (e.g. `gcloud auth print-access-token`) passed as a bearer header, which
+ *    avoids minting any long-lived local credential. Location defaults to
+ *    "global" (where the gemini flash models serve from).
+ *  - **Gemini Developer API** (`GOOGLE_GENERATIVE_AI_API_KEY`): the original
+ *    prepaid-key lane, kept for portability.
+ *
+ * Returns `null` when neither lane is configured so callers degrade
+ * deterministically (PDFs error with a clear 503; XLSX still ingest, since
+ * their extraction is model-free). Construction is side-effect free and never
+ * touches the network.
  */
 
 /** Re-exported so `@pebble/worker` (which does not depend on `ai`) can name the type. */
 export type { LanguageModel };
 
+function wantsVertex(env: Record<string, string | undefined>): boolean {
+  if (env.PEBBLE_AI_PROVIDER === "vertex") return true;
+  if (env.PEBBLE_AI_PROVIDER) return false;
+  return Boolean(env.GOOGLE_VERTEX_PROJECT);
+}
+
+/** Shared Vertex provider construction (model + embedder lanes). */
+export function createVertexProvider(env: Record<string, string | undefined>) {
+  const accessToken = env.GOOGLE_VERTEX_ACCESS_TOKEN;
+  return createVertex({
+    project: env.GOOGLE_VERTEX_PROJECT,
+    location: env.GOOGLE_VERTEX_LOCATION ?? "global",
+    ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {}),
+  });
+}
+
 export function createIngestModelFromEnv(
   env: Record<string, string | undefined>,
 ): LanguageModel | null {
+  const modelId = env.PEBBLE_INGEST_MODEL ?? modelConfigFromEnv(env).gemini;
+  if (wantsVertex(env)) {
+    return createVertexProvider(env)(modelId);
+  }
   const apiKey = env.GOOGLE_GENERATIVE_AI_API_KEY;
   if (!apiKey) return null;
-  const modelId = env.PEBBLE_INGEST_MODEL ?? modelConfigFromEnv(env).gemini;
   return createGoogleGenerativeAI({ apiKey })(modelId);
 }

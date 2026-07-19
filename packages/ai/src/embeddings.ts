@@ -1,5 +1,6 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { embedMany, type EmbeddingModel } from "ai";
+import { createVertexProvider } from "./ingest/model";
 
 /**
  * Embedder for the Phase B RAG chunks (rag_chunks.embedding vector(768)).
@@ -46,16 +47,32 @@ export async function embedInBatches(
   return out;
 }
 
-/** Real embedder backed by Gemini's text-embedding model via the Vercel AI SDK. */
+/**
+ * Real embedder backed by Gemini's text-embedding model via the Vercel AI SDK.
+ * The embedding model is injected (Developer-API or Vertex provider — both
+ * honor the same `google.outputDimensionality` provider option), so this class
+ * is lane-agnostic; the factories below pick the lane.
+ */
 export class GoogleEmbedder implements Embedder {
   readonly model: string;
   readonly dimensions = 768 as const;
   private readonly embeddingModel: EmbeddingModel<string>;
 
-  constructor(config: { apiKey: string; modelId?: string }) {
-    this.model = config.modelId ?? DEFAULT_GOOGLE_EMBEDDING_MODEL;
-    const provider = createGoogleGenerativeAI({ apiKey: config.apiKey });
-    this.embeddingModel = provider.textEmbedding(this.model);
+  constructor(config: { apiKey: string; modelId?: string });
+  constructor(config: { embeddingModel: EmbeddingModel<string>; modelId: string });
+  constructor(
+    config:
+      | { apiKey: string; modelId?: string }
+      | { embeddingModel: EmbeddingModel<string>; modelId: string },
+  ) {
+    if ("embeddingModel" in config) {
+      this.model = config.modelId;
+      this.embeddingModel = config.embeddingModel;
+    } else {
+      this.model = config.modelId ?? DEFAULT_GOOGLE_EMBEDDING_MODEL;
+      const provider = createGoogleGenerativeAI({ apiKey: config.apiKey });
+      this.embeddingModel = provider.textEmbedding(this.model);
+    }
   }
 
   async embed(texts: string[]): Promise<number[][]> {
@@ -120,14 +137,29 @@ function l2Normalize(v: number[]): number[] {
 }
 
 /**
- * GoogleEmbedder when a Google API key is configured (and the stub isn't
- * explicitly forced via PEBBLE_EMBEDDER=stub); StubEmbedder otherwise — e.g.
- * local dev, CI, and any environment without GOOGLE_GENERATIVE_AI_API_KEY.
+ * Real embedder when a lane is configured (and the stub isn't explicitly
+ * forced via PEBBLE_EMBEDDER=stub): Vertex AI when PEBBLE_AI_PROVIDER=vertex /
+ * GOOGLE_VERTEX_PROJECT is set (IAM/ADC-authed, postpaid), else the Developer
+ * API when GOOGLE_GENERATIVE_AI_API_KEY exists. StubEmbedder otherwise — e.g.
+ * local dev and CI with no credentials at all.
  */
 export function createEmbedder(env: Record<string, string | undefined>): Embedder {
+  if (env.PEBBLE_EMBEDDER === "stub") return new StubEmbedder();
+  const modelId = env.PEBBLE_EMBEDDING_MODEL ?? DEFAULT_GOOGLE_EMBEDDING_MODEL;
+
+  const vertexSelected =
+    env.PEBBLE_AI_PROVIDER === "vertex" ||
+    (!env.PEBBLE_AI_PROVIDER && Boolean(env.GOOGLE_VERTEX_PROJECT));
+  if (vertexSelected) {
+    return new GoogleEmbedder({
+      embeddingModel: createVertexProvider(env).textEmbeddingModel(modelId),
+      modelId,
+    });
+  }
+
   const apiKey = env.GOOGLE_GENERATIVE_AI_API_KEY;
-  if (apiKey && env.PEBBLE_EMBEDDER !== "stub") {
-    return new GoogleEmbedder({ apiKey, modelId: env.PEBBLE_EMBEDDING_MODEL ?? DEFAULT_GOOGLE_EMBEDDING_MODEL });
+  if (apiKey) {
+    return new GoogleEmbedder({ apiKey, modelId });
   }
   return new StubEmbedder();
 }

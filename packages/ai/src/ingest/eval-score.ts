@@ -29,6 +29,14 @@ export interface EvalExpectation {
   labeledPages: number[];
   expectedLines: ExpectedLine[];
   expectMeta?: Partial<DocMeta>;
+  /**
+   * True when `expectedLines` enumerates EVERY line item on the labeled pages.
+   * Only fully-labeled fixtures carry an honest precision signal — partially
+   * labeled ones (2–4 lines per section) systematically count correct
+   * extractions as "extra", so the aggregate precision gate is computed over
+   * fully-labeled fixtures alone; recall is meaningful on all fixtures.
+   */
+  fullyLabeled?: boolean;
 }
 
 export interface FieldAccuracy {
@@ -88,7 +96,15 @@ function normalizeField(value: string | null | undefined): string {
 
 function metaFieldMatches(expected: unknown, actual: unknown): boolean {
   if (typeof expected === "string" && typeof actual === "string") {
-    return normalizeField(expected) === normalizeField(actual);
+    const exp = normalizeField(expected);
+    const act = normalizeField(actual);
+    if (exp === act) return true;
+    // The corpus prints revisions with prose around the number ("Rev: 02
+    // (With Concealed Sprinklers)") and headings with label prefixes
+    // ("PROJECT - …"). A faithful verbatim transcription that CONTAINS the
+    // expected value is a correct extraction, not a mismatch — containment
+    // only runs in that direction so a truncated/wrong value still fails.
+    return act.includes(exp);
   }
   return JSON.stringify(expected) === JSON.stringify(actual);
 }

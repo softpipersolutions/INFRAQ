@@ -1,7 +1,9 @@
 {
   "sourceFile": "Amitabh Fire Safety BOQ Data/FF-149 Experio Unit Fire Sprinkler System & FAS (26122025 R2).pdf",
   "totalPages": 2,
-  "labeledPages": [1],
+  "labeledPages": [
+    1
+  ],
   "expectMeta": {
     "attention": "Yamini Sharma",
     "projectName": "COMMERCIAL UNIT, EXPORIO BUILDING, LUCKNOW, UP",
@@ -143,5 +145,6 @@
       "rateKind": "SITC",
       "section": "PART II. ALARMS & ASSITANCE"
     }
-  ]
+  ],
+  "fullyLabeled": true
 }
