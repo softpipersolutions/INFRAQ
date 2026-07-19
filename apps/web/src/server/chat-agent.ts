@@ -213,7 +213,7 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
       const e = (err as { error?: unknown }).error ?? err;
       console.error("[chat] stream error:", e instanceof Error ? e.message : e);
     },
-    onFinish: async ({ text, totalUsage, steps }) => {
+    onFinish: async ({ text, totalUsage, steps, providerMetadata }) => {
       try {
         const parts = reconstructUiParts(steps);
         const toolNames = collectToolNames(steps);
@@ -227,6 +227,19 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
           model: modelId,
           parts,
         });
+        // Cache reads/writes bill at their own rates and would otherwise be
+        // invisible to the ledger: `totalUsage.cachedInputTokens` carries the
+        // reads; writes come from Anthropic's provider metadata. Sum writes
+        // across steps (each step of a tool loop may write).
+        const anthropicUsage = (providerMetadata?.anthropic as
+          | { usage?: { cache_creation_input_tokens?: number } }
+          | undefined)?.usage;
+        const stepWrites = steps.reduce((sum, s) => {
+          const su = (s.providerMetadata?.anthropic as
+            | { usage?: { cache_creation_input_tokens?: number } }
+            | undefined)?.usage;
+          return sum + (su?.cache_creation_input_tokens ?? 0);
+        }, 0);
         await insertLlmCall(
           db,
           toLlmCallLog({
@@ -236,6 +249,10 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
             inputTokens: usageIn(totalUsage),
             outputTokens: usageOut(totalUsage),
             sessionId,
+            cache: {
+              cacheReadTokens: totalUsage.cachedInputTokens ?? 0,
+              cacheWriteTokens: stepWrites || (anthropicUsage?.cache_creation_input_tokens ?? 0),
+            },
           }),
         );
 

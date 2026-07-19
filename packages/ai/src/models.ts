@@ -62,10 +62,36 @@ export function rateForModel(model: string): Rate {
   return RATE_TABLE.find((r) => model.startsWith(r.prefix))?.rate ?? FALLBACK_RATE;
 }
 
-/** Estimated USD cost of a call — stored on each llm_calls row. */
-export function estimateCostUsd(model: string, inputTokens: number, outputTokens: number): number {
+/** Anthropic prompt-caching billing multipliers on the input rate. */
+const CACHE_READ_MULTIPLIER = 0.1; // cache hits bill at 10% of input
+const CACHE_WRITE_MULTIPLIER = 1.25; // 5-minute cache writes bill at 125%
+
+export interface CacheUsage {
+  /** Tokens read from the prompt cache (usage.cachedInputTokens). */
+  cacheReadTokens?: number;
+  /** Tokens written to the cache (anthropic cache_creation_input_tokens). */
+  cacheWriteTokens?: number;
+}
+
+/**
+ * Estimated USD cost of a call — stored on each llm_calls row.
+ *
+ * `inputTokens` is the FRESH (uncached) input; cached reads/writes bill at
+ * their own multipliers and were previously ignored, which understated every
+ * cached Claude turn on the dashboard tile.
+ */
+export function estimateCostUsd(
+  model: string,
+  inputTokens: number,
+  outputTokens: number,
+  cache?: CacheUsage,
+): number {
   const rate = rateForModel(model);
-  const usd = (inputTokens / 1_000_000) * rate.inPerM + (outputTokens / 1_000_000) * rate.outPerM;
+  const usd =
+    (inputTokens / 1_000_000) * rate.inPerM +
+    (outputTokens / 1_000_000) * rate.outPerM +
+    (((cache?.cacheReadTokens ?? 0) / 1_000_000) * rate.inPerM) * CACHE_READ_MULTIPLIER +
+    (((cache?.cacheWriteTokens ?? 0) / 1_000_000) * rate.inPerM) * CACHE_WRITE_MULTIPLIER;
   return Math.round(usd * 1_000_000) / 1_000_000; // 6dp — matches NUMERIC(10,6)
 }
 
@@ -87,6 +113,7 @@ export function toLlmCallLog(args: {
   inputTokens: number;
   outputTokens: number;
   sessionId?: string | null;
+  cache?: CacheUsage;
 }): LlmCallLog {
   return {
     lane: args.lane,
@@ -94,7 +121,7 @@ export function toLlmCallLog(args: {
     intent: args.intent ?? null,
     inputTokens: args.inputTokens,
     outputTokens: args.outputTokens,
-    costUsd: estimateCostUsd(args.model, args.inputTokens, args.outputTokens),
+    costUsd: estimateCostUsd(args.model, args.inputTokens, args.outputTokens, args.cache),
     sessionId: args.sessionId ?? null,
   };
 }

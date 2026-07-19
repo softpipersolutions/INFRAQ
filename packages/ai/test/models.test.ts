@@ -40,3 +40,23 @@ describe("cost accounting", () => {
     expect(log.costUsd).toBeGreaterThan(0);
   });
 });
+
+
+describe("estimateCostUsd with prompt-cache usage", () => {
+  it("bills cache reads at 10% and writes at 125% of the input rate", () => {
+    // sonnet: $3/M input. 1M cache-read = $0.30; 1M cache-write = $3.75.
+    expect(estimateCostUsd("claude-sonnet-5", 0, 0, { cacheReadTokens: 1_000_000 })).toBeCloseTo(0.3, 6);
+    expect(estimateCostUsd("claude-sonnet-5", 0, 0, { cacheWriteTokens: 1_000_000 })).toBeCloseTo(3.75, 6);
+  });
+  it("adds cache costs to fresh-token costs", () => {
+    const fresh = estimateCostUsd("claude-sonnet-5", 1000, 100);
+    const withCache = estimateCostUsd("claude-sonnet-5", 1000, 100, { cacheReadTokens: 10_000 });
+    expect(withCache).toBeCloseTo(fresh + 0.3 * (10_000 / 1_000_000) * 10 / 10, 6);
+    expect(withCache).toBeGreaterThan(fresh);
+  });
+  it("toLlmCallLog carries cache costs into costUsd", () => {
+    const withoutCache = toLlmCallLog({ lane: "claude", model: "claude-sonnet-5", inputTokens: 100, outputTokens: 50 });
+    const withCache = toLlmCallLog({ lane: "claude", model: "claude-sonnet-5", inputTokens: 100, outputTokens: 50, cache: { cacheReadTokens: 12_000, cacheWriteTokens: 12_000 } });
+    expect(withCache.costUsd).toBeGreaterThan(withoutCache.costUsd);
+  });
+});
