@@ -2,8 +2,74 @@
 
 > **Purpose of this file:** hand off the build to a fresh Claude Code session (local or remote) with zero context loss. Read this top-to-bottom, then follow "How to continue" at the end. The full approved architecture/build plan is in **`docs/PLAN.md`** — read that too before writing code.
 
-Last updated: 2026-07-18 · Branch: `claude/fire-safety-boq-webapp-f5n921`
+Last updated: 2026-07-19 · Branch: `claude/fire-safety-boq-webapp-f5n921`
 
+> ## 🤖 PHASE C.5 — THE AGENTIC CHAT SYSTEM (2026-07-19)
+> The templated slot-filling lane is gone. **Claude Sonnet 5 now owns every
+> user-visible reply** and orchestrates the whole Module-02 workflow itself
+> through **15 tools** (`packages/ai/src/agent/module02.ts`) — no
+> `selectLane`/classifier/`buildSlotResponseText` script in between. Deleted:
+> `selectLane`, the Gemini pre-triage classifier, `buildSlotResponseText`/
+> `buildSlotRecap`, `COMPUTE_LANE_MESSAGE`, `routeTurn`/`INTENTS`. A single
+> agent turn (`runAgentTurn` in `apps/web/src/server/chat-agent.ts`,
+> `streamText` + `stepCountIs(8)`) composes persona → Module-02 tool
+> fragments/policy → cached master digest, then the running summary + last-12
+> verbatim turns + a session-state block (`agent/registry.ts`,
+> `agent/context.ts` — the module-agnostic ERP seam every future INFRAQ module
+> plugs into). Safety upgrades: **`create_enquiry` shrank to
+> `{userConfirmed:true}`** — the record is now derived entirely from the
+> session's captured slot state (`createEnquiryFromState`), so the model can no
+> longer pass values diverging from what it showed the user; new
+> `get_enquiry_state`/`repair_enquiry_state`/`reset_enquiry_capture` give the
+> agent a conversational self-heal path for a stale/corrupt draft instead of
+> silently pressing on. **Opus 4.8 escalation is deterministic and
+> rate-guarded** (`agent/escalation.ts`): a challenge on a linked draft,
+> confirmed-slot contradictions ≥2, or a review past 12 turns escalates —
+> unless the per-user daily Opus cap (`PEBBLE_OPUS_DAILY_CAP_USD`, default $1)
+> or a 5-escalated-turns/day cap is already hit, in which case it stays on
+> Sonnet and ledgers the suppression (`agent-suppressed:budget[...]`).
+> **Gemini 3.5 Flash keeps three jobs**: `extract_enquiry_fields` (long pasted
+> text), embeddings, and running-summary compaction — `chat_sessions.summary` +
+> `summary_upto_message_id` fold everything older than the last 12 turns into a
+> ≤300-token watermarked digest (`agent/compaction.ts`), refreshed once >8
+> turns go unsummarized. **Tool activity now survives a reload**:
+> `chat_messages.parts` (jsonb) persists one part per tool call
+> (`input-available` → `output-available`/`output-error`) plus text, so the UI
+> can rehydrate live-activity rows and the post-creation receipt card exactly
+> as they streamed. All safety invariants unchanged or tightened: LLMs still
+> never compute money, never mutate an estimate (`propose_line_edit` stays
+> suggestion-only), never approve/dispatch (human-button-only, no tool exists
+> for either).
+>
+> **WP5 — the live conversation eval harness** (`apps/web/eval/**`,
+> `apps/web/scripts/chat-agent-eval.ts`, script `eval:chat`): 8 canonical
+> conversations against `runAgentTurn` directly (no HTTP) over a fresh
+> PGlite db per case — happy path (one message → canonical slots → restate →
+> confirm → exactly one enquiry + LOCKED v1 estimate, receipt part, a tolerant
+> no-invented-numbers check against tool output/user text/master digest, cost
+> and wall gates), incremental capture + mid-stream correction (contradiction
+> counter stays 0 for a still-proposed field), a curveball recall question
+> mid-capture (state untouched, capture resumes), challenge-the-draft ×2
+> (Opus escalation ledgered, a rule/standard citation, zero estimate
+> mutations), a pure recall turn (zero side effects), self-heal from the
+> legacy padded-`systemsRequired` bug (`"Common"` leaking into a
+> client-requested-systems slot), budget exhaustion (429, no new llm_calls
+> row), and an explain walkthrough (`DL-FAS-001` + `IS 2189`/`per 60`, no
+> invented figures). **Never run in CI** — it calls the real Anthropic +
+> Gemini APIs. Run it with:
+> ```bash
+> ANTHROPIC_API_KEY=... GOOGLE_GENERATIVE_AI_API_KEY=... \
+>   pnpm --filter @pebble/web eval:chat
+> # or Vertex, and/or a single scenario:
+> ANTHROPIC_API_KEY=... PEBBLE_AI_PROVIDER=vertex GOOGLE_VERTEX_PROJECT=infraq-greenberg \
+>   GOOGLE_VERTEX_LOCATION=global GOOGLE_VERTEX_ACCESS_TOKEN=$(gcloud auth print-access-token) \
+>   pnpm --filter @pebble/web eval:chat -- --only happy-path
+> ```
+> Without keys it exits 2 with setup instructions, never confused with a real
+> eval failure. Remaining: run the full 8-case suite with real keys and fold
+> any prompt-quality findings back to the persona/module fragment (not this
+> harness's job — it only reports).
+>
 > ## 💬 PHASE C COMPLETE — CHAT LIVE (2026-07-19)
 > The conversational lane is deployed: /chat streams through the
 > deterministic-first router — Gemini (Vertex) fills A.08 slots with
