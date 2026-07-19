@@ -32,11 +32,14 @@ export const chatRouter = router({
     const session = await getChatSession(ctx.db, input.sessionId);
     const slotState = resolveSlotState(session?.slotState ?? null);
     const na = nextAction(slotState);
+    const enquiryId = session?.enquiryId ?? null;
     return {
       slotState,
-      enquiryId: session?.enquiryId ?? null,
-      // The UI shows Confirm once every required field is captured (proposed or confirmed).
-      readyToConfirm: na.kind !== "ask",
+      enquiryId,
+      // The UI shows Confirm once every required field is captured (proposed or
+      // confirmed) — and never again once the enquiry exists (a reloaded page
+      // otherwise re-offers a Confirm that can only 409).
+      readyToConfirm: enquiryId === null && na.kind !== "ask",
       allConfirmed: allRequiredConfirmed(slotState),
     };
   }),

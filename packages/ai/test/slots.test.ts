@@ -7,6 +7,7 @@ import {
   confirmSlot,
   initSlotState,
   nextAction,
+  type ExtractedFields,
 } from "../src/index";
 
 describe("slot-filling state machine", () => {
@@ -67,11 +68,15 @@ describe("slot-filling state machine", () => {
   });
 
   it("rejects an invalid assembly (e.g. bad building type) with issues", () => {
+    // The extraction schema now enum-constrains buildingType, so a bad value
+    // can only arrive through a stale/corrupt persisted slot state — simulate
+    // that by casting past the compile-time enum (the runtime validation in
+    // buildEnquiryInput is exactly what this test pins down).
     let s = initSlotState();
     s = applyExtracted(s, {
       clientName: "X",
       projectName: "Y",
-      buildingType: "Spaceship", // not a BuildingType
+      buildingType: "Spaceship" as unknown as ExtractedFields["buildingType"],
       floorsAbove: 4,
       floorAreaSqm: 450,
       systemsRequired: ["FAS"],

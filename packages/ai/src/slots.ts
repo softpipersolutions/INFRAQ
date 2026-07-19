@@ -1,4 +1,11 @@
-import { enquiryInputSchema, type EnquiryInput } from "@pebble/shared";
+import {
+  APPLICABLE_STANDARDS,
+  BUILDING_TYPES,
+  enquiryInputSchema,
+  MAKE_PREFERENCES,
+  SYSTEM_TYPES,
+  type EnquiryInput,
+} from "@pebble/shared";
 import { z } from "zod";
 
 /**
@@ -67,18 +74,43 @@ export function initSlotState(): SlotState {
   return state;
 }
 
-/** Zod schema for a model's per-message extraction (all fields optional). */
+/**
+ * Zod schema for a model's per-message extraction (all fields optional).
+ * The enum-backed fields are constrained to the SHARED canonical vocabularies
+ * — a schema-enforced enum is the only reliable way to make the extractor emit
+ * `"FAS"` rather than free text like `"Fire Alarm System"` (which would then
+ * fail `buildEnquiryInput`'s validation at confirm time).
+ */
 export const extractionSchema = z
   .object({
     clientName: z.string().min(1).optional(),
     projectName: z.string().min(1).optional(),
-    buildingType: z.string().optional(),
+    buildingType: z
+      .enum(BUILDING_TYPES)
+      .optional()
+      .describe("Canonical building type"),
     floorsAbove: z.number().int().min(0).max(200).optional(),
-    floorAreaSqm: z.number().positive().optional(),
-    systemsRequired: z.array(z.string()).optional(),
-    makePreference: z.string().optional(),
+    floorAreaSqm: z
+      .number()
+      .positive()
+      .optional()
+      .describe("Area of ONE typical floor in square metres (per-floor, never the building total)"),
+    systemsRequired: z
+      .array(z.enum(SYSTEM_TYPES))
+      .optional()
+      .describe(
+        'Canonical system codes: fire alarm/detection → "FAS"; hydrant/riser/hose → "Hydrant"; ' +
+          'sprinklers → "Sprinkler"; extinguishers → "Extinguisher"; gas/clean-agent suppression → "Suppression"',
+      ),
+    makePreference: z
+      .enum(MAKE_PREFERENCES)
+      .optional()
+      .describe('No stated preference / "as per Greenberg" / "your choice" → "As per Greenberg"'),
     projectTier: z.number().int().min(1).max(4).optional(),
-    applicableStandard: z.string().optional(),
+    applicableStandard: z
+      .enum(APPLICABLE_STANDARDS)
+      .optional()
+      .describe('IS / Indian standards → "IS"'),
     clientEmail: z.string().optional(),
     clientPhone: z.string().optional(),
     notes: z.string().optional(),

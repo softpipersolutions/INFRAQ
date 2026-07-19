@@ -25,6 +25,9 @@ export function buildExtractionPrompt(userMessage: string, state: SlotState): st
     "Extract fire-safety enquiry fields (A.08) that the user states or clearly implies in their latest message.",
     "Only include fields that are NEWLY mentioned or corrected; omit everything else. Do not guess.",
     "Normalise: building type and systems to the canonical enum spelling; areas/floors to numbers.",
+    "floorAreaSqm is the area of ONE typical floor, never the building total: " +
+      "'450 sqm per floor' → 450. If the user only gives a total for N floors, divide by N. " +
+      "When the user corrects an earlier value, emit the corrected value.",
     "",
     `Already captured: ${knownSummary(state)}`,
     "",

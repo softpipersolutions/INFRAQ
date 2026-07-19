@@ -215,7 +215,7 @@ export default function EstimatePage() {
                   <th className="px-3 py-2 text-right tabular">Install rate</th>
                   <th className="px-3 py-2 text-right tabular">SITC rate</th>
                   <th className="px-3 py-2 text-right tabular">Amount</th>
-                  {editable ? <th className="px-3 py-2" /> : null}
+                  <th className="px-3 py-2" />
                 </tr>
               </thead>
               <tbody>
@@ -344,18 +344,29 @@ function LineRow({
         <td className="px-3 py-2 text-right tabular">{formatINR(line.installRatePaise)}</td>
         <td className="px-3 py-2 text-right tabular">{formatINR(line.sitcRatePaise)}</td>
         <td className="px-3 py-2 text-right tabular font-medium">{formatINR(line.lineAmountPaise)}</td>
-        {editable ? (
-          <td className="px-3 py-2 text-right">
-            <div className="flex justify-end gap-2">
-              <button className="text-xs text-[var(--pebble-accent)] hover:underline" onClick={() => setOpen((o) => !o)}>
-                {open ? "Close" : "Edit"}
-              </button>
-              <button className="text-xs text-red-600 hover:underline" onClick={onRemove}>
-                Remove
-              </button>
-            </div>
-          </td>
-        ) : null}
+        <td className="px-3 py-2 text-right">
+          <div className="flex justify-end gap-2">
+            <Link
+              href={`/chat?ask=${encodeURIComponent(
+                `Explain line ${line.lineUid} of estimate ${estimateId}: why this item, quantity and rate?`,
+              )}`}
+              className="text-xs text-[var(--pebble-accent)] hover:underline"
+              title="Ask chat to explain this line"
+            >
+              Explain
+            </Link>
+            {editable ? (
+              <>
+                <button className="text-xs text-[var(--pebble-accent)] hover:underline" onClick={() => setOpen((o) => !o)}>
+                  {open ? "Close" : "Edit"}
+                </button>
+                <button className="text-xs text-red-600 hover:underline" onClick={onRemove}>
+                  Remove
+                </button>
+              </>
+            ) : null}
+          </div>
+        </td>
       </tr>
       {open && editable ? (
         <tr className="border-b border-[var(--pebble-border)] bg-slate-50">

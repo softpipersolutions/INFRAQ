@@ -1,32 +1,27 @@
-import Link from "next/link";
-import { Card, PageHeader } from "@/components/ui";
+import { Suspense } from "react";
+import { ChatPanel } from "@/components/chat/chat-panel";
+import { EmptyState, PageHeader } from "@/components/ui";
 
 /**
- * Chat is a later-phase UX layer over the same tRPC services the enquiry form
- * uses (spec §4.4 slot-filling). It is intentionally a stub here — the core
- * enquiry → draft → review → approve loop runs entirely through the structured
- * screens with zero AI, which is the acceptance gate for this build.
+ * Conversational enquiry capture (spec §4.4) — a UX layer over the same
+ * tRPC services the structured enquiry form uses. Slot-filling state lives
+ * server-side (chat_sessions.slot_state); this page only renders it and lets
+ * the model read/explain/propose, never compute or mutate directly.
+ *
+ * `/chat` has no dynamic route segment, so Next attempts to statically
+ * prerender it — ChatPanel reads the `?ask=` search param (for the estimate
+ * grid's "Explain" links), which requires a Suspense boundary here.
  */
 export default function ChatPage() {
   return (
     <div>
-      <PageHeader title="Chat" subtitle="Conversational enquiry capture — later phase." />
-      <Card className="p-6 text-sm text-[var(--pebble-muted)]">
-        <p className="mb-3">
-          The conversational lane (Gemini retrieval + Claude drafting with slot-filling from
-          <code className="mx-1 rounded bg-slate-100 px-1">@pebble/ai</code>) will capture an enquiry
-          in natural language, confirm the A.08 record, and then call the same
-          <code className="mx-1 rounded bg-slate-100 px-1">enquiry.create</code> service the form uses
-          to generate a draft.
-        </p>
-        <p>
-          For now, use the{" "}
-          <Link href="/enquiries/new" className="text-[var(--pebble-accent)] hover:underline">
-            structured enquiry form
-          </Link>{" "}
-          — it exercises the full deterministic generation path.
-        </p>
-      </Card>
+      <PageHeader
+        title="Chat"
+        subtitle="Capture an enquiry conversationally, or ask about an existing estimate."
+      />
+      <Suspense fallback={<EmptyState>Loading chat…</EmptyState>}>
+        <ChatPanel />
+      </Suspense>
     </div>
   );
 }

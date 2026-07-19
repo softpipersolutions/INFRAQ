@@ -49,6 +49,10 @@ export default function DashboardPage() {
             <Tile label="Approved" value={stats.data.byStatus["APPROVED"] ?? 0} />
           </div>
 
+          <div className="mb-6">
+            <LlmCostTile />
+          </div>
+
           <Card>
             <div className="border-b border-[var(--pebble-border)] px-4 py-3 text-sm font-semibold">
               Recent estimates
@@ -111,6 +115,39 @@ function Tile({ label, value }: { label: string; value: number }) {
     <Card className="p-4">
       <div className="text-xs uppercase tracking-wide text-[var(--pebble-muted)]">{label}</div>
       <div className="mt-1 text-2xl font-semibold tabular">{value}</div>
+    </Card>
+  );
+}
+
+/**
+ * LLM spend tile (spec §4.4 cost dashboard): today's spend + call count from
+ * dashboard.llmCost (works standalone), layered with today's daily budget
+ * from chat.costToday when that router is available. The chat router is
+ * owned by a parallel lane — the budget query is allowed to fail (retry
+ * disabled) and is simply omitted from the tile until it lands.
+ */
+function LlmCostTile() {
+  const cost = trpc.dashboard.llmCost.useQuery();
+  const budget = trpc.chat.costToday.useQuery(undefined, { retry: false });
+  const budgetUsd = !budget.isError ? (budget.data?.budgetUsd ?? null) : null;
+
+  return (
+    <Card className="p-4">
+      <div className="text-xs uppercase tracking-wide text-[var(--pebble-muted)]">AI spend today</div>
+      {cost.isLoading || !cost.data ? (
+        <div className="mt-1 text-sm text-[var(--pebble-muted)]">Loading…</div>
+      ) : cost.isError ? (
+        <div className="mt-1 text-sm text-red-700">Failed to load: {cost.error.message}</div>
+      ) : (
+        <>
+          <div className="mt-1 text-2xl font-semibold tabular">${cost.data.today.costUsd.toFixed(4)}</div>
+          <div className="mt-1 text-xs text-[var(--pebble-muted)]">
+            {cost.data.today.calls} call{cost.data.today.calls === 1 ? "" : "s"}
+            {budgetUsd !== null ? ` · budget $${budgetUsd.toFixed(2)}` : ""}
+            {" · "}${cost.data.month.costUsd.toFixed(2)} this month ({cost.data.month.calls} calls)
+          </div>
+        </>
+      )}
     </Card>
   );
 }
