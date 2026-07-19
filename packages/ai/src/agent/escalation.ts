@@ -7,12 +7,13 @@
  * the per-user daily Opus budget and turn cap allow it. Everything here is pure
  * and unit-tested; the route wires the persisted counters and env caps in.
  *
- * This module also owns the legacy `shouldEscalateToOpus` helper (moved here
- * from `router.ts`) so the old signal-based escalation and the new
- * `decideEscalation` live together; `router.ts` re-exports them for compat.
+ * This module also owns the legacy `shouldEscalateToOpus` helper (a pure,
+ * signal-based check) alongside the new budget-aware `decideEscalation`. The
+ * route uses `decideEscalation`; `shouldEscalateToOpus` is retained as a small
+ * pure utility with its own unit coverage.
  */
 
-// ─── Legacy signal-based escalation (kept for the deprecated router seam) ─────
+// ─── Legacy signal-based escalation (pure utility) ───────────────────────────
 
 /** Signals that justify escalating the Claude lane to Opus 4.8. */
 export interface EscalationSignals {
@@ -39,9 +40,9 @@ export const DEFAULT_ESCALATION: EscalationThresholds = {
 };
 
 /**
- * @deprecated Legacy signal-based escalation from the lane router. New code uses
- * `decideEscalation`, which adds the daily Opus budget/turn caps. Kept so the
- * deprecated `routeTurn` path and existing callers keep working until WP3.
+ * Signal-based escalation check (pure). New route code uses `decideEscalation`,
+ * which adds the daily Opus budget/turn caps; this remains a small standalone
+ * utility for the signal thresholds.
  */
 export function shouldEscalateToOpus(
   signals: EscalationSignals,

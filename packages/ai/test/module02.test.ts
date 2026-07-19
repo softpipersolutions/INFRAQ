@@ -219,4 +219,15 @@ describe("new self-heal + document tools call the right service methods", () => 
     expect(services.lookupMaterial).toHaveBeenCalledWith("FAS-SMK-001");
     expect((result as { materialCode: string }).materialCode).toBe("FAS-SMK-001");
   });
+
+  // Ported from the retired tools.test.ts (buildPebbleTools): propose stays
+  // suggestion-only — the model can never apply an estimate edit.
+  it("propose_line_edit is suggestion-only (never applied)", async () => {
+    const { tools } = module02Toolset(stubServices(), SESSION);
+    const result = (await tools.propose_line_edit!.execute!(
+      { estimateId: "E1", lineUid: "u1", qty: 32, editReason: "recount" },
+      OPTS,
+    )) as { applied: boolean };
+    expect(result.applied).toBe(false);
+  });
 });

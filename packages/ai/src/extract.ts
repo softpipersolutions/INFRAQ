@@ -1,15 +1,17 @@
 import { generateObject, type LanguageModel } from "ai";
-import { z } from "zod";
-import { INTENTS, type Intent } from "./router";
 import { extractionSchema, type ExtractedFields, type SlotState, SLOT_FIELDS } from "./slots";
 
 /**
- * The Gemini retrieval/extraction lane's two model calls (spec §4.4):
- *   - extractEnquiryFields: pull newly-mentioned A.08 fields from a message
- *   - classifyIntent: the cheap enum classification the router uses
+ * The Gemini extraction call (spec §4.4): `extractEnquiryFields` pulls
+ * newly-mentioned A.08 fields from a message.
  *
- * Both take the model by injection so orchestration is testable with a stub;
- * the prompt builders are pure and are what the unit tests cover.
+ * The model is injected so orchestration is testable with a stub; the prompt
+ * builder is pure and is what the unit tests cover.
+ *
+ * NOTE (Phase C.5): the pre-triage intent classifier (`classifyIntent` /
+ * `buildClassificationPrompt`) has been deleted — the Sonnet-5 agent routes
+ * itself via tool choice, so there are no lanes to pick. Gemini Flash's
+ * remaining jobs are field extraction (here), embeddings and summary compaction.
  */
 
 /** Compact summary of what's already known, so the model extracts only new info. */
@@ -83,49 +85,4 @@ export async function extractEnquiryFields(args: {
     prompt: buildExtractionPrompt(args.userMessage, args.state),
   });
   return guardExtractedFields(object, args.userMessage);
-}
-
-const intentClassificationSchema = z.object({
-  intent: z.enum(INTENTS),
-  confidence: z.number().min(0).max(1),
-});
-
-/**
- * @deprecated Phase C.5 deletes the pre-triage intent classifier — the Sonnet-5
- * agent routes itself via tool choice, so there are no lanes to pick. Kept only
- * until WP3 rewires the /api/chat route (which still calls this); do not add new
- * callers. Gemini Flash's remaining jobs are field extraction, embeddings and
- * summary compaction.
- */
-export function buildClassificationPrompt(message: string): string {
-  return [
-    "Classify the user's intent for a fire-safety estimating assistant into exactly one label:",
-    "- LOOKUP: fetch a specific master fact (a material, make, or price)",
-    "- EXTRACT: state enquiry details to capture",
-    "- RECALL: ask what was quoted before / historical retrieval",
-    "- INTERPRET: open-ended interpretation of requirements",
-    "- DRAFT_ASSIST: help shaping or adjusting a draft estimate",
-    "- EXPLAIN: ask why a line/quantity/rate is what it is",
-    "- COMPUTE: request a (re)calculation of prices/quantities/totals",
-    "- SLOT_FILL: continue an in-progress enquiry capture",
-    "Return the label and a confidence in [0,1].",
-    "",
-    `Message: """${message}"""`,
-  ].join("\n");
-}
-
-/**
- * @deprecated See `buildClassificationPrompt` — the intent classifier is removed
- * in Phase C.5 (the agent routes itself). Retained for compat until WP3.
- */
-export async function classifyIntent(
-  model: LanguageModel,
-  message: string,
-): Promise<{ intent: Intent; confidence: number }> {
-  const { object } = await generateObject({
-    model,
-    schema: intentClassificationSchema,
-    prompt: buildClassificationPrompt(message),
-  });
-  return object;
 }

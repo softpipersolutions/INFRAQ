@@ -9,11 +9,12 @@ import {
   getOrCreateChatSession,
   linkSessionEnquiry,
   listChatMessages,
+  sumOpusSpendSince,
   updateSlotState,
 } from "@pebble/db";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { checkDailyBudget, resolveSlotState } from "../chat-runtime";
+import { checkDailyBudget, resolveSlotState, startOfUtcDayISO } from "../chat-runtime";
 import { createEnquiryAndGenerate } from "../generate";
 import { protectedProcedure, router } from "../trpc";
 
@@ -103,18 +104,28 @@ export const chatRouter = router({
         content: m.content,
         lane: m.lane,
         model: m.model,
+        // Tool-activity + receipt parts for reload fidelity (null on legacy text-only rows).
+        parts: m.parts,
         createdAt: m.createdAt.toISOString(),
       }));
     }),
 
-  /** The signed-in user's LLM spend today plus the configured daily budget. */
+  /**
+   * The signed-in user's LLM spend today plus the configured daily budget, and
+   * the Opus-only slice of that spend (for the dashboard escalation tile).
+   */
   costToday: protectedProcedure.query(async ({ ctx }) => {
     const budget = await checkDailyBudget(ctx.db, { userId: ctx.user.firebaseUid });
+    const opus = await sumOpusSpendSince(ctx.db, {
+      userId: ctx.user.firebaseUid,
+      sinceISO: startOfUtcDayISO(),
+    });
     return {
       spentUsd: budget.spentUsd,
       budgetUsd: budget.budgetUsd,
       remainingUsd: budget.remainingUsd,
       blocked: budget.blocked,
+      opusSpentToday: opus.costUsd,
     };
   }),
 });

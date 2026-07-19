@@ -9,8 +9,8 @@
  * approves/dispatches.
  *
  * `agent/registry.ts` is the ERP seam: modules plug in as `ModuleToolset`s and
- * `composeAgent` folds them into one turn. The pre-agent lane router/classifier
- * remain exported (deprecated) until WP3 rewires the /api/chat route.
+ * `composeAgent` folds them into one turn. Deterministic Opus escalation lives
+ * in `agent/escalation.ts`; the old lane router/classifier are gone (WP3).
  *
  * Everything is dependency-injected (models, services) so the orchestration is
  * unit-testable without any API key.
@@ -25,7 +25,6 @@ export * from "./agent/compaction";
 export * from "./agent/context";
 
 export * from "./models";
-export * from "./router";
 export * from "./slots";
 export * from "./digest";
 export * from "./prompts";

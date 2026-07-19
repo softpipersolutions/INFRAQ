@@ -1,5 +1,6 @@
 import { applyExtracted, initSlotState, type SlotState } from "@pebble/ai";
 import {
+  appendChatMessage,
   createDb,
   getOrCreateChatSession,
   insertLlmCall,
@@ -179,9 +180,37 @@ describe("chat router", () => {
     expect(ok.blocked).toBe(false);
     expect(ok.remainingUsd).toBeGreaterThan(0);
 
-    // costToday surfaces the same numbers to the UI tile.
+    // costToday surfaces the same numbers to the UI tile, plus the Opus slice.
     const caller = callerFor(ESTIMATOR);
     const cost = await caller.chat.costToday();
     expect(cost.spentUsd).toBeGreaterThanOrEqual(6);
+    expect(cost.opusSpentToday).toBe(0); // the seeded call was a Sonnet call
+  });
+
+  it("history returns tool/receipt parts for reload fidelity", async () => {
+    const caller = callerFor(ESTIMATOR);
+    const sessionId = "parts-history-session";
+    await getOrCreateChatSession(db, { sessionId, userId: ESTIMATOR.firebaseUid });
+    await appendChatMessage(db, { sessionId, role: "user", content: "8 floor office" });
+    await appendChatMessage(db, {
+      sessionId,
+      role: "assistant",
+      content: "Checked the design rules.",
+      lane: "claude",
+      model: "claude-sonnet-4-6",
+      parts: [
+        { type: "text", text: "Checked the design rules." },
+        { type: "tool-get_design_rules", toolCallId: "t1", state: "output-available", input: {}, output: [] },
+      ],
+    });
+
+    const history = await caller.chat.history({ sessionId });
+    const assistant = history.find((m) => m.role === "assistant");
+    expect(assistant?.parts).toBeTruthy();
+    const partTypes = (assistant?.parts as Array<{ type: string }>).map((p) => p.type);
+    expect(partTypes).toContain("tool-get_design_rules");
+    // A legacy text-only user row has null parts.
+    const userRow = history.find((m) => m.role === "user");
+    expect(userRow?.parts).toBeNull();
   });
 });

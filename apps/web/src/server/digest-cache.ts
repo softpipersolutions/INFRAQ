@@ -19,6 +19,14 @@ let cached: { hash: string; text: string } | null = null;
 export interface CachedDigest {
   /** Ordered system blocks: [persona] → [digest with cache_control]. */
   blocks: SystemBlock[];
+  /**
+   * The master-data digest block on its own — the LAST cached block, carrying
+   * the Anthropic `cache_control` breakpoint. `composeAgent` (the Phase-C.5
+   * agent route) takes this directly (persona comes from `PEBBLE_PERSONA`), so
+   * the whole cached prefix — persona → module fragments/policy → digest —
+   * caches behind one breakpoint.
+   */
+  digestBlock: SystemBlock;
   hash: string;
   /** True when this call reused the previously-rendered digest text. */
   hit: boolean;
@@ -34,9 +42,10 @@ export async function getCachedDigest(db: Db): Promise<CachedDigest> {
 
   // The digest block is the second system block (persona is first).
   const digestBlock = assembled.blocks[1];
-  cached = { hash: assembled.digestHash, text: digestBlock?.content ?? "" };
+  if (!digestBlock) throw new Error("assembleSystemPrompt did not return a digest block");
+  cached = { hash: assembled.digestHash, text: digestBlock.content };
 
-  return { blocks: assembled.blocks, hash: assembled.digestHash, hit };
+  return { blocks: assembled.blocks, digestBlock, hash: assembled.digestHash, hit };
 }
 
 /** Test/ops hook: drop the cached digest so the next call re-renders. */
