@@ -15,6 +15,12 @@ export const chatSessions = pgTable("chat_sessions", {
   /** Slot-filling state for enquiry capture (partial A.08 fields). */
   slotState: jsonb("slot_state").$type<Record<string, unknown>>().notNull(),
   enquiryId: text("enquiry_id"),
+  /** Gemini-Flash-maintained running summary of turns older than the window. */
+  summary: text("summary"),
+  /** ULID watermark: `summary` covers messages with id <= this. Null = no summary yet. */
+  summaryUptoMessageId: text("summary_upto_message_id"),
+  /** Confirmed-slot contradiction counter — feeds the Opus escalation guard. */
+  contradictions: integer("contradictions").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -28,6 +34,8 @@ export const chatMessages = pgTable("chat_messages", {
   content: text("content").notNull(),
   lane: text("lane"),
   model: text("model"),
+  /** Tool-call/tool-result/receipt parts for reload fidelity; null for legacy text-only rows. */
+  parts: jsonb("parts").$type<unknown[]>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, like, sql } from "drizzle-orm";
 import type { Db } from "../client";
 import { newUlid } from "../ids";
 import { chatMessages, chatSessions, llmCalls } from "../schema";
@@ -25,6 +25,12 @@ export interface ChatSessionRow {
   userId: string;
   slotState: Record<string, unknown> | null;
   enquiryId: string | null;
+  /** Gemini-Flash running summary of turns older than the compaction window (null = none yet). */
+  summary: string | null;
+  /** ULID watermark: `summary` covers messages with id <= this. */
+  summaryUptoMessageId: string | null;
+  /** Confirmed-slot contradiction counter feeding the Opus escalation guard. */
+  contradictions: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,6 +42,8 @@ export interface ChatMessageRow {
   content: string;
   lane: string | null;
   model: string | null;
+  /** Tool-call/tool-result/receipt parts; null for legacy text-only rows. */
+  parts: unknown[] | null;
   createdAt: Date;
 }
 
@@ -45,6 +53,9 @@ function rowToSession(r: typeof chatSessions.$inferSelect): ChatSessionRow {
     userId: r.userId,
     slotState: (r.slotState ?? null) as Record<string, unknown> | null,
     enquiryId: r.enquiryId ?? null,
+    summary: r.summary ?? null,
+    summaryUptoMessageId: r.summaryUptoMessageId ?? null,
+    contradictions: r.contradictions,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   };
@@ -104,11 +115,68 @@ export async function linkSessionEnquiry(
     .where(eq(chatSessions.id, sessionId));
 }
 
+/**
+ * Overwrite the Gemini-Flash running summary and advance its watermark
+ * (`summaryUptoMessageId`). Called by the summary-refresh trigger once more
+ * than `PEBBLE_CHAT_WINDOW` unsummarized turns have accumulated.
+ */
+export async function updateSessionSummary(
+  db: Db,
+  sessionId: string,
+  args: { summary: string; uptoMessageId: string },
+): Promise<void> {
+  await db
+    .update(chatSessions)
+    .set({
+      summary: args.summary,
+      summaryUptoMessageId: args.uptoMessageId,
+      updatedAt: new Date(),
+    })
+    .where(eq(chatSessions.id, sessionId));
+}
+
+/** Overwrite the contradiction counter outright (e.g. reset on `reset_enquiry_capture`). */
+export async function setContradictions(db: Db, sessionId: string, count: number): Promise<void> {
+  await db
+    .update(chatSessions)
+    .set({ contradictions: count, updatedAt: new Date() })
+    .where(eq(chatSessions.id, sessionId));
+}
+
+/**
+ * Atomically bump the contradiction counter and return the new value — the
+ * Opus escalation guard reads this to decide `contradictions >= 2`.
+ */
+export async function incrementContradictions(
+  db: Db,
+  sessionId: string,
+  by = 1,
+): Promise<number> {
+  const rows = await db
+    .update(chatSessions)
+    .set({
+      contradictions: sql`${chatSessions.contradictions} + ${by}`,
+      updatedAt: new Date(),
+    })
+    .where(eq(chatSessions.id, sessionId))
+    .returning({ contradictions: chatSessions.contradictions });
+  const row = rows[0];
+  if (!row) throw new Error(`Chat session ${sessionId} not found`);
+  return row.contradictions;
+}
+
 // ─── Messages ────────────────────────────────────────────────────────────────
 
 export async function appendChatMessage(
   db: Db,
-  args: { sessionId: string; role: string; content: string; lane?: string | null; model?: string | null },
+  args: {
+    sessionId: string;
+    role: string;
+    content: string;
+    lane?: string | null;
+    model?: string | null;
+    parts?: unknown[] | null;
+  },
 ): Promise<string> {
   const id = newUlid();
   await db.insert(chatMessages).values({
@@ -118,6 +186,7 @@ export async function appendChatMessage(
     content: args.content,
     lane: args.lane ?? null,
     model: args.model ?? null,
+    parts: args.parts ?? null,
   });
   return id;
 }
@@ -145,9 +214,32 @@ export async function listChatMessages(
       content: r.content,
       lane: r.lane ?? null,
       model: r.model ?? null,
+      parts: (r.parts ?? null) as unknown[] | null,
       createdAt: r.createdAt,
     }))
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+/**
+ * Count messages newer than `afterMessageId` in a session — ULIDs sort
+ * chronologically, so this is a plain `id > watermark` count. `null` counts
+ * every message in the session. Feeds the summary-refresh trigger
+ * (`> PEBBLE_CHAT_WINDOW` unsummarized turns).
+ */
+export async function countMessagesAfter(
+  db: Db,
+  sessionId: string,
+  afterMessageId: string | null,
+): Promise<number> {
+  const where =
+    afterMessageId === null
+      ? eq(chatMessages.sessionId, sessionId)
+      : and(eq(chatMessages.sessionId, sessionId), gt(chatMessages.id, afterMessageId));
+  const rows = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(chatMessages)
+    .where(where);
+  return rows[0]?.count ?? 0;
 }
 
 // ─── LLM cost ledger ─────────────────────────────────────────────────────────
@@ -206,4 +298,32 @@ export async function sumLlmCostSince(
     .from(llmCalls)
     .where(gte(llmCalls.createdAt, since));
   return rows.reduce((sum, r) => sum + Number(r.cost ?? 0), 0);
+}
+
+/**
+ * Opus spend + turn count for a user since an instant — the escalation
+ * rate-guard input (`PEBBLE_OPUS_DAILY_CAP_USD` and a max-escalated-turns/day
+ * limit). Joins llm_calls → chat_sessions (same session-attribution rule as
+ * `sumLlmCostSince`) and filters to models matching `claude-opus%`.
+ */
+export async function sumOpusSpendSince(
+  db: Db,
+  args: { userId: string; sinceISO: string },
+): Promise<{ costUsd: number; turns: number }> {
+  const since = new Date(args.sinceISO);
+  const rows = await db
+    .select({ cost: llmCalls.costUsd })
+    .from(llmCalls)
+    .innerJoin(chatSessions, eq(llmCalls.sessionId, chatSessions.id))
+    .where(
+      and(
+        eq(chatSessions.userId, args.userId),
+        gte(llmCalls.createdAt, since),
+        like(llmCalls.model, "claude-opus%"),
+      ),
+    );
+  return {
+    costUsd: rows.reduce((sum, r) => sum + Number(r.cost ?? 0), 0),
+    turns: rows.length,
+  };
 }

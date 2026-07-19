@@ -1,19 +1,31 @@
+import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { Db, DbHandle } from "../src/index";
 import {
   appendChatMessage,
+  countMessagesAfter,
+  createDb,
   getChatSession,
   getOrCreateChatSession,
+  incrementContradictions,
   insertLlmCall,
   linkSessionEnquiry,
   listChatMessages,
+  migrateDb,
+  setContradictions,
   sumLlmCostSince,
+  sumOpusSpendSince,
+  updateSessionSummary,
   updateSlotState,
   upsertUser,
 } from "../src/index";
 import { chatSessions } from "../src/schema";
 import { freshDb } from "./helpers";
+
+const DRIZZLE_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "drizzle");
 
 let handle: DbHandle;
 let db: Db;
@@ -26,6 +38,48 @@ afterEach(async () => {
 });
 
 const DEV_UID = "dev-admin";
+
+describe("0003 chat agent migration", () => {
+  it("applies 0003_chat_agent.sql on a fresh database", async () => {
+    const fresh = await createDb({ pglite: true, pgliteDir: "memory://" });
+    try {
+      const applied = await migrateDb(fresh);
+      expect(applied).toContain("0003_chat_agent.sql");
+    } finally {
+      await fresh.close();
+    }
+  });
+
+  it("adds the summary/watermark/contradictions and parts columns plus the session-id index", async () => {
+    const cols = (await db.execute(sql`
+      SELECT table_name, column_name FROM information_schema.columns
+      WHERE (table_name = 'chat_sessions' AND column_name IN ('summary', 'summary_upto_message_id', 'contradictions'))
+         OR (table_name = 'chat_messages' AND column_name = 'parts')
+      ORDER BY table_name, column_name
+    `)) as unknown as { rows: Array<{ table_name: string; column_name: string }> };
+    expect(cols.rows.map((r) => `${r.table_name}.${r.column_name}`)).toEqual([
+      "chat_messages.parts",
+      "chat_sessions.contradictions",
+      "chat_sessions.summary",
+      "chat_sessions.summary_upto_message_id",
+    ]);
+
+    const idx = (await db.execute(
+      sql`SELECT indexname FROM pg_indexes WHERE tablename = 'chat_messages' AND indexname = 'idx_chat_messages_session_id'`,
+    )) as unknown as { rows: Array<{ indexname: string }> };
+    expect(idx.rows).toHaveLength(1);
+  });
+
+  it("re-applies the raw migration SQL without error (multi-clause ADD COLUMN IF NOT EXISTS on PGlite)", async () => {
+    const contents = await readFile(join(DRIZZLE_DIR, "0003_chat_agent.sql"), "utf8");
+    await expect(handle.exec(contents)).resolves.not.toThrow();
+    // Columns are still exactly what they were — a clean no-op, not a duplicate.
+    const cols = (await db.execute(
+      sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'chat_sessions' AND column_name = 'contradictions'`,
+    )) as unknown as { rows: Array<{ column_name: string }> };
+    expect(cols.rows).toHaveLength(1);
+  });
+});
 
 describe("chat sessions", () => {
   it("get-or-create is idempotent and starts with a null (fresh) slot state", async () => {
@@ -64,6 +118,46 @@ describe("chat sessions", () => {
     await linkSessionEnquiry(db, "sess-link", "GBE-ENQ-2026-042");
     expect((await getChatSession(db, "sess-link"))?.enquiryId).toBe("GBE-ENQ-2026-042");
   });
+
+  it("starts with a null summary/watermark and a zero contradiction counter", async () => {
+    const fresh = await getOrCreateChatSession(db, { sessionId: "sess-fresh-agent", userId: DEV_UID });
+    expect(fresh.summary).toBeNull();
+    expect(fresh.summaryUptoMessageId).toBeNull();
+    expect(fresh.contradictions).toBe(0);
+  });
+
+  it("updates the running summary and its watermark, read back through getChatSession", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-sum", userId: DEV_UID });
+    const msgId = await appendChatMessage(db, { sessionId: "sess-sum", role: "user", content: "Hi" });
+
+    await updateSessionSummary(db, "sess-sum", {
+      summary: "Client asked about a 4-storey commercial FAS enquiry.",
+      uptoMessageId: msgId,
+    });
+
+    const row = await getChatSession(db, "sess-sum");
+    expect(row?.summary).toBe("Client asked about a 4-storey commercial FAS enquiry.");
+    expect(row?.summaryUptoMessageId).toBe(msgId);
+  });
+
+  it("sets the contradiction counter outright", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-contra-set", userId: DEV_UID });
+    await setContradictions(db, "sess-contra-set", 3);
+    expect((await getChatSession(db, "sess-contra-set"))?.contradictions).toBe(3);
+
+    await setContradictions(db, "sess-contra-set", 0);
+    expect((await getChatSession(db, "sess-contra-set"))?.contradictions).toBe(0);
+  });
+
+  it("increments the contradiction counter and returns the new count", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-contra-inc", userId: DEV_UID });
+
+    expect(await incrementContradictions(db, "sess-contra-inc")).toBe(1);
+    expect(await incrementContradictions(db, "sess-contra-inc")).toBe(2);
+    expect(await incrementContradictions(db, "sess-contra-inc", 3)).toBe(5);
+
+    expect((await getChatSession(db, "sess-contra-inc"))?.contradictions).toBe(5);
+  });
 });
 
 describe("chat messages", () => {
@@ -93,6 +187,51 @@ describe("chat messages", () => {
     }
     const recent = await listChatMessages(db, "sess-lim", 2);
     expect(recent.map((m) => m.content)).toEqual(["m3", "m4"]);
+  });
+
+  it("round-trips tool/receipt parts on append, and legacy no-parts rows list as null", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-parts", userId: DEV_UID });
+
+    // Legacy-shaped call: no `parts` at all.
+    await appendChatMessage(db, { sessionId: "sess-parts", role: "user", content: "Hi" });
+
+    const parts = [
+      { type: "text", text: "Checked design rules" },
+      { type: "tool-call", toolName: "get_design_rules", input: { systemType: "FAS" } },
+      { type: "tool-result", toolName: "get_design_rules", output: { ruleCode: "DL-FAS-001" } },
+    ];
+    await appendChatMessage(db, {
+      sessionId: "sess-parts",
+      role: "assistant",
+      content: "Here is what I found.",
+      lane: "agent",
+      model: "claude-sonnet-5",
+      parts,
+    });
+
+    // Explicit null is accepted the same as omitting the field.
+    await appendChatMessage(db, { sessionId: "sess-parts", role: "user", content: "Thanks", parts: null });
+
+    const msgs = await listChatMessages(db, "sess-parts");
+    expect(msgs.map((m) => m.parts)).toEqual([null, parts, null]);
+  });
+
+  it("countMessagesAfter counts unsummarized turns with and without a watermark", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-count", userId: DEV_UID });
+    const ids: string[] = [];
+    for (let i = 0; i < 4; i++) {
+      ids.push(await appendChatMessage(db, { sessionId: "sess-count", role: "user", content: `m${i}` }));
+    }
+
+    // Null watermark = every message in the session.
+    expect(await countMessagesAfter(db, "sess-count", null)).toBe(4);
+    // After the 2nd message (index 1): the 2 that follow it.
+    expect(await countMessagesAfter(db, "sess-count", ids[1] as string)).toBe(2);
+    // After the last message: none.
+    expect(await countMessagesAfter(db, "sess-count", ids[3] as string)).toBe(0);
+    // A session with no messages at all.
+    await getOrCreateChatSession(db, { sessionId: "sess-count-empty", userId: DEV_UID });
+    expect(await countMessagesAfter(db, "sess-count-empty", null)).toBe(0);
   });
 });
 
@@ -135,5 +274,51 @@ describe("llm cost ledger", () => {
     // A future window contains nothing.
     const future = new Date(Date.now() + 60_000).toISOString();
     expect(await sumLlmCostSince(db, { userId: DEV_UID, sinceISO: future })).toBe(0);
+  });
+});
+
+describe("opus escalation spend guard", () => {
+  it("sums cost and turn count for claude-opus* models only, scoped to the user", async () => {
+    await upsertUser(db, {
+      firebaseUid: "user-opus-a",
+      email: "opus-a@greenberg.test",
+      displayName: "Opus A",
+      role: "estimator",
+      active: true,
+    });
+    await upsertUser(db, {
+      firebaseUid: "user-opus-b",
+      email: "opus-b@greenberg.test",
+      displayName: "Opus B",
+      role: "estimator",
+      active: true,
+    });
+    await getOrCreateChatSession(db, { sessionId: "sess-opus-a", userId: "user-opus-a" });
+    await getOrCreateChatSession(db, { sessionId: "sess-opus-b", userId: "user-opus-b" });
+
+    // Two Opus turns for user A ...
+    await insertLlmCall(db, { sessionId: "sess-opus-a", lane: "agent-opus", model: "claude-opus-4-8", intent: "agent-opus:challenge", inputTokens: 0, outputTokens: 0, costUsd: 0.15 });
+    await insertLlmCall(db, { sessionId: "sess-opus-a", lane: "agent-opus", model: "claude-opus-4-8", intent: "agent-opus:contradiction", inputTokens: 0, outputTokens: 0, costUsd: 0.2 });
+    // ... a Sonnet turn for user A that must NOT count as Opus spend ...
+    await insertLlmCall(db, { sessionId: "sess-opus-a", lane: "agent", model: "claude-sonnet-5", inputTokens: 0, outputTokens: 0, costUsd: 0.02 });
+    // ... and an Opus turn for a different user that must not leak into A's total.
+    await insertLlmCall(db, { sessionId: "sess-opus-b", lane: "agent-opus", model: "claude-opus-4-8", inputTokens: 0, outputTokens: 0, costUsd: 0.37 });
+
+    const since = "2000-01-01T00:00:00.000Z";
+    const a = await sumOpusSpendSince(db, { userId: "user-opus-a", sinceISO: since });
+    expect(a.turns).toBe(2);
+    expect(a.costUsd).toBeCloseTo(0.35, 6);
+
+    const b = await sumOpusSpendSince(db, { userId: "user-opus-b", sinceISO: since });
+    expect(b.turns).toBe(1);
+    expect(b.costUsd).toBeCloseTo(0.37, 6);
+  });
+
+  it("excludes Opus calls before the since instant", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-opus-t", userId: DEV_UID });
+    await insertLlmCall(db, { sessionId: "sess-opus-t", lane: "agent-opus", model: "claude-opus-4-8", inputTokens: 0, outputTokens: 0, costUsd: 0.5 });
+    const future = new Date(Date.now() + 60_000).toISOString();
+    const result = await sumOpusSpendSince(db, { userId: DEV_UID, sinceISO: future });
+    expect(result).toEqual({ costUsd: 0, turns: 0 });
   });
 });
