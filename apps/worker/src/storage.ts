@@ -34,6 +34,9 @@ export interface StorageAdapter {
   put(key: string, bytes: Buffer | Uint8Array, contentType: string): Promise<PutResult>;
   /** Resolve a stored `uri` to a fetchable URL valid for `ttlSeconds`. */
   signedUrl(uri: string, ttlSeconds: number): Promise<string>;
+  /** Fetch a stored object's bytes back — used by ingestion to re-read a
+   *  registered source document (PDF/XLSX) for windowing/parsing. */
+  get(uri: string): Promise<Buffer>;
 }
 
 /** Hex sha256 of the exact bytes we are about to (or did) store. */
@@ -86,6 +89,12 @@ export class LocalStorageAdapter implements StorageAdapter {
     const abspath = uri.startsWith("file://") ? fileURLToPath(uri) : uri;
     return readFile(abspath);
   }
+
+  /** `StorageAdapter.get` — identical to `read`; kept as a distinct method so
+   *  callers can depend on the `StorageAdapter` interface alone. */
+  async get(uri: string): Promise<Buffer> {
+    return this.read(uri);
+  }
 }
 
 /**
@@ -137,6 +146,44 @@ export class GcsStorageAdapter implements StorageAdapter {
     });
     return url;
   }
+
+  /** Fetch stored bytes back via the GCS SDK's `file.download()`. */
+  async get(uri: string): Promise<Buffer> {
+    const bucket = await this.bucket();
+    const [buf] = await bucket.file(this.keyFromUri(uri)).download();
+    return buf;
+  }
+}
+
+/**
+ * Parse a `gs://bucket/key` uri into its parts. Exported standalone so the
+ * (trivial, side-effect-free) parsing logic can be unit-tested without
+ * touching the `@google-cloud/storage` SDK.
+ */
+export function parseGsUri(uri: string): { bucket: string; key: string } {
+  const m = /^gs:\/\/([^/]+)\/(.+)$/.exec(uri);
+  if (!m) throw new Error(`Not a gs:// uri: ${uri}`);
+  return { bucket: m[1] ?? "", key: m[2] ?? "" };
+}
+
+/**
+ * Standalone signed-URL helper for an arbitrary `gs://` uri, independent of
+ * any single `GcsStorageAdapter`'s configured bucket — the bucket and key are
+ * parsed FROM THE URI, so this works for a uri from a different bucket than
+ * whatever the adapter was constructed with (e.g. the ingestion corpus
+ * bucket vs the rendered-output bucket). The SDK import is lazy, matching
+ * `GcsStorageAdapter`'s pattern of never touching GCP credentials until a
+ * GCS operation is genuinely requested.
+ */
+export async function signedUrlForGsUri(uri: string, ttlSeconds: number): Promise<string> {
+  const { bucket: bucketName, key } = parseGsUri(uri);
+  const { Storage } = await import("@google-cloud/storage");
+  const client = new Storage();
+  const [url] = await client
+    .bucket(bucketName)
+    .file(key)
+    .getSignedUrl({ action: "read", expires: Date.now() + ttlSeconds * 1000 });
+  return url;
 }
 
 /**
