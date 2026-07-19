@@ -4,6 +4,24 @@
 
 Last updated: 2026-07-18 · Branch: `claude/fire-safety-boq-webapp-f5n921`
 
+> ## 📚 PHASE B COMPLETE — CORPUS INGESTED (2026-07-19)
+> All 145 historical proposals (142 PDF + 3 XLSX) extracted, normalized,
+> dedup-routed and staged in production: **145/145 DONE**, ≈3.6k staged line
+> proposals, ≈850 RAG chunks, total Vertex extraction cost < $1.
+> Gates: G2 (stub E2E + resumability) ✅ · G3 eval on Vertex gemini-3.5-flash
+> prompt pdf-extract-v1: precision 100% (fully-labeled fixtures), recall 100%
+> (all 6 fixtures / 65 lines), fields 100% ✅ · G5 backfill 145/145 ✅.
+> Extraction runs on **Vertex AI** (postpaid, IAM; PEBBLE_AI_PROVIDER=vertex —
+> the Developer-API prepaid lane remains env-selectable). Live surfaces:
+> /admin/ingestion (corpus dashboard), /admin/ingestion/queue (keyboard
+> verification queue — a/e/r/m, Shift+A bulk), /history (hybrid RAG search
+> with cited sources). Remaining: **G6** — Greenberg staff review session on
+> the live queue (commit first tranche with provenance, spot-check 10 prices
+> against source PDFs), then Phase C chat. Notable prod lessons burned in:
+> NUL bytes from Gemini for unmappable glyphs (°C) crash real Postgres but
+> not PGlite (scrubbed in normalizeLine); backfill driver needs no local
+> bucket creds (uris derive from the corpus dir; gcloud user-token lane).
+>
 > ## 🚀 PHASE A DEPLOYED TO PRODUCTION (2026-07-19)
 > Live on Cloud Run (project **infraq-greenberg**, asia-south1):
 > **web** https://pebble-web-4xnkcvcksa-el.a.run.app (public, AUTH_MODE=firebase,
