@@ -247,29 +247,77 @@ async function runRemote(args: CliArgs): Promise<void> {
     return;
   }
 
-  // OIDC identity token client — audience is the worker's URL (Cloud Run IAM).
-  const { GoogleAuth } = await import("google-auth-library");
-  const client = await new GoogleAuth().getIdTokenClient(workerUrl);
+  // OIDC identity token for the worker (Cloud Run IAM). Two lanes:
+  //  - WORKER_TOKEN_FROM_GCLOUD=1: mint a USER identity token via the gcloud
+  //    CLI (works for any signed-in invoker principal — no service-account
+  //    credentials needed locally), cached and re-minted every 45 min so runs
+  //    longer than a token's 1h TTL survive.
+  //  - default: google-auth-library ADC (service-account contexts, CI).
+  let authHeader: () => Promise<string>;
+  if (process.env.WORKER_TOKEN_FROM_GCLOUD === "1") {
+    const { execFileSync } = await import("node:child_process");
+    let cached: { token: string; mintedAt: number } | null = null;
+    authHeader = async () => {
+      if (!cached || Date.now() - cached.mintedAt > 45 * 60 * 1000) {
+        const token = execFileSync("gcloud", ["auth", "print-identity-token"], {
+          encoding: "utf8",
+        }).trim();
+        cached = { token, mintedAt: Date.now() };
+      }
+      return `Bearer ${cached.token}`;
+    };
+  } else {
+    const { GoogleAuth } = await import("google-auth-library");
+    const client = await new GoogleAuth().getIdTokenClient(workerUrl);
+    authHeader = async () => {
+      const headers = await client.getRequestHeaders();
+      const bearer =
+        headers instanceof Headers
+          ? headers.get("authorization")
+          : (headers as Record<string, string>)["Authorization"];
+      if (!bearer) throw new Error("could not mint an identity token for the worker");
+      return bearer;
+    };
+  }
+
+  const request = async <T>(url: string, init: { method: string; body?: string }): Promise<T> => {
+    const res = await fetch(url, {
+      method: init.method,
+      headers: {
+        authorization: await authHeader(),
+        ...(init.body ? { "content-type": "application/json" } : {}),
+      },
+      body: init.body,
+      signal: AbortSignal.timeout(900_000),
+    });
+    const data = (await res.json().catch(() => null)) as (T & { error?: string }) | null;
+    if (!res.ok) {
+      const err = new Error(`HTTP ${res.status}: ${data?.error ?? ""}`);
+      (err as unknown as { response: { status: number; data: unknown } }).response = {
+        status: res.status,
+        data,
+      };
+      throw err;
+    }
+    return data as T;
+  };
 
   let doneUris = new Set<string>();
   if (args.resume) {
-    const statusRes = await client.request<{ documents: StatusDoc[] }>({
-      url: `${workerUrl}/tasks/ingest/status`,
-      method: "GET",
-    });
+    const statusRes = await request<{ documents: StatusDoc[] }>(
+      `${workerUrl}/tasks/ingest/status`,
+      { method: "GET" },
+    );
     doneUris = new Set(
-      (statusRes.data.documents ?? []).filter((d) => d.status === "DONE").map((d) => d.storageUri),
+      (statusRes.documents ?? []).filter((d) => d.status === "DONE").map((d) => d.storageUri),
     );
   }
 
   const postOnce = async (sourceUri: string): Promise<IngestReport> => {
-    // gaxios serializes an object `data` to JSON and sets the content-type.
-    const res = await client.request<IngestReport>({
-      url: `${workerUrl}/tasks/ingest`,
+    return request<IngestReport>(`${workerUrl}/tasks/ingest`, {
       method: "POST",
-      data: { sourceUri, ...(args.force ? { force: true } : {}) },
+      body: JSON.stringify({ sourceUri, ...(args.force ? { force: true } : {}) }),
     });
-    return res.data;
   };
 
   const limit = pLimit(args.concurrency);
