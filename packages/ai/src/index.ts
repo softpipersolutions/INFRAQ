@@ -17,3 +17,8 @@ export * from "./digest";
 export * from "./prompts";
 export * from "./tools";
 export * from "./extract";
+export * from "./embeddings";
+export * from "./ingest/schemas";
+export * from "./ingest/prompts";
+export * from "./ingest/extract";
+export * from "./ingest/eval-score";

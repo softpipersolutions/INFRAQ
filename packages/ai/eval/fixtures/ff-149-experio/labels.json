@@ -1,0 +1,147 @@
+{
+  "sourceFile": "Amitabh Fire Safety BOQ Data/FF-149 Experio Unit Fire Sprinkler System & FAS (26122025 R2).pdf",
+  "totalPages": 2,
+  "labeledPages": [1],
+  "expectMeta": {
+    "attention": "Yamini Sharma",
+    "projectName": "COMMERCIAL UNIT, EXPORIO BUILDING, LUCKNOW, UP",
+    "docDateISO": "2025-12-26",
+    "revision": "02",
+    "sourceEntityGuess": "Greenberg Enterprises",
+    "docKind": "proposal",
+    "gstMentioned": true,
+    "grandTotalRupees": 83909.8
+  },
+  "expectedLines": [
+    {
+      "page": 1,
+      "slNo": "A1",
+      "descriptionContains": "class 'c' 50 mm",
+      "makeRaw": "Jindal (ISI)",
+      "qty": 6,
+      "unitRaw": "mtr",
+      "unitRateRupees": 590,
+      "amountRupees": 3540,
+      "rateKind": "SITC",
+      "section": "A. SPRINKLER SYSTEM"
+    },
+    {
+      "page": 1,
+      "slNo": "A2",
+      "descriptionContains": "class 'c' 40 mm",
+      "makeRaw": "Jindal (ISI)",
+      "qty": 6,
+      "unitRaw": "mtr",
+      "unitRateRupees": 510,
+      "amountRupees": 3060,
+      "rateKind": "SITC",
+      "section": "A. SPRINKLER SYSTEM"
+    },
+    {
+      "page": 1,
+      "slNo": "A3",
+      "descriptionContains": "class 'c' 32 mm",
+      "makeRaw": "Jindal (ISI)",
+      "qty": 6,
+      "unitRaw": "mtr",
+      "unitRateRupees": 460,
+      "amountRupees": 2760,
+      "rateKind": "SITC",
+      "section": "A. SPRINKLER SYSTEM"
+    },
+    {
+      "page": 1,
+      "slNo": "A4",
+      "descriptionContains": "class 'c' 25 mm",
+      "makeRaw": "Jindal (ISI)",
+      "qty": 15,
+      "unitRaw": "mtr",
+      "unitRateRupees": 420,
+      "amountRupees": 6300,
+      "rateKind": "SITC",
+      "section": "A. SPRINKLER SYSTEM"
+    },
+    {
+      "page": 1,
+      "slNo": "A5",
+      "descriptionContains": "chilli clamps",
+      "qty": 1,
+      "unitRaw": "Lump Sum",
+      "unitRateRupees": 3500,
+      "amountRupees": 3500,
+      "rateKind": "SITC",
+      "section": "A. SPRINKLER SYSTEM"
+    },
+    {
+      "page": 1,
+      "slNo": "A6",
+      "descriptionContains": "pendent type sprinkler",
+      "makeRaw": "Tyco OR Omaxe (ISI Marked + FM Approved + UL Listed)",
+      "qty": 9,
+      "unitRaw": "pcs",
+      "unitRateRupees": 2650,
+      "amountRupees": 23850,
+      "rateKind": "SITC",
+      "section": "A. SPRINKLER SYSTEM"
+    },
+    {
+      "page": 1,
+      "slNo": "1",
+      "descriptionContains": "fire alarm panel 2-zone",
+      "makeRaw": "Agni",
+      "qty": 1,
+      "unitRaw": "set",
+      "unitRateRupees": 8200,
+      "amountRupees": 8200,
+      "rateKind": "SITC",
+      "section": "PART II. ALARMS & ASSITANCE"
+    },
+    {
+      "page": 1,
+      "slNo": "2",
+      "descriptionContains": "smoke detectors with base",
+      "makeRaw": "Agni",
+      "qty": 6,
+      "unitRaw": "pcs",
+      "unitRateRupees": 1100,
+      "amountRupees": 6600,
+      "rateKind": "SITC",
+      "section": "PART II. ALARMS & ASSITANCE"
+    },
+    {
+      "page": 1,
+      "slNo": "3",
+      "descriptionContains": "manual call point",
+      "makeRaw": "Agni",
+      "qty": 1,
+      "unitRaw": "pcs",
+      "unitRateRupees": 650,
+      "amountRupees": 650,
+      "rateKind": "SITC",
+      "section": "PART II. ALARMS & ASSITANCE"
+    },
+    {
+      "page": 1,
+      "slNo": "4",
+      "descriptionContains": "emergency sounder",
+      "makeRaw": "Agni",
+      "qty": 1,
+      "unitRaw": "pcs",
+      "unitRateRupees": 550,
+      "amountRupees": 550,
+      "rateKind": "SITC",
+      "section": "PART II. ALARMS & ASSITANCE"
+    },
+    {
+      "page": 1,
+      "slNo": "5",
+      "descriptionContains": "panel to device connections",
+      "qty": 110,
+      "unitRaw": "mtr",
+      "unitRateRupees": 110,
+      "amountRupees": 12100,
+      "rateKind": "SITC",
+      "section": "PART II. ALARMS & ASSITANCE"
+    }
+  ]
+}
