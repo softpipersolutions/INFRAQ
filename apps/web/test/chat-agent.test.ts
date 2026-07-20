@@ -519,6 +519,50 @@ describe("agent turn + services", () => {
     expect(toolPart?.state).toBe("output-available");
   });
 
+  it("ends the turn at an ask_user clarification, persisting the part + a [Asked:] content suffix", async () => {
+    const sessionId = "agent-ask-user";
+    const askInput = {
+      question: "Which building type is this?",
+      options: [
+        { label: "Commercial", detail: "offices, retail, mixed-use" },
+        { label: "Residential" },
+      ],
+      allowFreeText: true,
+    };
+    // The model calls ask_user (no executor) — the turn must end AT the call,
+    // so this single scripted step is the only one that runs.
+    const stub = streamStub("claude-sonnet-4-6", [
+      { toolCall: { toolName: "ask_user", input: askInput } },
+    ]);
+    const res = await runAgentTurn(
+      { db, models: models({ claudeDefault: stub.model }) },
+      { sessionId, message: "I need an estimate for a new building", user: actor },
+    );
+    await drainBody(res);
+
+    const assistant = await waitFor(async () => {
+      const msgs = await listChatMessages(db, sessionId, 100);
+      const a = msgs.find((m) => m.role === "assistant");
+      return a?.parts ? a : null;
+    });
+
+    // The turn stopped at the clarification — exactly one model step ran.
+    expect(stub.invoked.count).toBe(1);
+
+    // The part round-trips as tool-ask_user with state input-available (no result).
+    const parts = assistant.parts as Array<{ type: string; state?: string; input?: unknown }>;
+    const askPart = parts.find((p) => p.type === "tool-ask_user");
+    expect(askPart).toBeTruthy();
+    expect(askPart?.state).toBe("input-available");
+    expect(askPart?.input).toEqual(askInput);
+
+    // The content text carries the [Asked: …] suffix (persistence-only) so the
+    // model sees its own question when the next turn's history is rebuilt.
+    expect(assistant.content).toContain(
+      "[Asked: Which building type is this? — options: Commercial | Residential]",
+    );
+  });
+
   // ── auto-title, end to end via runAgentTurn's onFinish ──────────────────────
 
   it("runAgentTurn onFinish auto-titles a brand-new session after the first exchange (fire-and-forget)", async () => {

@@ -1,5 +1,6 @@
 import type { Tool } from "ai";
 import type { SystemBlock } from "../prompts";
+import { ASK_USER_TOOL_NAME, buildAskUserTool } from "./ask-user";
 
 /**
  * The module-agnostic agent core (Phase C.5 — the ERP seam).
@@ -53,7 +54,11 @@ export interface AgentComposition {
   systemBlocks: SystemBlock[];
   /** Resolved `buildTurnContext` outputs (nulls dropped), in module order. */
   turnContextBlocks: string[];
-  /** Union of every module's tools; a `${moduleId}:` prefix is applied ONLY on a name collision. */
+  /**
+   * Union of every module's tools, plus the agent-core `ask_user` clarification
+   * tool. A `${moduleId}:` prefix is applied ONLY on a name collision between
+   * modules; `ask_user` is reserved for the core and no module may define it.
+   */
   tools: Record<string, Tool>;
 }
 
@@ -104,7 +109,7 @@ export async function composeAgent(opts: {
   );
   const turnContextBlocks = resolved.filter((b): b is string => b != null && b.length > 0);
 
-  return { systemBlocks, turnContextBlocks, tools: unionTools(modules) };
+  return { systemBlocks, turnContextBlocks, tools: composeTools(modules) };
 }
 
 /**
@@ -126,11 +131,27 @@ export function buildPolicyDigest(modules: ModuleToolset[]): string {
       `These tools require an explicit user confirmation first: ${confirmRequired.join(", ")}. Restate the record and get a clear yes before you call them.`,
     );
   }
+  lines.push(
+    `Clarification questions go through ${ASK_USER_TOOL_NAME} (a short option menu the user taps) — at most one per turn, and never to confirm enquiry creation.`,
+  );
   return lines.join("\n");
 }
 
-/** Union every module's tools; prefix a tool key with `${moduleId}:` ONLY when its bare name collides across modules. */
-function unionTools(modules: ModuleToolset[]): Record<string, Tool> {
+/**
+ * Union every module's tools and add the agent-core `ask_user` clarification
+ * tool. A tool key is prefixed with `${moduleId}:` ONLY when its bare name
+ * collides across modules; `ask_user` is reserved for the core, so we assert no
+ * module ever defines a tool of that name.
+ */
+function composeTools(modules: ModuleToolset[]): Record<string, Tool> {
+  for (const m of modules) {
+    if (ASK_USER_TOOL_NAME in m.tools) {
+      throw new Error(
+        `composeAgent: module "${m.id}" defines a tool named "${ASK_USER_TOOL_NAME}", which is reserved for the agent-core clarification tool.`,
+      );
+    }
+  }
+
   const counts = new Map<string, number>();
   for (const m of modules) {
     for (const name of Object.keys(m.tools)) counts.set(name, (counts.get(name) ?? 0) + 1);
@@ -142,6 +163,7 @@ function unionTools(modules: ModuleToolset[]): Record<string, Tool> {
       tools[key] = t;
     }
   }
+  tools[ASK_USER_TOOL_NAME] = buildAskUserTool();
   return tools;
 }
 

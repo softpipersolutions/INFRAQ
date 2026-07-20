@@ -45,6 +45,30 @@ describe("historyRowsToUIMessages", () => {
     expect(messages).toEqual([{ id: "01BBB", role: "assistant", parts }]);
   });
 
+  it("round-trips an ask_user clarification part (input-available, no output) verbatim", () => {
+    const parts = [
+      {
+        type: "tool-ask_user",
+        toolCallId: "call_ask",
+        state: "input-available",
+        input: {
+          question: "Which building type is this?",
+          options: [{ label: "Commercial", detail: "offices, retail" }, { label: "Residential" }],
+          allowFreeText: true,
+        },
+      },
+    ];
+    const messages = historyRowsToUIMessages([
+      {
+        id: "01AXU",
+        role: "assistant",
+        content: "[Asked: Which building type is this? — options: Commercial | Residential]",
+        parts,
+      },
+    ]);
+    expect(messages).toEqual([{ id: "01AXU", role: "assistant", parts }]);
+  });
+
   it("maps any non-'user' role to 'assistant' (defensive against unexpected DB values)", () => {
     const messages = historyRowsToUIMessages([
       { id: "01CCC", role: "system", content: "internal note", parts: null },

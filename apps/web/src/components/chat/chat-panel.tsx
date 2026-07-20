@@ -1,8 +1,8 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, isTextUIPart, type UIMessage } from "ai";
-import { ArrowDown, ArrowUp, Check, Copy, PanelLeft, RotateCw, Square } from "lucide-react";
+import { DefaultChatTransport, isFileUIPart, isTextUIPart, type FileUIPart, type UIMessage } from "ai";
+import { ArrowDown, ArrowUp, Check, Copy, PanelLeft, Paperclip, RotateCw, Square } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -11,21 +11,52 @@ import {
   useMemo,
   useRef,
   useState,
+  type ChangeEvent,
+  type ClipboardEvent,
+  type DragEvent,
   type KeyboardEvent,
 } from "react";
 import { Badge, Button, Card, TextInput } from "@/components/ui";
 import { Tooltip } from "@/components/ui/tooltip";
 import { trpc } from "@/trpc/react";
+import { PendingAttachmentsRow, SentFileChipsRow, type PendingAttachment } from "./attachment-chips";
 import { useChatSidebarToggle } from "./chat-sidebar-context";
+import { ClarificationCard } from "./clarification-card";
 import { ConfirmationCard } from "./confirmation-card";
 import { historyRowsToUIMessages } from "./history-to-ui-messages";
 import { Markdown } from "./markdown";
 import { SlotRail } from "./slot-rail";
-import { isCreateEnquirySuccessPart, isToolPart, ReceiptCard, ToolActivityRow } from "./tool-activity";
+import {
+  isCreateEnquirySuccessPart,
+  isToolPart,
+  ReceiptCard,
+  ToolActivityRow,
+  toolNameFromPart,
+  type ToolPart,
+} from "./tool-activity";
 import { useAutoscroll } from "./use-autoscroll";
 
 /** Composer textarea grows from 1 to ~8 lines, then scrolls internally. */
 const COMPOSER_MAX_HEIGHT_PX = 192;
+
+/** Matches the upload route's per-request file cap (app/api/chat/attachments). */
+const MAX_ATTACHMENTS = 4;
+
+/** Allowed `<input type="file">` types — mirrors the upload route's allowlist. */
+const ATTACHMENT_ACCEPT = [
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+  "text/plain",
+  "text/markdown",
+  "text/csv",
+  ".md",
+  ".markdown",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+].join(",");
 
 /** Resets height to auto (so it can shrink) then grows to fit content, capped by the CSS max-height (overflow-y-auto takes over past that). */
 function autoGrowTextarea(el: HTMLTextAreaElement) {
@@ -49,6 +80,11 @@ function extractText(message: UIMessage | undefined): string {
 function messageHasSuccessfulCreateEnquiry(message: UIMessage | undefined): boolean {
   if (!message) return false;
   return message.parts.filter(isToolPart).some(isCreateEnquirySuccessPart);
+}
+
+/** True for the agent-core `ask_user` clarification part (rendered as an option-chip card). */
+function isAskUserPart(part: ToolPart): boolean {
+  return toolNameFromPart(part) === "ask_user";
 }
 
 /**
@@ -130,6 +166,116 @@ export function ChatPanel({
   useEffect(() => {
     if (textareaRef.current) autoGrowTextarea(textareaRef.current);
   }, [input]);
+
+  // ─── Attachments (Chat overhaul WP7) ────────────────────────────────────
+  const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragActive, setDragActive] = useState(false);
+
+  /**
+   * Upload a batch of files immediately: an optimistic "uploading" chip per
+   * file, one multipart POST for the whole batch, then each chip flips to
+   * "done" (server id/filename/mediaType/size) or "error" (message from the
+   * server, or a generic network-failure copy). Silently caps the batch at
+   * however many slots remain under `MAX_ATTACHMENTS`.
+   */
+  async function uploadFiles(files: File[]) {
+    if (files.length === 0) return;
+    setAttachmentError(null);
+    const capacity = MAX_ATTACHMENTS - pendingAttachments.length;
+    if (capacity <= 0) {
+      setAttachmentError(`Up to ${MAX_ATTACHMENTS} files per message.`);
+      return;
+    }
+    const accepted = files.slice(0, capacity);
+    if (accepted.length < files.length) {
+      setAttachmentError(`Up to ${MAX_ATTACHMENTS} files per message — only the first ${accepted.length} were added.`);
+    }
+
+    const batch: PendingAttachment[] = accepted.map((f) => ({
+      clientId: crypto.randomUUID(),
+      id: null,
+      filename: f.name,
+      mediaType: f.type || "application/octet-stream",
+      sizeBytes: f.size,
+      status: "uploading",
+    }));
+    setPendingAttachments((prev) => [...prev, ...batch]);
+
+    const formData = new FormData();
+    formData.set("sessionId", sessionId);
+    for (const f of accepted) formData.append("files", f);
+
+    // Applies a result to whichever of THIS batch's chips still exist in
+    // state — a chip removed (or the whole list cleared by a send) mid-flight
+    // simply has no match here and is silently skipped.
+    function applyToBatch(fn: (clientId: string, index: number) => Partial<PendingAttachment>) {
+      setPendingAttachments((prev) =>
+        prev.map((p) => {
+          const index = batch.findIndex((b) => b.clientId === p.clientId);
+          return index === -1 ? p : { ...p, ...fn(p.clientId, index) };
+        }),
+      );
+    }
+
+    try {
+      const res = await fetch("/api/chat/attachments", { method: "POST", body: formData });
+      const payload = (await res.json().catch(() => null)) as {
+        attachments?: Array<{ id: string; filename: string; mediaType: string; sizeBytes: number }>;
+        message?: string;
+      } | null;
+      if (!res.ok) {
+        const message = payload?.message ?? "Upload failed.";
+        applyToBatch(() => ({ status: "error", errorMessage: message }));
+        return;
+      }
+      const uploaded = payload?.attachments ?? [];
+      applyToBatch((_clientId, index) => {
+        const server = uploaded[index];
+        return server
+          ? { id: server.id, filename: server.filename, mediaType: server.mediaType, sizeBytes: server.sizeBytes, status: "done" }
+          : { status: "error", errorMessage: "Upload failed." };
+      });
+    } catch {
+      applyToBatch(() => ({ status: "error", errorMessage: "Upload failed — check your connection." }));
+    }
+  }
+
+  function removePendingAttachment(clientId: string) {
+    setPendingAttachments((prev) => prev.filter((p) => p.clientId !== clientId));
+  }
+
+  function onFileInputChange(e: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = ""; // allow re-selecting the same file(s) later
+    void uploadFiles(files);
+  }
+
+  function onComposerPaste(e: ClipboardEvent<HTMLTextAreaElement>) {
+    const files = Array.from(e.clipboardData?.files ?? []);
+    if (files.length > 0) void uploadFiles(files);
+  }
+
+  function onMessagesDragEnter(e: DragEvent<HTMLDivElement>) {
+    if (!e.dataTransfer.types.includes("Files")) return;
+    e.preventDefault();
+    setDragActive(true);
+  }
+  function onMessagesDragOver(e: DragEvent<HTMLDivElement>) {
+    if (!e.dataTransfer.types.includes("Files")) return;
+    e.preventDefault();
+  }
+  function onMessagesDragLeave(e: DragEvent<HTMLDivElement>) {
+    // Only clear once the pointer leaves the whole drop target, not just a
+    // child element within it (avoids flicker while dragging over children).
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragActive(false);
+  }
+  function onMessagesDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragActive(false);
+    void uploadFiles(Array.from(e.dataTransfer.files ?? []));
+  }
 
   // tRPC keys these queries by their input, so `sessionId` changing (a real
   // navigation to a different session) is enough to refetch both — no extra
@@ -241,7 +387,28 @@ export function ChatPanel({
     // Fire BEFORE awaiting the send — the lobby's URL swap (see chat/page.tsx)
     // must happen at send-time, not once the turn finishes streaming.
     if (chat.messages.length === 0) onFirstMessageSent?.();
-    await chat.sendMessage({ text });
+
+    // Only finished uploads travel with the message — anything still
+    // "uploading" or "error" is dropped (see uploadFiles' applyToBatch: a
+    // clientId no longer present here is simply a no-op when that upload
+    // eventually settles). The WHOLE pending list is cleared on send either
+    // way, per spec.
+    const doneAttachments = pendingAttachments.filter(
+      (a): a is PendingAttachment & { id: string } => a.status === "done" && a.id !== null,
+    );
+    const attachmentIds = doneAttachments.map((a) => a.id);
+    // Client-side-only file chips on the just-sent user message (spec WP7
+    // §4) — the AI SDK's `files` param on `sendMessage` becomes UIMessage
+    // `file` parts placed before the text part. These are NOT persisted;
+    // server-authored file parts arrive in WP8.
+    const files: FileUIPart[] = doneAttachments.map((a) => ({
+      type: "file",
+      mediaType: a.mediaType,
+      filename: a.filename,
+      url: `/api/chat/attachments/${a.id}`,
+    }));
+    setPendingAttachments([]);
+    await chat.sendMessage({ text, files }, { body: { attachmentIds } });
   }
 
   const confirmEnquiry = trpc.chat.confirmEnquiry.useMutation();
@@ -371,7 +538,13 @@ export function ChatPanel({
           )}
         </div>
 
-        <div className="relative flex-1 overflow-hidden">
+        <div
+          className="relative flex-1 overflow-hidden"
+          onDragEnter={onMessagesDragEnter}
+          onDragOver={onMessagesDragOver}
+          onDragLeave={onMessagesDragLeave}
+          onDrop={onMessagesDrop}
+        >
           <div ref={autoscroll.containerRef} className="h-full overflow-y-auto p-4">
             {showEmptyState ? (
               <EmptyState disabled={streaming} onPick={(text) => void send(text)} />
@@ -382,16 +555,25 @@ export function ChatPanel({
                   const dayKey = iso ? calendarDayKey(iso) : null;
                   const showDivider = dayKey !== null && lastDayKey !== null && dayKey !== lastDayKey;
                   if (dayKey !== null) lastDayKey = dayKey;
+                  const isLastMessage = i === chat.messages.length - 1;
+                  // For a clarification card's historical highlight: the text of
+                  // the user message that immediately followed this one (if any).
+                  const following = chat.messages[i + 1];
+                  const followingUserText =
+                    following && following.role === "user" ? extractText(following) : null;
                   return (
                     <div key={message.id}>
                       {showDivider && iso ? <DayDivider iso={iso} /> : null}
                       <MessageBubble
                         message={message}
-                        streaming={streaming && i === chat.messages.length - 1}
+                        streaming={streaming && isLastMessage}
                         isLastAssistant={i === lastAssistantIndex}
+                        isLastMessage={isLastMessage}
+                        followingUserText={followingUserText}
                         timestampIso={iso}
                         model={modelFor(message.id)}
                         onRetry={() => void onRetryLast()}
+                        onPickClarification={(label) => void send(label)}
                       />
                     </div>
                   );
@@ -427,6 +609,12 @@ export function ChatPanel({
               </button>
             </div>
           ) : null}
+
+          {dragActive ? (
+            <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-md border-2 border-dashed border-border-strong bg-surface-sunken/90 text-sm font-medium text-ink-secondary">
+              Drop files to attach
+            </div>
+          ) : null}
         </div>
 
         {errorMessage ? (
@@ -438,6 +626,17 @@ export function ChatPanel({
           </div>
         ) : null}
 
+        {attachmentError ? (
+          <div className="flex items-center justify-between gap-3 border-t border-danger-border bg-danger-soft px-4 py-1.5 text-xs text-danger">
+            <span>{attachmentError}</span>
+            <button type="button" className="shrink-0 underline" onClick={() => setAttachmentError(null)}>
+              Dismiss
+            </button>
+          </div>
+        ) : null}
+
+        <PendingAttachmentsRow attachments={pendingAttachments} onRemove={removePendingAttachment} />
+
         <form
           className="flex items-end gap-2 border-t border-border p-3"
           onSubmit={(e) => {
@@ -445,6 +644,25 @@ export function ChatPanel({
             void send();
           }}
         >
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept={ATTACHMENT_ACCEPT}
+            onChange={onFileInputChange}
+            className="hidden"
+          />
+          <Tooltip label="Attach files">
+            <button
+              type="button"
+              aria-label="Attach files"
+              disabled={streaming}
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-ink-muted transition hover:bg-grey-100 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Paperclip size={16} strokeWidth={1.75} aria-hidden />
+            </button>
+          </Tooltip>
           <label htmlFor="chat-composer" className="sr-only">
             Message Pebble
           </label>
@@ -463,6 +681,7 @@ export function ChatPanel({
                 void send();
               }
             }}
+            onPaste={onComposerPaste}
             disabled={streaming}
             placeholder="Tell me about the enquiry, or ask a question…"
             enterKeyHint="send"
@@ -592,16 +811,24 @@ function MessageBubble({
   message,
   streaming,
   isLastAssistant,
+  isLastMessage,
+  followingUserText,
   timestampIso,
   model,
   onRetry,
+  onPickClarification,
 }: {
   message: UIMessage;
   streaming: boolean;
   isLastAssistant: boolean;
+  /** This message is the last in the list — an `ask_user` card here is still interactive. */
+  isLastMessage: boolean;
+  /** Text of the user message that immediately followed this one (for the clarification-card highlight). */
+  followingUserText: string | null;
   timestampIso: string | null;
   model: string | null;
   onRetry: () => void;
+  onPickClarification: (label: string) => void;
 }) {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
@@ -626,8 +853,23 @@ function MessageBubble({
 
   const showOpusBadge = !isUser && !!model && model.startsWith("claude-opus");
 
+  // File parts (Chat overhaul WP7) are rendered as ONE static chip row above
+  // the text — not per-part inline — so they're pulled out of the ordered
+  // `.map()` below and the loop's existing fallback (`return null` for any
+  // part type it doesn't recognise) quietly skips them there.
+  const fileParts = message.parts.filter(isFileUIPart);
+
   return (
     <div className={`message-enter group flex flex-col gap-1.5 ${isUser ? "items-end" : "items-start"}`}>
+      {fileParts.length > 0 ? (
+        <SentFileChipsRow
+          files={fileParts.map((p) => ({
+            filename: p.filename ?? "Attachment",
+            mediaType: p.mediaType,
+            url: p.url,
+          }))}
+        />
+      ) : null}
       {message.parts.map((part, i) => {
         const isLastPart = i === message.parts.length - 1;
         if (part.type === "text") {
@@ -653,6 +895,23 @@ function MessageBubble({
           );
         }
         if (isToolPart(part)) {
+          if (isAskUserPart(part)) {
+            // Interactive only when this clarification is the last thing on
+            // screen and the turn has settled — once the user has answered
+            // (a following user message exists) or a newer turn arrived, it
+            // replays as a static card, highlighting the chosen chip.
+            const interactive = isLastMessage && !streaming;
+            return (
+              <div key={i} className="max-w-[80%]">
+                <ClarificationCard
+                  part={part}
+                  interactive={interactive}
+                  chosenLabel={followingUserText}
+                  onPick={onPickClarification}
+                />
+              </div>
+            );
+          }
           return (
             <div key={i} className="max-w-[80%]">
               {isCreateEnquirySuccessPart(part) ? (

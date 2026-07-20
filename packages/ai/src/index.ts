@@ -18,6 +18,7 @@
 
 // Agent core (Phase C.5).
 export * from "./agent/registry";
+export * from "./agent/ask-user";
 export * from "./agent/persona";
 export * from "./agent/module02";
 export * from "./agent/escalation";

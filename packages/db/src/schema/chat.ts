@@ -49,6 +49,31 @@ export const chatMessages = pgTable("chat_messages", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * One row per uploaded chat attachment (Chat overhaul WP7) — one row per
+ * upload, not per distinct file (see drizzle/0005_chat_attachments.sql for
+ * why). `status` is 'READY' for types the agent can read directly, or
+ * 'OFFICE_PENDING' for xlsx/docx pending the skills-lane conversion.
+ */
+export const chatAttachments = pgTable("chat_attachments", {
+  id: text("id").primaryKey(), // ULID
+  sessionId: text("session_id")
+    .notNull()
+    .references(() => chatSessions.id),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.firebaseUid),
+  filename: text("filename").notNull(),
+  mediaType: text("media_type").notNull(),
+  sizeBytes: integer("size_bytes").notNull(),
+  sha256: text("sha256").notNull(),
+  storageUri: text("storage_uri").notNull(),
+  /** Set for PDFs only — the upload route's >100-page guard reads this before insert. */
+  pageCount: integer("page_count"),
+  status: text("status").notNull().default("READY"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** One row per LLM API call — cost/latency accounting across lanes. */
 export const llmCalls = pgTable("llm_calls", {
   id: text("id").primaryKey(), // ULID

@@ -1,7 +1,7 @@
 import { and, desc, eq, gt, gte, isNotNull, isNull, like, sql } from "drizzle-orm";
 import type { Db } from "../client";
 import { newUlid } from "../ids";
-import { chatMessages, chatSessions, llmCalls } from "../schema";
+import { chatAttachments, chatMessages, chatSessions, llmCalls } from "../schema";
 
 /**
  * Conversational enquiry-capture repository (chat lane) + LLM cost accounting.
@@ -606,4 +606,152 @@ export async function sumOpusSpendSince(
     costUsd: rows.reduce((sum, r) => sum + Number(r.cost ?? 0), 0),
     turns: rows.length,
   };
+}
+
+// ─── Attachments (Chat overhaul WP7) ────────────────────────────────────────
+//
+// One row per upload (not per distinct file — the same bytes can land in
+// storage once and be referenced by several rows; see
+// drizzle/0005_chat_attachments.sql). Owner-scoped like the rest of this
+// module: `getChatAttachment`/`listSessionAttachments` filter on `user_id` so
+// a non-owner's id/session simply reads back empty, never another user's row.
+
+export interface ChatAttachmentRow {
+  id: string;
+  sessionId: string;
+  userId: string;
+  filename: string;
+  mediaType: string;
+  sizeBytes: number;
+  sha256: string;
+  storageUri: string;
+  /** Set for PDFs only. */
+  pageCount: number | null;
+  /** 'READY' | 'OFFICE_PENDING' (see schema doc comment). */
+  status: string;
+  createdAt: Date;
+}
+
+function rowToAttachment(r: typeof chatAttachments.$inferSelect): ChatAttachmentRow {
+  return {
+    id: r.id,
+    sessionId: r.sessionId,
+    userId: r.userId,
+    filename: r.filename,
+    mediaType: r.mediaType,
+    sizeBytes: r.sizeBytes,
+    sha256: r.sha256,
+    storageUri: r.storageUri,
+    pageCount: r.pageCount ?? null,
+    status: r.status,
+    createdAt: r.createdAt,
+  };
+}
+
+/**
+ * Insert one attachment row. Callers (the upload route) resolve/dedupe
+ * `storageUri` by (userId, sha256) BEFORE calling this — this function just
+ * writes whatever it's given, one row per upload.
+ */
+export async function insertChatAttachment(
+  db: Db,
+  args: {
+    sessionId: string;
+    userId: string;
+    filename: string;
+    mediaType: string;
+    sizeBytes: number;
+    sha256: string;
+    storageUri: string;
+    pageCount?: number | null;
+    /** Defaults to 'READY'. */
+    status?: string;
+  },
+): Promise<ChatAttachmentRow> {
+  const id = newUlid();
+  const createdAt = new Date();
+  const status = args.status ?? "READY";
+  const pageCount = args.pageCount ?? null;
+  await db.insert(chatAttachments).values({
+    id,
+    sessionId: args.sessionId,
+    userId: args.userId,
+    filename: args.filename,
+    mediaType: args.mediaType,
+    sizeBytes: args.sizeBytes,
+    sha256: args.sha256,
+    storageUri: args.storageUri,
+    pageCount,
+    status,
+    createdAt,
+  });
+  return {
+    id,
+    sessionId: args.sessionId,
+    userId: args.userId,
+    filename: args.filename,
+    mediaType: args.mediaType,
+    sizeBytes: args.sizeBytes,
+    sha256: args.sha256,
+    storageUri: args.storageUri,
+    pageCount,
+    status,
+    createdAt,
+  };
+}
+
+/**
+ * One attachment by id — but ONLY if it belongs to `userId`. A non-owner (or
+ * a missing row) reads back `null`, mirroring `getChatSession`'s ownership
+ * contract, so the serve route (app/api/chat/attachments/[id]) can 404
+ * without leaking whether a foreign attachment exists.
+ */
+export async function getChatAttachment(
+  db: Db,
+  args: { id: string; userId: string },
+): Promise<ChatAttachmentRow | null> {
+  const rows = await db
+    .select()
+    .from(chatAttachments)
+    .where(and(eq(chatAttachments.id, args.id), eq(chatAttachments.userId, args.userId)))
+    .limit(1);
+  const r = rows[0];
+  return r ? rowToAttachment(r) : null;
+}
+
+/**
+ * Every attachment row for a session, owner-scoped, in upload (chronological
+ * ULID) order — the composer's pending-list hydration and (from WP8) the
+ * per-turn attachment lookup.
+ */
+export async function listSessionAttachments(
+  db: Db,
+  args: { sessionId: string; userId: string },
+): Promise<ChatAttachmentRow[]> {
+  const rows = await db
+    .select()
+    .from(chatAttachments)
+    .where(and(eq(chatAttachments.sessionId, args.sessionId), eq(chatAttachments.userId, args.userId)))
+    .orderBy(chatAttachments.id);
+  return rows.map(rowToAttachment);
+}
+
+/**
+ * The most recent attachment row sharing this user's (userId, sha256) — the
+ * upload route's per-user content dedup: when found, its `storageUri` is
+ * reused instead of writing the bytes to storage again (a fresh row is still
+ * inserted per upload, see the module doc comment above).
+ */
+export async function findChatAttachmentBySha256(
+  db: Db,
+  args: { userId: string; sha256: string },
+): Promise<ChatAttachmentRow | null> {
+  const rows = await db
+    .select()
+    .from(chatAttachments)
+    .where(and(eq(chatAttachments.userId, args.userId), eq(chatAttachments.sha256, args.sha256)))
+    .orderBy(desc(chatAttachments.id))
+    .limit(1);
+  const r = rows[0];
+  return r ? rowToAttachment(r) : null;
 }

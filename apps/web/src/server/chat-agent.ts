@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  ASK_USER_TOOL_NAME,
   buildSessionStateBlock,
   chatWindowFromEnv,
   composeAgent,
@@ -29,6 +30,7 @@ import {
   type Db,
 } from "@pebble/db";
 import {
+  hasToolCall,
   smoothStream,
   stepCountIs,
   streamText,
@@ -70,6 +72,13 @@ import { getCachedDigest } from "@/server/digest-cache";
 export const bodySchema = z.object({
   sessionId: z.string().min(1),
   message: z.string().min(1),
+  // Chat overhaul WP7: the composer's uploaded-attachment ids for this turn
+  // (see app/api/chat/attachments). Accepted on the wire so the transport
+  // contract is ready, but NOT YET read anywhere below — runAgentTurn simply
+  // ignores it. TODO(WP8): thread these into the tool loop (attach as
+  // file/document content on the user message) once the skills lane exists
+  // to consume them.
+  attachmentIds: z.array(z.string()).max(4).optional(),
 });
 
 export function jsonResponse(status: number, body: Record<string, unknown>): Response {
@@ -223,7 +232,12 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
     // to carry its cache_control breakpoint; opt into leading system messages.
     allowSystemInMessages: true,
     tools: composition.tools,
-    stopWhen: stepCountIs(8),
+    // Stop at 8 steps, OR the moment the agent asks a structured clarification:
+    // `ask_user` has no executor, so the SDK cannot feed a result back and the
+    // loop ends there anyway — this `hasToolCall` guard makes that a stated
+    // contract (belt-and-braces against a future SDK that would keep looping),
+    // so the turn always ends AT the question with the option chips on screen.
+    stopWhen: [stepCountIs(8), hasToolCall(ASK_USER_TOOL_NAME)],
     // WP5 streaming feel: re-chunk the model's raw text deltas into
     // word-sized pieces on a short internal delay so the UI receives a
     // steady drip instead of large, bursty deltas. Purely a client-perceived
@@ -239,7 +253,10 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
       try {
         const parts = reconstructUiParts(steps);
         const toolNames = collectToolNames(steps);
-        const content = fullAssistantText(steps, text);
+        // Persist the question INTO the assistant content text (never streamed
+        // to the client) so the model — whose next turn's history is rebuilt
+        // from content text — sees the clarification it just asked.
+        const content = appendAskUserSuffix(fullAssistantText(steps, text), steps);
 
         await appendChatMessage(db, {
           sessionId,
@@ -490,6 +507,34 @@ function fullAssistantText(steps: readonly StepResult<ToolSet>[], finalText: str
     .join("\n\n")
     .trim();
   return joined.length > 0 ? joined : finalText;
+}
+
+/**
+ * When the finished turn asked a structured clarification (an `ask_user` call),
+ * append a compact record of it to the PERSISTED content text:
+ *   `[Asked: <question> — options: <label1> | <label2> ...]`
+ * so the model — whose next turn's history is rebuilt from content text, not
+ * parts — sees its own question and the options it offered. This is
+ * persistence-only: it is NEVER streamed to the client (the client renders the
+ * clarification card from the `tool-ask_user` part instead). Only the first
+ * `ask_user` call is recorded (the persona/policy allow at most one per turn).
+ */
+export function appendAskUserSuffix(content: string, steps: readonly StepResult<ToolSet>[]): string {
+  for (const step of steps) {
+    for (const c of step.content) {
+      if (c.type !== "tool-call" || c.toolName !== ASK_USER_TOOL_NAME) continue;
+      const input = c.input as { question?: unknown; options?: unknown } | null | undefined;
+      const question = typeof input?.question === "string" ? input.question.trim() : "";
+      const options = Array.isArray(input?.options) ? input.options : [];
+      const labels = options
+        .map((o) => (o && typeof (o as { label?: unknown }).label === "string" ? (o as { label: string }).label : null))
+        .filter((l): l is string => !!l && l.length > 0);
+      if (!question || labels.length === 0) return content;
+      const suffix = `[Asked: ${question} — options: ${labels.join(" | ")}]`;
+      return content.length > 0 ? `${content}\n\n${suffix}` : suffix;
+    }
+  }
+  return content;
 }
 
 /**

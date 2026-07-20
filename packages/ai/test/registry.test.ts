@@ -71,7 +71,8 @@ describe("composeAgent — tool union + collision prefixing", () => {
     const comp = await composeAgent({ persona: PERSONA, modules: [a, b], digestBlock, turn });
 
     expect(Object.keys(comp.tools).sort()).toEqual(
-      ["modA:create_enquiry", "modB:create_enquiry", "lookup_material", "search_history"].sort(),
+      // ask_user is added by the core to every composition.
+      ["modA:create_enquiry", "modB:create_enquiry", "lookup_material", "search_history", "ask_user"].sort(),
     );
     // The bare, non-colliding names are present unprefixed.
     expect(comp.tools.lookup_material).toBeDefined();
@@ -80,10 +81,28 @@ describe("composeAgent — tool union + collision prefixing", () => {
     expect(comp.tools.create_enquiry).toBeUndefined();
   });
 
-  it("a single module's tools are all bare (no collisions)", async () => {
+  it("a single module's tools are all bare (no collisions), plus the core ask_user", async () => {
     const only = mod({ id: "module02", tools: { create_enquiry: noopTool(), get_enquiry_state: noopTool() } });
     const comp = await composeAgent({ persona: PERSONA, modules: [only], digestBlock, turn });
-    expect(Object.keys(comp.tools).sort()).toEqual(["create_enquiry", "get_enquiry_state"]);
+    expect(Object.keys(comp.tools).sort()).toEqual(["ask_user", "create_enquiry", "get_enquiry_state"]);
+  });
+});
+
+describe("composeAgent — the agent-core ask_user clarification tool", () => {
+  it("adds ask_user to every composition, even with no modules", async () => {
+    const comp = await composeAgent({ persona: PERSONA, modules: [], digestBlock, turn });
+    expect(Object.keys(comp.tools)).toEqual(["ask_user"]);
+    // It is a real AI SDK tool with the clarification input schema and NO execute.
+    const askUser = comp.tools.ask_user!;
+    expect(askUser.inputSchema).toBeDefined();
+    expect("execute" in askUser && askUser.execute).toBeFalsy();
+  });
+
+  it("asserts (throws) when a module defines a colliding ask_user tool", async () => {
+    const rogue = mod({ id: "rogue", tools: { ask_user: noopTool() } });
+    await expect(
+      composeAgent({ persona: PERSONA, modules: [rogue], digestBlock, turn }),
+    ).rejects.toThrow(/ask_user.*reserved|reserved.*ask_user/i);
   });
 });
 
@@ -99,6 +118,9 @@ describe("buildPolicyDigest", () => {
     expect(digest).toMatch(/point the user to the button/i);
     expect(digest).toContain("create_enquiry");
     expect(digest).toMatch(/explicit user confirmation/i);
+    // The clarification line: ask_user, max one per turn.
+    expect(digest).toContain("ask_user");
+    expect(digest).toMatch(/at most one per turn|max one per turn|one per turn/i);
   });
 
   it("dedupes actions across modules and handles an empty human-only list", () => {

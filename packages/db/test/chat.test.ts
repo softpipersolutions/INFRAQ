@@ -9,14 +9,18 @@ import {
   ChatSessionOwnershipError,
   countMessagesAfter,
   createDb,
+  findChatAttachmentBySha256,
+  getChatAttachment,
   getChatSession,
   getChatSessionOwner,
   getOrCreateChatSession,
   incrementContradictions,
+  insertChatAttachment,
   insertLlmCall,
   linkSessionEnquiry,
   listChatMessages,
   listChatSessions,
+  listSessionAttachments,
   migrateDb,
   renameChatSession,
   setContradictions,
@@ -29,7 +33,7 @@ import {
   updateSlotState,
   upsertUser,
 } from "../src/index";
-import { chatSessions, llmCalls } from "../src/schema";
+import { chatAttachments, chatSessions, llmCalls } from "../src/schema";
 import { freshDb } from "./helpers";
 
 const DRIZZLE_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "drizzle");
@@ -664,5 +668,199 @@ describe("opus escalation spend guard", () => {
     const future = new Date(Date.now() + 60_000).toISOString();
     const result = await sumOpusSpendSince(db, { userId: DEV_UID, sinceISO: future });
     expect(result).toEqual({ costUsd: 0, turns: 0 });
+  });
+});
+
+describe("0005 chat attachments migration", () => {
+  it("applies 0005_chat_attachments.sql on a fresh database", async () => {
+    const fresh = await createDb({ pglite: true, pgliteDir: "memory://" });
+    try {
+      const applied = await migrateDb(fresh);
+      expect(applied).toContain("0005_chat_attachments.sql");
+    } finally {
+      await fresh.close();
+    }
+  });
+
+  it("creates chat_attachments with its columns and the session/dedup indexes", async () => {
+    const cols = (await db.execute(sql`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_name = 'chat_attachments'
+      ORDER BY column_name
+    `)) as unknown as { rows: Array<{ column_name: string }> };
+    expect(cols.rows.map((r) => r.column_name).sort()).toEqual(
+      [
+        "created_at",
+        "filename",
+        "id",
+        "media_type",
+        "page_count",
+        "session_id",
+        "sha256",
+        "size_bytes",
+        "status",
+        "storage_uri",
+        "user_id",
+      ].sort(),
+    );
+
+    const idx = (await db.execute(
+      sql`SELECT indexname FROM pg_indexes WHERE tablename = 'chat_attachments' ORDER BY indexname`,
+    )) as unknown as { rows: Array<{ indexname: string }> };
+    expect(idx.rows.map((r) => r.indexname)).toEqual(
+      expect.arrayContaining(["idx_chat_attachments_session", "idx_chat_attachments_user_sha256"]),
+    );
+  });
+
+  it("re-applies the raw migration SQL without error (idempotent CREATE TABLE/INDEX IF NOT EXISTS on PGlite)", async () => {
+    const contents = await readFile(join(DRIZZLE_DIR, "0005_chat_attachments.sql"), "utf8");
+    await expect(handle.exec(contents)).resolves.not.toThrow();
+    // Still an empty table — a clean no-op, not a duplicate/error.
+    const rows = await db.select().from(chatAttachments);
+    expect(rows).toEqual([]);
+  });
+});
+
+describe("chat attachments repository", () => {
+  it("inserts and reads back an owner-predicated attachment; a non-owner reads null", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-att-1", userId: DEV_UID });
+    const inserted = await insertChatAttachment(db, {
+      sessionId: "sess-att-1",
+      userId: DEV_UID,
+      filename: "BOQ.pdf",
+      mediaType: "application/pdf",
+      sizeBytes: 12345,
+      sha256: "a".repeat(64),
+      storageUri: "file:///tmp/chat-uploads/dev-admin/aaaa/BOQ.pdf",
+      pageCount: 12,
+    });
+    expect(inserted.status).toBe("READY");
+
+    const fetched = await getChatAttachment(db, { id: inserted.id, userId: DEV_UID });
+    expect(fetched).toEqual(inserted);
+
+    await upsertUser(db, {
+      firebaseUid: "att-stranger",
+      email: "stranger@greenberg.test",
+      displayName: "Stranger",
+      role: "estimator",
+      active: true,
+    });
+    expect(await getChatAttachment(db, { id: inserted.id, userId: "att-stranger" })).toBeNull();
+  });
+
+  it("defaults status to READY and pageCount to null when omitted", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-att-2", userId: DEV_UID });
+    const row = await insertChatAttachment(db, {
+      sessionId: "sess-att-2",
+      userId: DEV_UID,
+      filename: "notes.txt",
+      mediaType: "text/plain",
+      sizeBytes: 10,
+      sha256: "b".repeat(64),
+      storageUri: "file:///tmp/chat-uploads/dev-admin/bbbb/notes.txt",
+    });
+    expect(row.status).toBe("READY");
+    expect(row.pageCount).toBeNull();
+  });
+
+  it("honours an explicit OFFICE_PENDING status (xlsx/docx pending the skills lane)", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-att-3", userId: DEV_UID });
+    const row = await insertChatAttachment(db, {
+      sessionId: "sess-att-3",
+      userId: DEV_UID,
+      filename: "quote.xlsx",
+      mediaType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      sizeBytes: 999,
+      sha256: "c".repeat(64),
+      storageUri: "file:///tmp/chat-uploads/dev-admin/cccc/quote.xlsx",
+      status: "OFFICE_PENDING",
+    });
+    expect(row.status).toBe("OFFICE_PENDING");
+  });
+
+  it("lists a session's attachments in upload order, owner-scoped", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-att-list", userId: DEV_UID });
+    const first = await insertChatAttachment(db, {
+      sessionId: "sess-att-list",
+      userId: DEV_UID,
+      filename: "a.pdf",
+      mediaType: "application/pdf",
+      sizeBytes: 1,
+      sha256: "d".repeat(64),
+      storageUri: "file:///tmp/a.pdf",
+    });
+    const second = await insertChatAttachment(db, {
+      sessionId: "sess-att-list",
+      userId: DEV_UID,
+      filename: "b.png",
+      mediaType: "image/png",
+      sizeBytes: 2,
+      sha256: "e".repeat(64),
+      storageUri: "file:///tmp/b.png",
+    });
+
+    const list = await listSessionAttachments(db, { sessionId: "sess-att-list", userId: DEV_UID });
+    expect(list.map((r) => r.id)).toEqual([first.id, second.id]);
+
+    await getOrCreateChatSession(db, { sessionId: "sess-att-other", userId: DEV_UID });
+    expect(await listSessionAttachments(db, { sessionId: "sess-att-other", userId: DEV_UID })).toEqual([]);
+
+    await upsertUser(db, {
+      firebaseUid: "att-list-stranger",
+      email: "stranger2@greenberg.test",
+      displayName: "Stranger Two",
+      role: "estimator",
+      active: true,
+    });
+    expect(
+      await listSessionAttachments(db, { sessionId: "sess-att-list", userId: "att-list-stranger" }),
+    ).toEqual([]);
+  });
+
+  it("finds the same user's earlier upload by (userId, sha256) for storage dedup, scoped per-user", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-dedup-1", userId: DEV_UID });
+    const sha = "f".repeat(64);
+    const original = await insertChatAttachment(db, {
+      sessionId: "sess-dedup-1",
+      userId: DEV_UID,
+      filename: "spec.pdf",
+      mediaType: "application/pdf",
+      sizeBytes: 500,
+      sha256: sha,
+      storageUri: "file:///tmp/chat-uploads/dev-admin/ffff/spec.pdf",
+      pageCount: 3,
+    });
+
+    const found = await findChatAttachmentBySha256(db, { userId: DEV_UID, sha256: sha });
+    expect(found?.storageUri).toBe(original.storageUri);
+
+    // Re-uploading the SAME content into a different session inserts a new
+    // row but must resolve to the SAME storage_uri via this lookup.
+    await getOrCreateChatSession(db, { sessionId: "sess-dedup-2", userId: DEV_UID });
+    const secondUpload = await insertChatAttachment(db, {
+      sessionId: "sess-dedup-2",
+      userId: DEV_UID,
+      filename: "spec.pdf",
+      mediaType: "application/pdf",
+      sizeBytes: 500,
+      sha256: sha,
+      storageUri: found!.storageUri,
+      pageCount: 3,
+    });
+    expect(secondUpload.id).not.toBe(original.id);
+    expect(secondUpload.storageUri).toBe(original.storageUri);
+
+    // A different user's identical content hash is a DIFFERENT dedup scope.
+    await upsertUser(db, {
+      firebaseUid: "att-dedup-other-user",
+      email: "dedup-other@greenberg.test",
+      displayName: "Dedup Other",
+      role: "estimator",
+      active: true,
+    });
+    expect(
+      await findChatAttachmentBySha256(db, { userId: "att-dedup-other-user", sha256: sha }),
+    ).toBeNull();
   });
 });
