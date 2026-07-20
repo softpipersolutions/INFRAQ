@@ -82,6 +82,23 @@ function modelIdOf(model: LanguageModel): string {
 }
 
 /**
+ * Concatenate an error's message with every message down its `cause` chain.
+ * Drizzle wraps driver errors ("Failed query: …") and keeps the pg reason
+ * (e.g. `conflicting key value violates exclusion constraint
+ * "prices_no_overlapping_validity"`) on `cause` — matching only the top-level
+ * message would miss it.
+ */
+function errorChainText(err: unknown): string {
+  const parts: string[] = [];
+  let cursor: unknown = err;
+  for (let depth = 0; depth < 5 && cursor instanceof Error; depth++) {
+    parts.push(cursor.message);
+    cursor = cursor.cause;
+  }
+  return parts.join(" | ");
+}
+
+/**
  * Best-effort source-document date for the audit prompt. `QueueItem` does not
  * carry the document's date, so we fall back to the staged payload's
  * `validFromISO` (which staging derives from the document date) — present on
@@ -224,10 +241,40 @@ export async function autoApproveBatch(
         approved++;
         if (commitResult.outcome.degraded) degraded++;
       } catch (err) {
-        // EXCLUDE overlap, a race, a missing master, etc. — don't fail the
-        // batch; leave the row PROPOSED and route it to a human as unsure.
+        const message = (err as Error).message ?? "";
+        // A validity-overlap on the prices/install_rates EXCLUDE constraint
+        // means a price for this (material, make) already exists covering the
+        // same date — typically two BOQ lines the dedup pass collapsed onto
+        // one material (e.g. two pipe sizes) trying to store same-day prices.
+        // Only one can exist BY DESIGN; the first commit won. Retrying can
+        // never succeed, and leaving the row PROPOSED head-of-line-blocks the
+        // whole queue — so reject it with the reason instead.
+        // Drizzle wraps the pg error ("Failed query: ...") and keeps the real
+        // reason on err.cause, so match against the whole cause chain.
+        const isValidityOverlap = /exclusion constraint|_no_overlapping_validity|conflicting key value/i.test(
+          errorChainText(err),
+        );
+        if (isValidityOverlap) {
+          try {
+            await dbLimit(() =>
+              rejectStagedRecord(deps.db, { stagedRecordId: item.id, reviewer: "gemini-auto" }),
+            );
+            rejected++;
+            collect(
+              rejectedExamples,
+              item.id,
+              "duplicate price point: a price for this material+make already covers this date (first one kept)",
+            );
+          } catch (rejectErr) {
+            unsure++;
+            collect(unsureExamples, item.id, `commit+reject failed: ${(rejectErr as Error).message}`);
+          }
+          return;
+        }
+        // Anything else (race, missing master, transient) — leave PROPOSED
+        // and route to a human as unsure.
         unsure++;
-        collect(unsureExamples, item.id, `commit failed: ${(err as Error).message}`);
+        collect(unsureExamples, item.id, `commit failed: ${errorChainText(err) || message}`);
       }
       return;
     }

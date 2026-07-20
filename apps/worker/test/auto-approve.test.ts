@@ -284,6 +284,30 @@ describe("autoApproveBatch", () => {
     expect(stuck?.status).toBe("PROPOSED");
   });
 
+  it("EXCLUDE overlap (same-day duplicate price) → auto-rejected, not recycled as unsure", async () => {
+    // Two identical price points for the same (material, brand, valid_from):
+    // the first commits; the second hits the prices_no_overlapping_validity
+    // EXCLUDE constraint. Retrying can never succeed (only one price per pair
+    // per instant exists BY DESIGN), so it must be REJECTED with the duplicate
+    // reason — leaving it PROPOSED head-of-line-blocks the whole queue.
+    await seedValid(handle, [
+      { targetMaster: "prices", proposed: pricePoint("[v:approve]", "FAS-SMK-001"), confidence: 0.9 },
+      { targetMaster: "prices", proposed: pricePoint("[v:approve]", "FAS-SMK-001"), confidence: 0.9 },
+    ]);
+
+    const report = await autoApproveBatch(deps(handle, verdictStub()));
+
+    expect(report.approved).toBe(1);
+    expect(report.rejected).toBe(1);
+    expect(report.unsure).toBe(0);
+    expect(report.examples.rejected.some((e) => /duplicate price point/.test(e.issue))).toBe(true);
+
+    const staged = await allStaged(handle);
+    expect(staged.map((r) => r.status).sort()).toEqual(["APPROVED", "REJECTED"]);
+    const rejectedRow = staged.find((r) => r.status === "REJECTED");
+    expect(rejectedRow?.reviewedBy).toBe("gemini-auto");
+  });
+
   it("model null → throws a 503 WorkerError upfront", async () => {
     await seedValid(handle, [
       { targetMaster: "prices", proposed: pricePoint("[v:approve]", "FAS-SMK-001"), confidence: 0.9 },
