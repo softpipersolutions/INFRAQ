@@ -1,5 +1,6 @@
 "use client";
 
+import { Brain } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -116,7 +117,16 @@ export function Shell({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
-        <div className="border-t border-border px-5 py-3 text-xs text-ink-muted">
+        <div className="space-y-2 border-t border-border px-5 py-3 text-xs text-ink-muted">
+          <Link
+            href="/settings/memory"
+            className={`inline-flex items-center gap-1.5 transition hover:text-ink ${
+              isActive(pathname, "/settings/memory") ? "text-ink" : ""
+            }`}
+          >
+            <Brain size={13} strokeWidth={1.5} aria-hidden />
+            Memory
+          </Link>
           <SessionFooter />
         </div>
       </aside>

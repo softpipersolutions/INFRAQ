@@ -4,6 +4,8 @@ import {
   createDb,
   getChatSession,
   getOrCreateChatSession,
+  getSourceDocument,
+  insertChatAttachment,
   insertLlmCall,
   migrateDb,
   seedDatabase,
@@ -398,5 +400,81 @@ describe("chat router", () => {
     // And the owner can still confirm — proving the state survived the foreign attempts.
     const { enquiryId } = await owner.chat.confirmEnquiry({ sessionId });
     expect(enquiryId).toMatch(/^GBE-ENQ-/);
+  });
+
+  // ── sendToIngestion (WP8 §4) ─────────────────────────────────────────────────
+
+  async function seedPdfAttachment(userId: string, sessionId: string): Promise<string> {
+    await getOrCreateChatSession(db, { sessionId, userId });
+    const row = await insertChatAttachment(db, {
+      sessionId,
+      userId,
+      filename: "past-proposal.pdf",
+      mediaType: "application/pdf",
+      sizeBytes: 2048,
+      sha256: `sha-${sessionId}`,
+      storageUri: `file:///tmp/${sessionId}.pdf`,
+      pageCount: 12,
+      status: "READY",
+    });
+    return row.id;
+  }
+
+  it("sendToIngestion registers a PDF as a source document (idempotent)", async () => {
+    const caller = callerFor(ESTIMATOR);
+    const attachmentId = await seedPdfAttachment(ESTIMATOR.firebaseUid, "ingest-sess");
+
+    const first = await caller.chat.sendToIngestion({ attachmentId });
+    expect(first.registered).toBe(true);
+    expect(first.existing).toBe(false);
+    const doc = await getSourceDocument(db, first.sourceDocumentId);
+    expect(doc?.filename).toBe("past-proposal.pdf");
+    expect(doc?.status).toBe("REGISTERED");
+    expect(doc?.pageCount).toBe(12);
+
+    // A second send of the same file is idempotent (same source-doc id).
+    const second = await caller.chat.sendToIngestion({ attachmentId });
+    expect(second.existing).toBe(true);
+    expect(second.sourceDocumentId).toBe(first.sourceDocumentId);
+  });
+
+  it("sendToIngestion rejects a non-PDF attachment", async () => {
+    const caller = callerFor(ESTIMATOR);
+    await getOrCreateChatSession(db, { sessionId: "ingest-img", userId: ESTIMATOR.firebaseUid });
+    const row = await insertChatAttachment(db, {
+      sessionId: "ingest-img",
+      userId: ESTIMATOR.firebaseUid,
+      filename: "photo.png",
+      mediaType: "image/png",
+      sizeBytes: 100,
+      sha256: "sha-img",
+      storageUri: "file:///tmp/photo.png",
+      status: "READY",
+    });
+    await expect(caller.chat.sendToIngestion({ attachmentId: row.id })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+  });
+
+  it("sendToIngestion 404s a foreign attachment and is FORBIDDEN for a non-estimator role", async () => {
+    const attachmentId = await seedPdfAttachment(ESTIMATOR.firebaseUid, "ingest-owner-sess");
+
+    // A different estimator cannot reach it (owner-scoped → NOT_FOUND).
+    await expect(callerFor(OTHER).chat.sendToIngestion({ attachmentId })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+
+    // An approver (not estimator/admin) is blocked by RBAC before any lookup.
+    const approver: AppUser = {
+      firebaseUid: "chat-approver",
+      email: "approver@greenberg.test",
+      displayName: "Approver",
+      role: "approver",
+      active: true,
+    };
+    await upsertUser(db, approver);
+    await expect(callerFor(approver).chat.sendToIngestion({ attachmentId })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 });

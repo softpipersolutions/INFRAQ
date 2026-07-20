@@ -27,8 +27,12 @@ import { historyRowsToUIMessages } from "./history-to-ui-messages";
 import { Markdown } from "./markdown";
 import { SlotRail } from "./slot-rail";
 import {
+  GenerateFileCard,
   isCreateEnquirySuccessPart,
+  isGenerateFileSuccessPart,
+  isMemoryPart,
   isToolPart,
+  MemoryActivityRow,
   ReceiptCard,
   ToolActivityRow,
   toolNameFromPart,
@@ -414,6 +418,27 @@ export function ChatPanel({
   const confirmEnquiry = trpc.chat.confirmEnquiry.useMutation();
   const [confirmError, setConfirmError] = useState<string | null>(null);
 
+  // ─── "Send to ingestion" handoff (admin/estimator) on PDF chips (WP8 §4) ───
+  const me = trpc.users.me.useQuery();
+  const canIngest = me.data?.user?.role === "admin" || me.data?.user?.role === "estimator";
+  const sendToIngestion = trpc.chat.sendToIngestion.useMutation();
+  const [ingestNotice, setIngestNotice] = useState<string | null>(null);
+  const onSendToIngestion = useMemo(
+    () =>
+      canIngest
+        ? (attachmentId: string) => {
+            setIngestNotice(null);
+            sendToIngestion
+              .mutateAsync({ attachmentId })
+              .then((r) => setIngestNotice(r.note))
+              .catch((err) =>
+                setIngestNotice(err instanceof Error ? err.message : "Could not send to ingestion."),
+              );
+          }
+        : undefined,
+    [canIngest, sendToIngestion],
+  );
+
   async function onConfirm() {
     setConfirmError(null);
     try {
@@ -574,6 +599,7 @@ export function ChatPanel({
                         model={modelFor(message.id)}
                         onRetry={() => void onRetryLast()}
                         onPickClarification={(label) => void send(label)}
+                        onSendToIngestion={onSendToIngestion}
                       />
                     </div>
                   );
@@ -630,6 +656,15 @@ export function ChatPanel({
           <div className="flex items-center justify-between gap-3 border-t border-danger-border bg-danger-soft px-4 py-1.5 text-xs text-danger">
             <span>{attachmentError}</span>
             <button type="button" className="shrink-0 underline" onClick={() => setAttachmentError(null)}>
+              Dismiss
+            </button>
+          </div>
+        ) : null}
+
+        {ingestNotice ? (
+          <div className="flex items-center justify-between gap-3 border-t border-border bg-surface-sunken px-4 py-1.5 text-xs text-ink-secondary">
+            <span>{ingestNotice}</span>
+            <button type="button" className="shrink-0 underline" onClick={() => setIngestNotice(null)}>
               Dismiss
             </button>
           </div>
@@ -817,6 +852,7 @@ function MessageBubble({
   model,
   onRetry,
   onPickClarification,
+  onSendToIngestion,
 }: {
   message: UIMessage;
   streaming: boolean;
@@ -829,6 +865,8 @@ function MessageBubble({
   model: string | null;
   onRetry: () => void;
   onPickClarification: (label: string) => void;
+  /** Admin/estimator-only handler for the PDF-chip "Send to ingestion" menu (undefined hides it). */
+  onSendToIngestion?: (attachmentId: string) => void;
 }) {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
@@ -868,6 +906,7 @@ function MessageBubble({
             mediaType: p.mediaType,
             url: p.url,
           }))}
+          onSendToIngestion={isUser ? onSendToIngestion : undefined}
         />
       ) : null}
       {message.parts.map((part, i) => {
@@ -914,8 +953,12 @@ function MessageBubble({
           }
           return (
             <div key={i} className="max-w-[80%]">
-              {isCreateEnquirySuccessPart(part) ? (
+              {isMemoryPart(part) ? (
+                <MemoryActivityRow part={part} />
+              ) : isCreateEnquirySuccessPart(part) ? (
                 <ReceiptCard output={part.output} />
+              ) : isGenerateFileSuccessPart(part) ? (
+                <GenerateFileCard output={part.output} />
               ) : (
                 <ToolActivityRow part={part} />
               )}

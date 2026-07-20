@@ -6,12 +6,14 @@ import {
 } from "@pebble/ai";
 import {
   ChatSessionOwnershipError,
+  getChatAttachment,
   getChatSession,
   getChatSessionOwner,
   getOrCreateChatSession,
   linkSessionEnquiry,
   listChatMessages,
   listChatSessions,
+  registerSourceDocument,
   renameChatSession,
   setSessionArchived,
   setSessionPinned,
@@ -23,7 +25,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { checkDailyBudget, resolveSlotState, startOfUtcDayISO } from "../chat-runtime";
 import { createEnquiryAndGenerate } from "../generate";
-import { protectedProcedure, router } from "../trpc";
+import { protectedProcedure, roleProcedure, router } from "../trpc";
 
 /**
  * Chat control-plane router (spec §4.4). The conversational turn itself streams
@@ -217,6 +219,51 @@ export const chatRouter = router({
         parts: m.parts,
         createdAt: m.createdAt.toISOString(),
       }));
+    }),
+
+  /**
+   * Send an uploaded PDF chat attachment into the ingestion corpus
+   * (admin/estimator). Ingestion handoff choice (WP8 §4): this REGISTERS the
+   * file as a source document (idempotent on storage_uri — a re-send returns
+   * the existing id) and returns immediately. It deliberately does NOT run the
+   * ingestion pipeline inline — a full PDF ingest spans several model calls and
+   * would hang a chat interaction — so the registered doc lands in the corpus
+   * at REGISTERED, where the existing ingest path (the admin "Re-ingest" action
+   * / the backfill driver) processes it. This reuses the same
+   * `registerSourceDocument` the corpus already uses, so no new pipeline is
+   * introduced. Owner-scoped: the attachment must belong to the caller.
+   */
+  sendToIngestion: roleProcedure("estimator")
+    .input(z.object({ attachmentId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const attachment = await getChatAttachment(ctx.db, {
+        id: input.attachmentId,
+        userId: ctx.user.firebaseUid,
+      });
+      if (!attachment) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Attachment not found." });
+      }
+      if (attachment.mediaType.trim().toLowerCase() !== "application/pdf") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only PDF attachments can be sent to ingestion.",
+        });
+      }
+
+      const { id: sourceDocumentId, existing } = await registerSourceDocument(ctx.db, {
+        filename: attachment.filename,
+        storageUri: attachment.storageUri,
+        docType: "pdf",
+        pageCount: attachment.pageCount,
+      });
+      return {
+        registered: true,
+        sourceDocumentId,
+        existing,
+        note: existing
+          ? "This file was already in the ingestion corpus."
+          : "Registered for ingestion — it will be processed and appear in the verification queue.",
+      };
     }),
 
   /**

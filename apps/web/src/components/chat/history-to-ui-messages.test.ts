@@ -97,4 +97,36 @@ describe("historyRowsToUIMessages", () => {
   it("returns an empty list for an empty history", () => {
     expect(historyRowsToUIMessages([])).toEqual([]);
   });
+
+  it("widens a persisted user file part into a FileUIPart with the serve-route url (WP8)", () => {
+    const messages = historyRowsToUIMessages([
+      {
+        id: "01FILE",
+        role: "user",
+        content: "here are the details",
+        parts: [{ type: "file", filename: "notes.txt", mediaType: "text/plain", attachmentId: "att-9", v: 1 }],
+      },
+    ]);
+    expect(messages[0]?.parts).toEqual([
+      { type: "file", mediaType: "text/plain", filename: "notes.txt", url: "/api/chat/attachments/att-9" },
+    ]);
+  });
+
+  it("passes non-file parts through untouched even alongside a file part", () => {
+    const messages = historyRowsToUIMessages([
+      {
+        id: "01MIX",
+        role: "user",
+        content: "text",
+        parts: [
+          { type: "file", filename: "a.pdf", mediaType: "application/pdf", attachmentId: "att-1", v: 1 },
+          { type: "text", text: "text" },
+        ],
+      },
+    ]);
+    expect(messages[0]?.parts).toEqual([
+      { type: "file", mediaType: "application/pdf", filename: "a.pdf", url: "/api/chat/attachments/att-1" },
+      { type: "text", text: "text" },
+    ]);
+  });
 });

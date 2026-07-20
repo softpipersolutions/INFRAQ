@@ -9,4 +9,5 @@ export * from "./estimates";
 export * from "./audit";
 export * from "./ingestion";
 export * from "./chat";
+export * from "./memory";
 export * from "./users";

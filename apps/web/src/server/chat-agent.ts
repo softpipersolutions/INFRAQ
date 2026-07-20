@@ -2,17 +2,21 @@ import "server-only";
 
 import {
   ASK_USER_TOOL_NAME,
+  attachmentsToolset,
   buildSessionStateBlock,
   chatWindowFromEnv,
   composeAgent,
+  createSkillsLaneFromEnv,
   decideEscalation,
   generateSessionTitle,
+  memoryToolset,
   module02Toolset,
   modelConfigFromEnv,
   opusCapFromEnv,
   PEBBLE_PERSONA,
   refreshSummary,
   shouldRefreshSummary,
+  skillsLaneEnabled,
   toLlmCallLog,
   type ChatModels,
 } from "@pebble/ai";
@@ -20,6 +24,7 @@ import {
   appendChatMessage,
   ChatSessionOwnershipError,
   countMessagesAfter,
+  getChatAttachment,
   getOrCreateChatSession,
   insertLlmCall,
   listChatMessages,
@@ -29,6 +34,7 @@ import {
   type ChatSessionRow,
   type Db,
 } from "@pebble/db";
+import { createStorage, type StorageAdapter } from "@pebble/worker";
 import {
   hasToolCall,
   smoothStream,
@@ -41,6 +47,15 @@ import {
 } from "ai";
 import { z } from "zod";
 import { createAiServices } from "@/server/ai-services";
+import { createAttachmentServices } from "@/server/attachment-services";
+import { buildBoundMemoryHandler } from "@/server/memory-services";
+import {
+  buildAttachmentUserContent,
+  checkAttachmentCost,
+  toTurnAttachment,
+  userFilePartsFor,
+  type TurnAttachment,
+} from "@/server/chat-attachment-turn";
 import {
   checkDailyBudget,
   MODEL_UNCONFIGURED_MESSAGE,
@@ -72,12 +87,12 @@ import { getCachedDigest } from "@/server/digest-cache";
 export const bodySchema = z.object({
   sessionId: z.string().min(1),
   message: z.string().min(1),
-  // Chat overhaul WP7: the composer's uploaded-attachment ids for this turn
-  // (see app/api/chat/attachments). Accepted on the wire so the transport
-  // contract is ready, but NOT YET read anywhere below — runAgentTurn simply
-  // ignores it. TODO(WP8): thread these into the tool loop (attach as
-  // file/document content on the user message) once the skills lane exists
-  // to consume them.
+  // The composer's uploaded-attachment ids for this turn (see
+  // app/api/chat/attachments). WP8 consumes these: each id is resolved
+  // owner-scoped, a pre-flight cost guard refuses an over-budget batch, and the
+  // rest are embedded as file/document content on the current user message (and
+  // persisted as file parts on the user row). Capped at the composer's own
+  // MAX_FILES_PER_REQUEST.
   attachmentIds: z.array(z.string()).max(4).optional(),
 });
 
@@ -93,12 +108,16 @@ export interface RunAgentTurnDeps {
   models: ChatModels;
   env?: Record<string, string | undefined>;
   now?: Date;
+  /** Storage adapter for reading attachment bytes; defaults to the env-selected one. */
+  storage?: StorageAdapter;
 }
 
 export interface RunAgentTurnArgs {
   sessionId: string;
   message: string;
   user: { firebaseUid: string; role: string | null };
+  /** Uploaded-attachment ids to attach to THIS turn (owner-scoped, cost-guarded). */
+  attachmentIds?: string[];
 }
 
 /**
@@ -112,7 +131,9 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
   const { db, models } = deps;
   const env = deps.env ?? process.env;
   const now = deps.now ?? new Date();
+  const storage = deps.storage ?? createStorage(env);
   const { sessionId, message, user } = args;
+  const attachmentIds = args.attachmentIds ?? [];
 
   // 1. Ensure the session row exists (slot state + summary + contradictions + link).
   //    Owner-checked BEFORE any streaming: a UUID that already belongs to another
@@ -137,6 +158,33 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
       spentUsd: budget.spentUsd,
       budgetUsd: budget.budgetUsd,
     });
+  }
+
+  // 2b. Resolve the turn's attachments (owner + session scoped) and run the
+  //     PRE-FLIGHT COST GUARD before any model call. An unknown/foreign id 404s
+  //     with a clean JSON error; an over-budget batch is refused with a friendly
+  //     `attachment_too_large` message naming the biggest file (the client's
+  //     `friendlyError` renders `.message`). Bytes/text are loaded ONLY after the
+  //     metadata-only guard passes, so a huge batch is refused without the IO.
+  const attachments: TurnAttachment[] = [];
+  if (attachmentIds.length > 0) {
+    for (const id of attachmentIds) {
+      const row = await getChatAttachment(db, { id, userId: user.firebaseUid });
+      if (!row || row.sessionId !== sessionId) {
+        return jsonResponse(404, {
+          error: "attachment_not_found",
+          message: "An attachment for this message could not be found.",
+        });
+      }
+      attachments.push(toTurnAttachment(row));
+    }
+
+    const cost = checkAttachmentCost(attachments);
+    if (!cost.ok) {
+      return jsonResponse(413, { error: "attachment_too_large", message: cost.message });
+    }
+
+    await loadAttachmentContent(attachments, storage);
   }
 
   // 3. Escalation pre-check → Sonnet 5 (default) | Opus 4.8.
@@ -171,9 +219,33 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
     sessionId,
   });
   const digest = await getCachedDigest(db);
+
+  // Second module: the module-agnostic attachments toolset (re-read tools always;
+  // the Office analyze/generate tools ONLY when the skills-lane flag is on, so
+  // with the flag off they cost nothing — no schema, no prompt). The skills lane
+  // is built from env (null when the flag is off / no key), driven by the same
+  // model id resolved for this turn.
+  const skillsOn = skillsLaneEnabled(env);
+  const skillsLane = createSkillsLaneFromEnv(env, { model: modelId });
+  const attachmentServices = createAttachmentServices({
+    db,
+    storage,
+    userId: user.firebaseUid,
+    skillsLane,
+  });
+  // Third module: the agent-core cross-session memory toolset (WP9). Composed on
+  // EVERY turn like ask_user — its execute handler is bound to the authenticated
+  // userId + db, so the Claude memory tool can only ever touch this user's own
+  // /memories store (path-safe + capped in the handler). The SDK auto-attaches
+  // the memory beta header when this provider-defined tool is present.
+  const memoryHandler = buildBoundMemoryHandler(db, user.firebaseUid);
   const composition = await composeAgent({
     persona: PEBBLE_PERSONA,
-    modules: [module02Toolset(services, { sessionId })],
+    modules: [
+      module02Toolset(services, { sessionId }),
+      attachmentsToolset(attachmentServices, { sessionId, skillsEnabled: skillsOn }),
+      memoryToolset(memoryHandler),
+    ],
     digestBlock: digest.digestBlock,
     turn: { sessionId, userId: user.firebaseUid, userRole: user.role },
   });
@@ -211,18 +283,36 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
     if (!m.content || m.content.trim().length === 0) continue;
     messages.push({ role: m.role === "assistant" ? "assistant" : "user", content: m.content });
   }
+  // Build the current user message content from the typed text + resolved
+  // attachments: text/csv/md become fenced blocks, PDFs/images become file
+  // content parts, and OFFICE_PENDING files surface as a fresh system note
+  // (never cached) placed just before the user message.
+  const built = buildAttachmentUserContent({ text: message, attachments, skillsEnabled: skillsOn });
+  if (built.officeNote) {
+    messages.push({ role: "system", content: built.officeNote });
+  }
   // Breakpoint 2: cache the whole prefix+suffix so multi-step tool loops read
-  // from cache. `@ai-sdk/anthropic` applies message-level cacheControl to the
-  // last content block of a string-content user message (verified against the
-  // installed provider), so this places the breakpoint on the current turn.
+  // from cache. `@ai-sdk/anthropic` lands message-level cacheControl on the LAST
+  // content block of a user message — whether that content is a plain string
+  // (no attachments) or a multi-part array (attachments last), so the breakpoint
+  // always sits on the final block of the current turn.
   messages.push({
     role: "user",
-    content: message,
+    content: built.content,
     providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
   });
 
-  // 6. Persist the user turn BEFORE streaming.
-  await appendChatMessage(db, { sessionId, role: "user", content: message });
+  // 6. Persist the user turn BEFORE streaming. When files are attached, persist
+  //    their file parts on the user row so a reload rehydrates the chips (the
+  //    history→UI mapper renders `{type:'file', attachmentId, …}` as static
+  //    chips; legacy text-only rows still have `parts: null`).
+  const userParts = userFilePartsFor(attachments);
+  await appendChatMessage(db, {
+    sessionId,
+    role: "user",
+    content: message,
+    parts: userParts.length > 0 ? userParts : null,
+  });
 
   // 7. Stream. streamText is the only author of visible text.
   const result = streamText({
@@ -563,4 +653,36 @@ function usageIn(u: LanguageModelUsage): number {
 }
 function usageOut(u: LanguageModelUsage): number {
   return u.outputTokens ?? 0;
+}
+
+/**
+ * Load each attachment's content for embedding on the message: raw bytes for
+ * PDFs/images (attached as file/document blocks), decoded UTF-8 text for
+ * text/csv/md (appended as fenced blocks). Office/other files are never
+ * embedded, so they are skipped (the model reaches them via the re-read/analyze
+ * tools). A storage read failure leaves that attachment's content unset — the
+ * message still assembles, just without that file's bytes/text.
+ */
+async function loadAttachmentContent(
+  attachments: TurnAttachment[],
+  storage: StorageAdapter,
+): Promise<void> {
+  await Promise.all(
+    attachments.map(async (a) => {
+      if (a.kind !== "pdf" && a.kind !== "image" && a.kind !== "text") return;
+      if (!a.storageUri) return;
+      let bytes: Uint8Array;
+      try {
+        bytes = await storage.get(a.storageUri);
+      } catch (err) {
+        console.error("[chat] attachment read failed:", a.id, err instanceof Error ? err.message : err);
+        return;
+      }
+      if (a.kind === "text") {
+        a.text = new TextDecoder("utf-8").decode(bytes);
+      } else {
+        a.bytes = bytes;
+      }
+    }),
+  );
 }

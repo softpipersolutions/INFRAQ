@@ -1,6 +1,18 @@
 "use client";
 
-import { AlertCircle, File, FileText, Image as ImageIcon, Loader2, Table2, X, type LucideIcon } from "lucide-react";
+import {
+  AlertCircle,
+  File,
+  FileText,
+  Image as ImageIcon,
+  Loader2,
+  MoreHorizontal,
+  Table2,
+  Upload,
+  X,
+  type LucideIcon,
+} from "lucide-react";
+import { Menu } from "@/components/ui/menu";
 import { Tooltip } from "@/components/ui/tooltip";
 
 /**
@@ -134,28 +146,74 @@ export interface SentFile {
   mediaType: string;
   /** Authenticated download/preview link (`/api/chat/attachments/:id`). */
   url: string;
+  /** The chat_attachments.id — derived from `url` when absent (for the ingestion handoff). */
+  attachmentId?: string;
 }
 
-/** Static (non-interactive) file chips rendered inside a just-sent user message — no spinner, no remove button. */
-export function SentFileChipsRow({ files }: { files: SentFile[] }) {
+/** `/api/chat/attachments/<id>` → `<id>`; null when the url isn't the serve route. */
+function attachmentIdFromUrl(url: string): string | null {
+  const match = /\/api\/chat\/attachments\/([^/?#]+)/.exec(url);
+  return match?.[1] ?? null;
+}
+
+/**
+ * Static (non-interactive) file chips rendered inside a just-sent user message —
+ * no spinner, no remove button. When `onSendToIngestion` is provided (an
+ * admin/estimator viewing the thread), a PDF chip grows a small overflow menu
+ * with "Send to ingestion" (WP8 §4).
+ */
+export function SentFileChipsRow({
+  files,
+  onSendToIngestion,
+}: {
+  files: SentFile[];
+  /** Admin/estimator-only handler; when set, PDF chips show a "Send to ingestion" overflow menu. */
+  onSendToIngestion?: (attachmentId: string) => void;
+}) {
   if (files.length === 0) return null;
   return (
     <div className="flex max-w-[80%] flex-wrap justify-end gap-1.5">
       {files.map((f, i) => {
         const Icon = attachmentIconFor(f.mediaType);
+        const attachmentId = f.attachmentId ?? attachmentIdFromUrl(f.url);
+        const canIngest =
+          !!onSendToIngestion && !!attachmentId && f.mediaType.trim().toLowerCase() === "application/pdf";
         return (
-          <a
-            key={i}
-            href={f.url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-surface px-2.5 py-1 text-xs text-ink-secondary transition hover:bg-surface-sunken"
-          >
-            <Icon size={13} strokeWidth={1.75} className="shrink-0 text-ink-muted" aria-hidden />
-            <span className="max-w-[10rem] truncate" title={f.filename}>
-              {truncateFilename(f.filename)}
-            </span>
-          </a>
+          <span key={i} className="inline-flex items-center">
+            <a
+              href={f.url}
+              target="_blank"
+              rel="noreferrer"
+              className={`inline-flex items-center gap-1.5 border border-border-strong bg-surface px-2.5 py-1 text-xs text-ink-secondary transition hover:bg-surface-sunken ${
+                canIngest ? "rounded-l-full" : "rounded-full"
+              }`}
+            >
+              <Icon size={13} strokeWidth={1.75} className="shrink-0 text-ink-muted" aria-hidden />
+              <span className="max-w-[10rem] truncate" title={f.filename}>
+                {truncateFilename(f.filename)}
+              </span>
+            </a>
+            {canIngest ? (
+              <Menu
+                trigger={
+                  <button
+                    type="button"
+                    aria-label={`More actions for ${f.filename}`}
+                    className="inline-flex h-[26px] items-center rounded-r-full border border-l-0 border-border-strong bg-surface px-1.5 text-ink-muted transition hover:bg-surface-sunken hover:text-ink"
+                  >
+                    <MoreHorizontal size={13} strokeWidth={2} aria-hidden />
+                  </button>
+                }
+                items={[
+                  {
+                    label: "Send to ingestion",
+                    icon: Upload,
+                    onSelect: () => onSendToIngestion!(attachmentId!),
+                  },
+                ]}
+              />
+            ) : null}
+          </span>
         );
       })}
     </div>

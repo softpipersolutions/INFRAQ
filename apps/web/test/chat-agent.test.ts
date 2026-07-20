@@ -5,6 +5,7 @@ import {
   getChatSession,
   getOrCreateChatSession,
   getVersionWithLines,
+  insertChatAttachment,
   insertLlmCall,
   linkSessionEnquiry,
   listChatMessages,
@@ -18,6 +19,7 @@ import {
   type Db,
   type DbHandle,
 } from "@pebble/db";
+import type { PutResult, StorageAdapter } from "@pebble/worker";
 import type { LanguageModel } from "ai";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createAiServices } from "../src/server/ai-services";
@@ -646,5 +648,113 @@ describe("agent turn + services", () => {
       { sessionId: "agent-503", message: "hello", user: actor },
     );
     expect(res.status).toBe(503);
+  });
+
+  // ── attachments (WP8): resolution, cost guard, file-part persistence ────────
+
+  /** In-memory storage returning canned bytes for any uri (agent reads attachments through it). */
+  function memoryStorage(bytesByUri: Record<string, Uint8Array> = {}): StorageAdapter {
+    return {
+      async put(key: string, bytes: Buffer | Uint8Array): Promise<PutResult> {
+        bytesByUri[`mem://${key}`] = Buffer.from(bytes);
+        return { uri: `mem://${key}`, sha256: "stub" };
+      },
+      async signedUrl(uri: string) {
+        return uri;
+      },
+      async get(uri: string): Promise<Buffer> {
+        const found = bytesByUri[uri];
+        if (!found) throw new Error(`no object at ${uri}`);
+        return Buffer.from(found);
+      },
+      keyToUri: (key: string) => `mem://${key}`,
+    };
+  }
+
+  async function seedAttachment(args: {
+    sessionId: string;
+    filename: string;
+    mediaType: string;
+    storageUri: string;
+    pageCount?: number | null;
+    status?: string;
+  }): Promise<string> {
+    const row = await insertChatAttachment(db, {
+      sessionId: args.sessionId,
+      userId: USER.firebaseUid,
+      filename: args.filename,
+      mediaType: args.mediaType,
+      sizeBytes: 1000,
+      sha256: `sha-${args.filename}-${Math.random()}`,
+      storageUri: args.storageUri,
+      pageCount: args.pageCount ?? null,
+      status: args.status ?? "READY",
+    });
+    return row.id;
+  }
+
+  it("refuses an over-budget attachment batch (413) before any model call, without persisting the turn", async () => {
+    const sessionId = "agent-attach-toobig";
+    await getOrCreateChatSession(db, { sessionId, userId: USER.firebaseUid });
+    // 30-page PDF → 75_000 tokens > 60_000 limit.
+    const id = await seedAttachment({
+      sessionId,
+      filename: "huge.pdf",
+      mediaType: "application/pdf",
+      storageUri: "file:///tmp/huge.pdf",
+      pageCount: 30,
+    });
+    const dflt = streamStub("claude-sonnet-4-6", [{ text: "should not run" }]);
+    const res = await runAgentTurn(
+      { db, models: models({ claudeDefault: dflt.model }), storage: memoryStorage(), env: { PEBBLE_DAILY_LLM_BUDGET_USD: "1000000" } },
+      { sessionId, message: "read this", user: actor, attachmentIds: [id] },
+    );
+    expect(res.status).toBe(413);
+    const body = (await res.json()) as { error: string; message: string };
+    expect(body.error).toBe("attachment_too_large");
+    expect(body.message).toContain("huge.pdf");
+    // The model never ran and no user turn was persisted.
+    expect(dflt.invoked.count).toBe(0);
+    expect(await listChatMessages(db, sessionId, 100)).toEqual([]);
+  });
+
+  it("404s an unknown/foreign attachment id", async () => {
+    const sessionId = "agent-attach-unknown";
+    await getOrCreateChatSession(db, { sessionId, userId: USER.firebaseUid });
+    const res = await runAgentTurn(
+      { db, models: models({ claudeDefault: streamStub("claude-sonnet-4-6", [{ text: "hi" }]).model }), storage: memoryStorage(), env: { PEBBLE_DAILY_LLM_BUDGET_USD: "1000000" } },
+      { sessionId, message: "read this", user: actor, attachmentIds: ["does-not-exist"] },
+    );
+    expect(res.status).toBe(404);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe("attachment_not_found");
+  });
+
+  it("persists file parts on the user row and embeds a readable text attachment", async () => {
+    const sessionId = "agent-attach-ok";
+    await getOrCreateChatSession(db, { sessionId, userId: USER.firebaseUid });
+    const bytes: Record<string, Uint8Array> = {
+      "file:///tmp/notes.txt": new TextEncoder().encode("client wants FAS on 4 floors"),
+    };
+    const id = await seedAttachment({
+      sessionId,
+      filename: "notes.txt",
+      mediaType: "text/plain",
+      storageUri: "file:///tmp/notes.txt",
+    });
+    const dflt = streamStub("claude-sonnet-4-6", [{ text: "Got your notes." }]);
+    const res = await runAgentTurn(
+      { db, models: models({ claudeDefault: dflt.model }), storage: memoryStorage(bytes), env: { PEBBLE_DAILY_LLM_BUDGET_USD: "1000000" } },
+      { sessionId, message: "here are the details", user: actor, attachmentIds: [id] },
+    );
+    await drainBody(res);
+    const userRow = await waitFor(async () => {
+      const msgs = await listChatMessages(db, sessionId, 100);
+      return msgs.find((m) => m.role === "user" && Array.isArray(m.parts)) ?? null;
+    });
+    expect(userRow.parts).toEqual([
+      { type: "file", filename: "notes.txt", mediaType: "text/plain", attachmentId: id, v: 1 },
+    ]);
+    expect(dflt.invoked.count).toBe(1);
   });
 });

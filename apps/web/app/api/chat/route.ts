@@ -37,6 +37,7 @@ export async function POST(req: Request): Promise<Response> {
         sessionId: parsed.sessionId,
         message: parsed.message,
         user: { firebaseUid: user.firebaseUid, role: user.role },
+        attachmentIds: parsed.attachmentIds,
       },
     );
   } catch (err) {

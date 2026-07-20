@@ -3,14 +3,18 @@
 import {
   AlertCircle,
   BookOpen,
+  Brain,
   ClipboardEdit,
+  FileDown,
   FileOutput,
   FilePlus,
+  FileSearch,
   FileText,
   HelpCircle,
   IndianRupee,
   List,
   Package,
+  Paperclip,
   PenLine,
   RotateCcw,
   ScanText,
@@ -65,6 +69,10 @@ const TOOL_LABELS: Record<string, string> = {
   get_estimate_version: "Opened the estimate",
   list_makes_for_material: "Checked approved makes",
   propose_line_edit: "Drafted an edit suggestion",
+  list_attachments: "Listed attachments",
+  read_attachment: "Read an attached file",
+  analyze_office_file: "Analyzed an Office file",
+  generate_file: "Generated a file",
 };
 
 /** `toolLabel("lookup_material")` -> `"Looked up material"`; unknown tools fall back to a prettified name. */
@@ -89,6 +97,10 @@ const TOOL_ICONS: Record<string, LucideIcon> = {
   get_estimate_version: FileText,
   list_makes_for_material: List,
   propose_line_edit: PenLine,
+  list_attachments: Paperclip,
+  read_attachment: FileText,
+  analyze_office_file: FileSearch,
+  generate_file: FileDown,
 };
 
 const DEFAULT_TOOL_ICON: LucideIcon = Wrench;
@@ -120,9 +132,36 @@ function isNonEmptyString(value: unknown): value is string {
 export function toolSummary(toolName: string, output: unknown): string | null {
   try {
     switch (toolName) {
-      // create_enquiry renders as a ReceiptCard instead of a summary line.
+      // create_enquiry renders as a ReceiptCard instead of a summary line;
+      // a successful generate_file renders as a GenerateFileCard.
       case "create_enquiry":
         return null;
+
+      case "generate_file": {
+        if (!isRecord(output)) return null;
+        if (output.ok === true) return null; // success → download card
+        return isNonEmptyString(output.error) ? output.error : "Could not generate the file";
+      }
+
+      case "list_attachments": {
+        if (!Array.isArray(output)) return null;
+        return output.length === 0
+          ? "No files uploaded yet"
+          : `${output.length} file${output.length === 1 ? "" : "s"}`;
+      }
+
+      case "read_attachment": {
+        if (!isRecord(output)) return null;
+        if (isNonEmptyString(output.filename)) return output.filename;
+        if (isNonEmptyString(output.note)) return output.note;
+        return null;
+      }
+
+      case "analyze_office_file": {
+        if (!isRecord(output)) return null;
+        if (output.ok === true) return isNonEmptyString(output.filename) ? output.filename : "Analyzed";
+        return isNonEmptyString(output.error) ? output.error : null;
+      }
 
       case "get_design_rules": {
         if (!Array.isArray(output)) return null;
@@ -212,6 +251,85 @@ export function isCreateEnquirySuccessPart(part: ToolPart): boolean {
   );
 }
 
+/** True for a successful `generate_file` tool part — the trigger for rendering a GenerateFileCard (a download card) instead of a row. */
+export function isGenerateFileSuccessPart(part: ToolPart): boolean {
+  return (
+    toolNameFromPart(part) === "generate_file" &&
+    part.state === "output-available" &&
+    isRecord(part.output) &&
+    part.output.ok === true &&
+    isNonEmptyString(part.output.attachmentId)
+  );
+}
+
+/** True for a `memory` tool part (WP9) — rendered as a subtle one-liner, not a full activity row. */
+export function isMemoryPart(part: ToolPart): boolean {
+  return toolNameFromPart(part) === "memory";
+}
+
+/** The memory-tool write commands (everything but `view` mutates the store). */
+const MEMORY_WRITE_COMMANDS = new Set(["create", "str_replace", "insert", "delete", "rename"]);
+
+/**
+ * Derive the memory indicator's label + path from a `memory` tool call's input.
+ * `view` reads ("Checked memory"); create/str_replace/insert/delete/rename write
+ * ("Updated memory"). The path is `input.path`, or `input.new_path` for a rename.
+ * Defensive — the input is unknown-shaped (off the wire / out of jsonb).
+ */
+export function memoryIndicator(input: unknown): { label: string; path: string | null } {
+  if (!isRecord(input)) return { label: "Used memory", path: null };
+  const command = typeof input.command === "string" ? input.command : "";
+  const path = isNonEmptyString(input.path)
+    ? input.path
+    : isNonEmptyString(input.new_path)
+      ? input.new_path
+      : null;
+  if (command === "view") return { label: "Checked memory", path };
+  if (MEMORY_WRITE_COMMANDS.has(command)) return { label: "Updated memory", path };
+  return { label: "Used memory", path };
+}
+
+/**
+ * A subtle one-line memory indicator (WP9): a Brain glyph, "Checked memory"
+ * (view) or "Updated memory" (writes), and the file path — never a full activity
+ * row. An errored call shows the danger tint with the tool's `errorText`.
+ */
+export function MemoryActivityRow({ part }: { part: ToolPart }) {
+  const { label, path } = memoryIndicator(part.input);
+  const state = part.state ?? "output-available";
+  const pending = PENDING_STATES.has(state);
+
+  if (state === "output-error") {
+    return (
+      <div className="flex items-start gap-2 text-xs text-danger">
+        <Brain size={14} strokeWidth={1.5} className="mt-0.5 shrink-0" aria-hidden />
+        <span>
+          <span className="font-medium">Memory — failed.</span>
+          {part.errorText ? <span> {part.errorText}</span> : null}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 text-xs text-ink-muted">
+      <Brain
+        size={14}
+        strokeWidth={1.5}
+        className={`shrink-0 text-ink-muted/70${pending ? " animate-pulse" : ""}`}
+        aria-hidden
+      />
+      <span>
+        <span className="font-medium">
+          {label}
+          {pending ? "…" : ""}
+        </span>
+        {path ? <span className="text-ink-muted"> · {path}</span> : null}
+      </span>
+    </div>
+  );
+}
+
 const PENDING_STATES = new Set(["input-streaming", "input-available"]);
 
 /**
@@ -295,6 +413,37 @@ export function ReceiptCard({ output }: { output: unknown }) {
       >
         Open estimate
       </a>
+    </Card>
+  );
+}
+
+/**
+ * Renders a successful `generate_file` output as a download card: a FileDown
+ * glyph, the draft's filename, a DRAFT caption in muted ink, and a link to the
+ * authenticated serve route. Renders nothing for a failure (the agent explains
+ * those in its own text reply). The caption is load-bearing: the file is a
+ * working draft, NEVER an official Greenberg document.
+ */
+export function GenerateFileCard({ output }: { output: unknown }) {
+  if (!isRecord(output) || output.ok !== true) return null;
+  const attachmentId = isNonEmptyString(output.attachmentId) ? output.attachmentId : null;
+  const filename = isNonEmptyString(output.filename) ? output.filename : "Generated file";
+  if (!attachmentId) return null;
+
+  return (
+    <Card className="p-3">
+      <a
+        href={`/api/chat/attachments/${attachmentId}`}
+        target="_blank"
+        rel="noreferrer"
+        className="flex items-center gap-2.5 text-sm font-medium text-ink hover:underline"
+      >
+        <FileDown size={18} strokeWidth={1.75} className="shrink-0 text-ink-muted" aria-hidden />
+        <span className="truncate">{filename}</span>
+      </a>
+      <p className="mt-1.5 text-xs text-ink-muted">
+        DRAFT — generated by Pebble, not an official document.
+      </p>
     </Card>
   );
 }

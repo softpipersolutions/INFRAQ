@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   isCreateEnquirySuccessPart,
+  isGenerateFileSuccessPart,
+  isMemoryPart,
   isToolPart,
+  memoryIndicator,
   toolIcon,
   toolLabel,
   toolNameFromPart,
@@ -196,5 +199,96 @@ describe("isCreateEnquirySuccessPart", () => {
       output: { ok: true, estimateId: "EST-1" },
     };
     expect(isCreateEnquirySuccessPart(otherTool)).toBe(false);
+  });
+});
+
+describe("isGenerateFileSuccessPart", () => {
+  it("is true for a finished generate_file with an attachmentId", () => {
+    const part: ToolPart = {
+      type: "tool-generate_file",
+      state: "output-available",
+      output: { ok: true, attachmentId: "att-7", filename: "draft.xlsx", draft: true },
+    };
+    expect(isGenerateFileSuccessPart(part)).toBe(true);
+  });
+
+  it("is false for a failure ({ok:false, error})", () => {
+    const part: ToolPart = {
+      type: "tool-generate_file",
+      state: "output-available",
+      output: { ok: false, error: "container blew up" },
+    };
+    expect(isGenerateFileSuccessPart(part)).toBe(false);
+  });
+
+  it("is false when the attachmentId is missing", () => {
+    const part: ToolPart = {
+      type: "tool-generate_file",
+      state: "output-available",
+      output: { ok: true },
+    };
+    expect(isGenerateFileSuccessPart(part)).toBe(false);
+  });
+});
+
+describe("toolSummary — generate_file / read_attachment", () => {
+  it("generate_file success returns null (renders as a card)", () => {
+    expect(toolSummary("generate_file", { ok: true, attachmentId: "a", filename: "f.xlsx" })).toBeNull();
+  });
+
+  it("generate_file failure surfaces the error string", () => {
+    expect(toolSummary("generate_file", { ok: false, error: "no file produced" })).toBe("no file produced");
+  });
+
+  it("read_attachment summarises with the filename", () => {
+    expect(toolSummary("read_attachment", { ok: true, filename: "notes.txt", text: "x" })).toBe("notes.txt");
+  });
+
+  it("list_attachments summarises the count", () => {
+    expect(toolSummary("list_attachments", [{ attachmentId: "a" }, { attachmentId: "b" }])).toBe("2 files");
+    expect(toolSummary("list_attachments", [])).toBe("No files uploaded yet");
+  });
+});
+
+describe("memory indicator (WP9)", () => {
+  it("isMemoryPart matches the memory tool part", () => {
+    expect(isMemoryPart({ type: "tool-memory" })).toBe(true);
+    expect(isMemoryPart({ type: "tool-lookup_material" })).toBe(false);
+    expect(isMemoryPart({ type: "dynamic-tool", toolName: "memory" })).toBe(true);
+  });
+
+  it("view reads → 'Checked memory' with the path", () => {
+    expect(memoryIndicator({ command: "view", path: "/memories/prefs.md" })).toEqual({
+      label: "Checked memory",
+      path: "/memories/prefs.md",
+    });
+  });
+
+  it("writes → 'Updated memory' with the path", () => {
+    for (const command of ["create", "str_replace", "insert", "delete"]) {
+      expect(memoryIndicator({ command, path: "/memories/a.md" })).toEqual({
+        label: "Updated memory",
+        path: "/memories/a.md",
+      });
+    }
+  });
+
+  it("rename → 'Updated memory' using the new_path", () => {
+    expect(memoryIndicator({ command: "rename", old_path: "/memories/o.md", new_path: "/memories/n.md" })).toEqual({
+      label: "Updated memory",
+      path: "/memories/n.md",
+    });
+  });
+
+  it("view on the root has no path", () => {
+    expect(memoryIndicator({ command: "view", path: "/memories" })).toEqual({
+      label: "Checked memory",
+      path: "/memories",
+    });
+  });
+
+  it("is defensive against unknown-shaped input", () => {
+    expect(memoryIndicator(null)).toEqual({ label: "Used memory", path: null });
+    expect(memoryIndicator({})).toEqual({ label: "Used memory", path: null });
   });
 });
