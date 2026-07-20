@@ -16,6 +16,7 @@ import {
 } from "@pebble/ai";
 import {
   appendChatMessage,
+  ChatSessionOwnershipError,
   countMessagesAfter,
   getOrCreateChatSession,
   insertLlmCall,
@@ -102,7 +103,18 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
   const { sessionId, message, user } = args;
 
   // 1. Ensure the session row exists (slot state + summary + contradictions + link).
-  const session = await getOrCreateChatSession(db, { sessionId, userId: user.firebaseUid });
+  //    Owner-checked BEFORE any streaming: a UUID that already belongs to another
+  //    user is rejected (404, not 403 — do not leak that the session exists)
+  //    rather than resumed.
+  let session: ChatSessionRow;
+  try {
+    session = await getOrCreateChatSession(db, { sessionId, userId: user.firebaseUid });
+  } catch (err) {
+    if (err instanceof ChatSessionOwnershipError) {
+      return jsonResponse(404, { error: "session_not_found", message: "Session not found." });
+    }
+    throw err;
+  }
 
   // 2. Daily budget guard (per-user, since UTC midnight).
   const budget = await checkDailyBudget(db, { userId: user.firebaseUid, now, env });
@@ -230,7 +242,9 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
         // Cache reads/writes bill at their own rates and would otherwise be
         // invisible to the ledger: `totalUsage.cachedInputTokens` carries the
         // reads; writes come from Anthropic's provider metadata. Sum writes
-        // across steps (each step of a tool loop may write).
+        // across steps (each step of a tool loop may write). `toLlmCallLog`
+        // both prices these into costUsd AND surfaces the two raw counts, which
+        // `insertLlmCall` writes to llm_calls.cache_read_tokens/cache_write_tokens.
         const anthropicUsage = (providerMetadata?.anthropic as
           | { usage?: { cache_creation_input_tokens?: number } }
           | undefined)?.usage;
@@ -309,7 +323,7 @@ export async function maybeRefreshSummary(
     oldSummary: session.summary,
     messages: toSummarize.map((m) => ({ role: m.role, content: m.content })),
   });
-  await updateSessionSummary(db, sessionId, { summary, uptoMessageId: watermark });
+  await updateSessionSummary(db, sessionId, session.userId, { summary, uptoMessageId: watermark });
   await insertLlmCall(
     db,
     toLlmCallLog({

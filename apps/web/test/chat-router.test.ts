@@ -34,6 +34,24 @@ const ESTIMATOR: AppUser = {
   active: true,
 };
 
+/** A second signed-in user who tries to reach ESTIMATOR's sessions by UUID. */
+const OTHER: AppUser = {
+  firebaseUid: "chat-other",
+  email: "chat-other@greenberg.test",
+  displayName: "Chat Other",
+  role: "estimator",
+  active: true,
+};
+
+/** An admin — ownership is strict owner-only, so even an admin cannot reach a foreign session. */
+const ADMIN: AppUser = {
+  firebaseUid: "chat-admin",
+  email: "chat-admin@greenberg.test",
+  displayName: "Chat Admin",
+  role: "admin",
+  active: true,
+};
+
 /** A fully-captured (proposed) slot state for the demo enquiry. */
 function demoSlotState(): SlotState {
   return applyExtracted(initSlotState(), {
@@ -58,6 +76,8 @@ describe("chat router", () => {
     await seedDatabase(handle.db);
     db = handle.db as unknown as Db;
     await upsertUser(db, ESTIMATOR); // FK: chat_sessions.user_id → users
+    await upsertUser(db, OTHER);
+    await upsertUser(db, ADMIN);
   });
 
   afterAll(async () => {
@@ -93,7 +113,7 @@ describe("chat router", () => {
     const caller = callerFor(ESTIMATOR);
     const sessionId = "progress-session";
     await getOrCreateChatSession(db, { sessionId, userId: ESTIMATOR.firebaseUid });
-    await updateSlotState(db, sessionId, demoSlotState());
+    await updateSlotState(db, sessionId, ESTIMATOR.firebaseUid, demoSlotState());
 
     const state = await caller.chat.sessionState({ sessionId });
     // All required fields captured (proposed) → ready to confirm, not yet all-confirmed.
@@ -106,7 +126,7 @@ describe("chat router", () => {
     const caller = callerFor(ESTIMATOR);
     const sessionId = "confirm-session";
     await getOrCreateChatSession(db, { sessionId, userId: ESTIMATOR.firebaseUid });
-    await updateSlotState(db, sessionId, demoSlotState());
+    await updateSlotState(db, sessionId, ESTIMATOR.firebaseUid, demoSlotState());
 
     const { enquiryId, estimateId } = await caller.chat.confirmEnquiry({ sessionId });
     expect(enquiryId).toMatch(/^GBE-ENQ-/);
@@ -142,6 +162,7 @@ describe("chat router", () => {
     await updateSlotState(
       db,
       sessionId,
+      ESTIMATOR.firebaseUid,
       applyExtracted(initSlotState(), { clientName: "Only a name" }),
     );
     let code: string | null = null;
@@ -212,5 +233,49 @@ describe("chat router", () => {
     // A legacy text-only user row has null parts.
     const userRow = history.find((m) => m.role === "user");
     expect(userRow?.parts).toBeNull();
+  });
+
+  it("session ownership: a non-owner (incl. admin) gets NOT_FOUND on every session procedure; the owner still succeeds", async () => {
+    const owner = callerFor(ESTIMATOR);
+    const other = callerFor(OTHER);
+    const admin = callerFor(ADMIN);
+
+    // ESTIMATOR owns a fully-captured session (ready to confirm, not yet linked) with a message.
+    const sessionId = "xuser-session";
+    await getOrCreateChatSession(db, { sessionId, userId: ESTIMATOR.firebaseUid });
+    await updateSlotState(db, sessionId, ESTIMATOR.firebaseUid, demoSlotState());
+    await appendChatMessage(db, { sessionId, role: "user", content: "secret enquiry" });
+
+    const codeOf = async (fn: () => Promise<unknown>): Promise<string | null> => {
+      try {
+        await fn();
+        return null;
+      } catch (err) {
+        if (err instanceof TRPCError) return err.code;
+        throw err;
+      }
+    };
+
+    // Knowing the UUID is not enough: every read/mutation by a non-owner — an
+    // ordinary user AND an admin — is NOT_FOUND (never FORBIDDEN, no existence leak).
+    for (const caller of [other, admin]) {
+      expect(await codeOf(() => caller.chat.sessionState({ sessionId }))).toBe("NOT_FOUND");
+      expect(await codeOf(() => caller.chat.history({ sessionId }))).toBe("NOT_FOUND");
+      expect(await codeOf(() => caller.chat.confirmEnquiry({ sessionId }))).toBe("NOT_FOUND");
+      expect(await codeOf(() => caller.chat.reset({ sessionId }))).toBe("NOT_FOUND");
+    }
+
+    // The owner is unaffected — the foreign confirm/reset attempts were all no-ops.
+    const ownerState = await owner.chat.sessionState({ sessionId });
+    expect(ownerState.enquiryId).toBeNull();
+    expect(ownerState.readyToConfirm).toBe(true);
+    expect(ownerState.slotState.clientName.value).toBe("Acme Fire Pvt Ltd");
+
+    const ownerHistory = await owner.chat.history({ sessionId });
+    expect(ownerHistory.some((m) => m.content === "secret enquiry")).toBe(true);
+
+    // And the owner can still confirm — proving the state survived the foreign attempts.
+    const { enquiryId } = await owner.chat.confirmEnquiry({ sessionId });
+    expect(enquiryId).toMatch(/^GBE-ENQ-/);
   });
 });

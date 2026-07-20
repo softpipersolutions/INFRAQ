@@ -41,7 +41,7 @@ async function main() {
     notes: { status: "missing", value: null },
   };
 
-  await updateSlotState(db, sessionId, slotState);
+  await updateSlotState(db, sessionId, DEV_USER.firebaseUid, slotState);
   await handle.close();
   console.log(JSON.stringify({ ok: true, sessionId }));
 }

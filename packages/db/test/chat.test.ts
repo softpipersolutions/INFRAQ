@@ -6,9 +6,11 @@ import { eq, sql } from "drizzle-orm";
 import type { Db, DbHandle } from "../src/index";
 import {
   appendChatMessage,
+  ChatSessionOwnershipError,
   countMessagesAfter,
   createDb,
   getChatSession,
+  getChatSessionOwner,
   getOrCreateChatSession,
   incrementContradictions,
   insertLlmCall,
@@ -22,7 +24,7 @@ import {
   updateSlotState,
   upsertUser,
 } from "../src/index";
-import { chatSessions } from "../src/schema";
+import { chatSessions, llmCalls } from "../src/schema";
 import { freshDb } from "./helpers";
 
 const DRIZZLE_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "drizzle");
@@ -81,6 +83,51 @@ describe("0003 chat agent migration", () => {
   });
 });
 
+describe("0004 chat sessions v2 migration", () => {
+  it("applies 0004_chat_sessions_v2.sql on a fresh database", async () => {
+    const fresh = await createDb({ pglite: true, pgliteDir: "memory://" });
+    try {
+      const applied = await migrateDb(fresh);
+      expect(applied).toContain("0004_chat_sessions_v2.sql");
+    } finally {
+      await fresh.close();
+    }
+  });
+
+  it("adds the session-list columns, the cache-token ledger columns and the activity index", async () => {
+    const cols = (await db.execute(sql`
+      SELECT table_name, column_name FROM information_schema.columns
+      WHERE (table_name = 'chat_sessions' AND column_name IN
+              ('title', 'archived_at', 'pinned_at', 'last_message_at', 'last_message_preview'))
+         OR (table_name = 'llm_calls' AND column_name IN ('cache_read_tokens', 'cache_write_tokens'))
+      ORDER BY table_name, column_name
+    `)) as unknown as { rows: Array<{ table_name: string; column_name: string }> };
+    expect(cols.rows.map((r) => `${r.table_name}.${r.column_name}`)).toEqual([
+      "chat_sessions.archived_at",
+      "chat_sessions.last_message_at",
+      "chat_sessions.last_message_preview",
+      "chat_sessions.pinned_at",
+      "chat_sessions.title",
+      "llm_calls.cache_read_tokens",
+      "llm_calls.cache_write_tokens",
+    ]);
+
+    const idx = (await db.execute(
+      sql`SELECT indexname FROM pg_indexes WHERE tablename = 'chat_sessions' AND indexname = 'idx_chat_sessions_user_activity'`,
+    )) as unknown as { rows: Array<{ indexname: string }> };
+    expect(idx.rows).toHaveLength(1);
+  });
+
+  it("re-applies the raw migration SQL without error (idempotent ADD COLUMN IF NOT EXISTS on PGlite)", async () => {
+    const contents = await readFile(join(DRIZZLE_DIR, "0004_chat_sessions_v2.sql"), "utf8");
+    await expect(handle.exec(contents)).resolves.not.toThrow();
+    const cols = (await db.execute(
+      sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'chat_sessions' AND column_name = 'last_message_at'`,
+    )) as unknown as { rows: Array<{ column_name: string }> };
+    expect(cols.rows).toHaveLength(1);
+  });
+});
+
 describe("chat sessions", () => {
   it("get-or-create is idempotent and starts with a null (fresh) slot state", async () => {
     const first = await getOrCreateChatSession(db, { sessionId: "sess-1", userId: DEV_UID });
@@ -90,13 +137,64 @@ describe("chat sessions", () => {
     expect(first.enquiryId).toBeNull();
 
     // Advance the slot state, then re-create with the same id: must NOT clobber it.
-    await updateSlotState(db, "sess-1", { clientName: { status: "confirmed", value: "Acme" } });
+    await updateSlotState(db, "sess-1", DEV_UID, { clientName: { status: "confirmed", value: "Acme" } });
     const second = await getOrCreateChatSession(db, { sessionId: "sess-1", userId: DEV_UID });
     expect(second.slotState).toEqual({ clientName: { status: "confirmed", value: "Acme" } });
 
     // Exactly one row exists.
     const rows = await db.select().from(chatSessions).where(eq(chatSessions.id, "sess-1"));
     expect(rows).toHaveLength(1);
+  });
+
+  it("get-or-create rejects a session UUID that already belongs to a different user", async () => {
+    await upsertUser(db, {
+      firebaseUid: "owner-a",
+      email: "owner-a@greenberg.test",
+      displayName: "Owner A",
+      role: "estimator",
+      active: true,
+    });
+    await upsertUser(db, {
+      firebaseUid: "attacker-b",
+      email: "attacker-b@greenberg.test",
+      displayName: "Attacker B",
+      role: "estimator",
+      active: true,
+    });
+
+    // A owns the session.
+    await getOrCreateChatSession(db, { sessionId: "sess-owned", userId: "owner-a" });
+    await updateSlotState(db, "sess-owned", "owner-a", {
+      clientName: { status: "confirmed", value: "Acme" },
+    });
+
+    // B knows the UUID but is not the owner → get-or-create THROWS (never hands back A's row).
+    await expect(
+      getOrCreateChatSession(db, { sessionId: "sess-owned", userId: "attacker-b" }),
+    ).rejects.toBeInstanceOf(ChatSessionOwnershipError);
+
+    // The ownership-agnostic probe still reports the true owner (used only server-side).
+    expect(await getChatSessionOwner(db, "sess-owned")).toBe("owner-a");
+    expect(await getChatSessionOwner(db, "sess-nonexistent")).toBeNull();
+
+    // Owner-scoped reads/writes isolate B completely.
+    expect(await getChatSession(db, "sess-owned", "attacker-b")).toBeNull();
+    expect(await getChatSession(db, "sess-owned", "owner-a")).not.toBeNull();
+
+    // A non-owner mutation is a no-op — A's slot state and counter are untouched.
+    await updateSlotState(db, "sess-owned", "attacker-b", null);
+    await setContradictions(db, "sess-owned", "attacker-b", 9);
+    const stillA = await getChatSession(db, "sess-owned", "owner-a");
+    expect(stillA?.slotState).toEqual({ clientName: { status: "confirmed", value: "Acme" } });
+    expect(stillA?.contradictions).toBe(0);
+
+    // incrementContradictions as a non-owner matches zero rows → throws (nothing to bump).
+    await expect(incrementContradictions(db, "sess-owned", "attacker-b")).rejects.toThrow();
+
+    // Exactly one row exists for the UUID.
+    const rows = await db.select().from(chatSessions).where(eq(chatSessions.id, "sess-owned"));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.userId).toBe("owner-a");
   });
 
   it("round-trips a slot state and clears it back to null", async () => {
@@ -106,17 +204,17 @@ describe("chat sessions", () => {
       systemsRequired: { status: "confirmed", value: ["FAS", "Extinguisher"] },
       floorsAbove: { status: "confirmed", value: 4 },
     };
-    await updateSlotState(db, "sess-rt", state);
-    expect((await getChatSession(db, "sess-rt"))?.slotState).toEqual(state);
+    await updateSlotState(db, "sess-rt", DEV_UID, state);
+    expect((await getChatSession(db, "sess-rt", DEV_UID))?.slotState).toEqual(state);
 
-    await updateSlotState(db, "sess-rt", null);
-    expect((await getChatSession(db, "sess-rt"))?.slotState).toBeNull();
+    await updateSlotState(db, "sess-rt", DEV_UID, null);
+    expect((await getChatSession(db, "sess-rt", DEV_UID))?.slotState).toBeNull();
   });
 
   it("links the created enquiry back to the session", async () => {
     await getOrCreateChatSession(db, { sessionId: "sess-link", userId: DEV_UID });
-    await linkSessionEnquiry(db, "sess-link", "GBE-ENQ-2026-042");
-    expect((await getChatSession(db, "sess-link"))?.enquiryId).toBe("GBE-ENQ-2026-042");
+    await linkSessionEnquiry(db, "sess-link", DEV_UID, "GBE-ENQ-2026-042");
+    expect((await getChatSession(db, "sess-link", DEV_UID))?.enquiryId).toBe("GBE-ENQ-2026-042");
   });
 
   it("starts with a null summary/watermark and a zero contradiction counter", async () => {
@@ -130,33 +228,33 @@ describe("chat sessions", () => {
     await getOrCreateChatSession(db, { sessionId: "sess-sum", userId: DEV_UID });
     const msgId = await appendChatMessage(db, { sessionId: "sess-sum", role: "user", content: "Hi" });
 
-    await updateSessionSummary(db, "sess-sum", {
+    await updateSessionSummary(db, "sess-sum", DEV_UID, {
       summary: "Client asked about a 4-storey commercial FAS enquiry.",
       uptoMessageId: msgId,
     });
 
-    const row = await getChatSession(db, "sess-sum");
+    const row = await getChatSession(db, "sess-sum", DEV_UID);
     expect(row?.summary).toBe("Client asked about a 4-storey commercial FAS enquiry.");
     expect(row?.summaryUptoMessageId).toBe(msgId);
   });
 
   it("sets the contradiction counter outright", async () => {
     await getOrCreateChatSession(db, { sessionId: "sess-contra-set", userId: DEV_UID });
-    await setContradictions(db, "sess-contra-set", 3);
-    expect((await getChatSession(db, "sess-contra-set"))?.contradictions).toBe(3);
+    await setContradictions(db, "sess-contra-set", DEV_UID, 3);
+    expect((await getChatSession(db, "sess-contra-set", DEV_UID))?.contradictions).toBe(3);
 
-    await setContradictions(db, "sess-contra-set", 0);
-    expect((await getChatSession(db, "sess-contra-set"))?.contradictions).toBe(0);
+    await setContradictions(db, "sess-contra-set", DEV_UID, 0);
+    expect((await getChatSession(db, "sess-contra-set", DEV_UID))?.contradictions).toBe(0);
   });
 
   it("increments the contradiction counter and returns the new count", async () => {
     await getOrCreateChatSession(db, { sessionId: "sess-contra-inc", userId: DEV_UID });
 
-    expect(await incrementContradictions(db, "sess-contra-inc")).toBe(1);
-    expect(await incrementContradictions(db, "sess-contra-inc")).toBe(2);
-    expect(await incrementContradictions(db, "sess-contra-inc", 3)).toBe(5);
+    expect(await incrementContradictions(db, "sess-contra-inc", DEV_UID)).toBe(1);
+    expect(await incrementContradictions(db, "sess-contra-inc", DEV_UID)).toBe(2);
+    expect(await incrementContradictions(db, "sess-contra-inc", DEV_UID, 3)).toBe(5);
 
-    expect((await getChatSession(db, "sess-contra-inc"))?.contradictions).toBe(5);
+    expect((await getChatSession(db, "sess-contra-inc", DEV_UID))?.contradictions).toBe(5);
   });
 });
 
@@ -216,6 +314,36 @@ describe("chat messages", () => {
     expect(msgs.map((m) => m.parts)).toEqual([null, parts, null]);
   });
 
+  it("denormalizes last_message_at/preview onto the parent session on append", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-denorm", userId: DEV_UID });
+    // Fresh session: no message yet, so no denormalized pointer.
+    expect((await getChatSession(db, "sess-denorm", DEV_UID))?.lastMessageAt).toBeNull();
+    expect((await getChatSession(db, "sess-denorm", DEV_UID))?.lastMessagePreview).toBeNull();
+
+    await appendChatMessage(db, { sessionId: "sess-denorm", role: "user", content: "First question" });
+    const afterFirst = await getChatSession(db, "sess-denorm", DEV_UID);
+    expect(afterFirst?.lastMessageAt).toBeInstanceOf(Date);
+    expect(afterFirst?.lastMessagePreview).toBe("First question");
+    const firstAt = afterFirst!.lastMessageAt!;
+
+    // A long assistant reply: preview is truncated to the first 120 chars, and
+    // the pointer advances to the newest message.
+    const long = "A".repeat(200);
+    await appendChatMessage(db, { sessionId: "sess-denorm", role: "assistant", content: long, lane: "claude" });
+    const afterSecond = await getChatSession(db, "sess-denorm", DEV_UID);
+    expect(afterSecond?.lastMessagePreview).toBe("A".repeat(120));
+    expect(afterSecond!.lastMessageAt!.getTime()).toBeGreaterThanOrEqual(firstAt.getTime());
+  });
+
+  it("scopes the denormalization to the appended session only", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-denorm-a", userId: DEV_UID });
+    await getOrCreateChatSession(db, { sessionId: "sess-denorm-b", userId: DEV_UID });
+    await appendChatMessage(db, { sessionId: "sess-denorm-a", role: "user", content: "only A" });
+    // B was never appended to → its pointer stays null.
+    expect((await getChatSession(db, "sess-denorm-b", DEV_UID))?.lastMessagePreview).toBeNull();
+    expect((await getChatSession(db, "sess-denorm-a", DEV_UID))?.lastMessagePreview).toBe("only A");
+  });
+
   it("countMessagesAfter counts unsummarized turns with and without a watermark", async () => {
     await getOrCreateChatSession(db, { sessionId: "sess-count", userId: DEV_UID });
     const ids: string[] = [];
@@ -266,6 +394,42 @@ describe("llm cost ledger", () => {
     expect(await sumLlmCostSince(db, { userId: "user-b", sinceISO: since })).toBeCloseTo(1.0, 6);
     // Global tally includes the session-less call.
     expect(await sumLlmCostSince(db, { sinceISO: since })).toBeCloseTo(5.75, 6);
+  });
+
+  it("round-trips the optional cache read/write token counts, defaulting to null", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-cache", userId: DEV_UID });
+
+    // With cache usage supplied.
+    await insertLlmCall(db, {
+      sessionId: "sess-cache",
+      lane: "claude",
+      model: "claude-sonnet-4-6",
+      inputTokens: 100,
+      outputTokens: 20,
+      costUsd: 0.01,
+      cacheReadTokens: 512,
+      cacheWriteTokens: 128,
+    });
+    // Without: legacy shape omits them → columns are null.
+    await insertLlmCall(db, {
+      sessionId: "sess-cache",
+      lane: "gemini",
+      model: "gemini-3.5-flash",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const rows = await db
+      .select()
+      .from(llmCalls)
+      .where(eq(llmCalls.sessionId, "sess-cache"))
+      .orderBy(llmCalls.id);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.cacheReadTokens).toBe(512);
+    expect(rows[0]?.cacheWriteTokens).toBe(128);
+    expect(rows[1]?.cacheReadTokens).toBeNull();
+    expect(rows[1]?.cacheWriteTokens).toBeNull();
   });
 
   it("excludes calls before the since instant", async () => {

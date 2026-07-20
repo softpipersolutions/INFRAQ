@@ -48,7 +48,7 @@ export async function createDraftViaHappyPath(ctx: EvalCtx): Promise<DraftFixtur
   const turn1 = await ctx.sendTurn(sessionId, RICH_MESSAGE);
   const turn2 = await ctx.sendTurn(sessionId, GO_AHEAD_MESSAGE);
 
-  const session = await getChatSession(ctx.db, sessionId);
+  const session = await getChatSession(ctx.db, sessionId, ctx.user.firebaseUid);
   if (!session?.enquiryId) {
     throw new Error(
       `createDraftViaHappyPath: no enquiry linked after the go-ahead turn (reply: ${turn2.text.slice(0, 200)})`,
@@ -68,7 +68,7 @@ async function run(ctx: EvalCtx): Promise<CaseResult> {
 
   const turn1 = await ctx.sendTurn(sessionId, RICH_MESSAGE);
 
-  const sessionAfter1 = await getChatSession(ctx.db, sessionId);
+  const sessionAfter1 = await getChatSession(ctx.db, sessionId, ctx.user.firebaseUid);
   const stateAfter1 = resolveSlotState(sessionAfter1?.slotState ?? null);
 
   const gotSystems = [...((stateAfter1.systemsRequired.value as string[] | null) ?? [])].sort();
@@ -98,7 +98,7 @@ async function run(ctx: EvalCtx): Promise<CaseResult> {
   notes.push(noEnquiryYet ? "no enquiry created before confirmation" : "enquiry created TOO EARLY");
 
   const turn2 = await ctx.sendTurn(sessionId, GO_AHEAD_MESSAGE);
-  const sessionAfter2 = await getChatSession(ctx.db, sessionId);
+  const sessionAfter2 = await getChatSession(ctx.db, sessionId, ctx.user.firebaseUid);
 
   const enquiryId = sessionAfter2?.enquiryId ?? null;
   notes.push(enquiryId ? `enquiry created: ${enquiryId}` : "NO enquiry created after go-ahead");

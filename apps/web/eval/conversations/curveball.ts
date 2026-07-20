@@ -24,11 +24,11 @@ async function run(ctx: EvalCtx): Promise<CaseResult> {
   });
 
   await ctx.sendTurn(sessionId, TURN_1);
-  const beforeState = resolveSlotState((await getChatSession(ctx.db, sessionId))?.slotState ?? null);
+  const beforeState = resolveSlotState((await getChatSession(ctx.db, sessionId, ctx.user.firebaseUid))?.slotState ?? null);
   const beforeCount = capturedFieldCount(beforeState);
 
   const curveballTurn = await ctx.sendTurn(sessionId, CURVEBALL);
-  const afterCurveballSession = await getChatSession(ctx.db, sessionId);
+  const afterCurveballSession = await getChatSession(ctx.db, sessionId, ctx.user.firebaseUid);
   const afterCurveballState = resolveSlotState(afterCurveballSession?.slotState ?? null);
 
   const searchUsed = curveballTurn.parts.some((p) => p.type === "tool-search_past_estimates");
@@ -38,7 +38,7 @@ async function run(ctx: EvalCtx): Promise<CaseResult> {
   notes.push(stateUnchanged ? "slot state unchanged by the curveball turn" : "slot state CHANGED by the curveball turn");
 
   const resumeTurn = await ctx.sendTurn(sessionId, RESUME);
-  const afterResumeState = resolveSlotState((await getChatSession(ctx.db, sessionId))?.slotState ?? null);
+  const afterResumeState = resolveSlotState((await getChatSession(ctx.db, sessionId, ctx.user.firebaseUid))?.slotState ?? null);
   const afterResumeCount = capturedFieldCount(afterResumeState);
 
   const captureResumed = afterResumeCount > beforeCount;

@@ -15,10 +15,36 @@ import { chatMessages, chatSessions, llmCalls } from "../schema";
  * `null` literal rather than an empty object; the web layer reads that back as
  * `null` and seeds `initSlotState()`. This package never imports `@pebble/ai`,
  * so the slot-state shape is opaque here (`Record<string, unknown> | null`).
+ *
+ * SESSION OWNERSHIP (security): every session-row read/mutation keyed by
+ * `sessionId` also filters on `user_id`, so knowing another user's session UUID
+ * is not enough to read, confirm or reset it. The row-scoped functions take a
+ * `userId` and AND it into the predicate; a non-owner simply matches zero rows
+ * (a read returns `null`, a mutation is a no-op). `getOrCreateChatSession`
+ * additionally THROWS `ChatSessionOwnershipError` when the existing row belongs
+ * to a different user, rather than handing back a foreign row. The message
+ * helpers (`listChatMessages`, `countMessagesAfter`) and `appendChatMessage`
+ * are keyed by `session_id` only and are INTERNAL: callers must first resolve
+ * an owned session (via `getChatSession`/`getOrCreateChatSession` with the
+ * `userId`) — see each function's doc comment.
  */
 
 /** The JSON `null` literal for the NOT NULL slot_state column (a fresh session). */
 const JSON_NULL = sql`'null'::jsonb`;
+
+/**
+ * Thrown by `getOrCreateChatSession` when the session UUID already belongs to a
+ * DIFFERENT user. The web layer maps this to a `NOT_FOUND` (never `FORBIDDEN`)
+ * so it does not leak that the session exists.
+ */
+export class ChatSessionOwnershipError extends Error {
+  readonly sessionId: string;
+  constructor(sessionId: string) {
+    super(`Chat session ${sessionId} is owned by a different user`);
+    this.name = "ChatSessionOwnershipError";
+    this.sessionId = sessionId;
+  }
+}
 
 export interface ChatSessionRow {
   id: string;
@@ -31,6 +57,16 @@ export interface ChatSessionRow {
   summaryUptoMessageId: string | null;
   /** Confirmed-slot contradiction counter feeding the Opus escalation guard. */
   contradictions: number;
+  /** User/agent-set session label; null on legacy rows (list renders a fallback). */
+  title: string | null;
+  /** Soft-archive flag: null = active, timestamp = archived. */
+  archivedAt: Date | null;
+  /** Pin flag: null = unpinned, timestamp = pinned. */
+  pinnedAt: Date | null;
+  /** Denormalized newest-message time — the session list's sort key. */
+  lastMessageAt: Date | null;
+  /** First 120 chars of the newest message — the session list preview. */
+  lastMessagePreview: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,6 +92,11 @@ function rowToSession(r: typeof chatSessions.$inferSelect): ChatSessionRow {
     summary: r.summary ?? null,
     summaryUptoMessageId: r.summaryUptoMessageId ?? null,
     contradictions: r.contradictions,
+    title: r.title ?? null,
+    archivedAt: r.archivedAt ?? null,
+    pinnedAt: r.pinnedAt ?? null,
+    lastMessageAt: r.lastMessageAt ?? null,
+    lastMessagePreview: r.lastMessagePreview ?? null,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   };
@@ -63,16 +104,50 @@ function rowToSession(r: typeof chatSessions.$inferSelect): ChatSessionRow {
 
 // ─── Sessions ────────────────────────────────────────────────────────────────
 
-export async function getChatSession(db: Db, sessionId: string): Promise<ChatSessionRow | null> {
-  const rows = await db.select().from(chatSessions).where(eq(chatSessions.id, sessionId)).limit(1);
+/**
+ * The session row for `sessionId` — but ONLY if it belongs to `userId`. A
+ * non-owner (or a missing row) reads back as `null`, so the caller cannot tell
+ * a foreign session apart from one that does not exist.
+ */
+export async function getChatSession(
+  db: Db,
+  sessionId: string,
+  userId: string,
+): Promise<ChatSessionRow | null> {
+  const rows = await db
+    .select()
+    .from(chatSessions)
+    .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)))
+    .limit(1);
   const r = rows[0];
   return r ? rowToSession(r) : null;
+}
+
+/**
+ * The owning user's id for a session UUID, or `null` when no such row exists —
+ * ownership-agnostic. Lets a read-only caller (e.g. the `sessionState` query)
+ * distinguish a brand-new session (nothing to hide — show a fresh state) from
+ * one that belongs to a DIFFERENT user (surface NOT_FOUND) without a write and
+ * without leaking the row's contents.
+ */
+export async function getChatSessionOwner(db: Db, sessionId: string): Promise<string | null> {
+  const rows = await db
+    .select({ userId: chatSessions.userId })
+    .from(chatSessions)
+    .where(eq(chatSessions.id, sessionId))
+    .limit(1);
+  return rows[0]?.userId ?? null;
 }
 
 /**
  * Idempotent get-or-create keyed on the client-supplied session UUID. The
  * insert is a no-op on conflict, so an existing session's slot state / enquiry
  * link / user are never clobbered — the row is always read back and returned.
+ *
+ * Ownership: on conflict the existing row is read back UNFILTERED so a row that
+ * already belongs to a DIFFERENT user is rejected with `ChatSessionOwnershipError`
+ * instead of being handed to the caller. A same-owner row returns normally, and
+ * a brand-new UUID is created for `userId`.
  */
 export async function getOrCreateChatSession(
   db: Db,
@@ -83,15 +158,27 @@ export async function getOrCreateChatSession(
     .values({ id: args.sessionId, userId: args.userId, slotState: JSON_NULL })
     .onConflictDoNothing({ target: chatSessions.id });
 
-  const row = await getChatSession(db, args.sessionId);
-  if (!row) throw new Error(`Chat session ${args.sessionId} not found after upsert`);
-  return row;
+  // Read back WITHOUT the owner filter: a pre-existing row owned by someone else
+  // must be detected (and rejected), not silently returned as if it were ours.
+  const rows = await db
+    .select()
+    .from(chatSessions)
+    .where(eq(chatSessions.id, args.sessionId))
+    .limit(1);
+  const r = rows[0];
+  if (!r) throw new Error(`Chat session ${args.sessionId} not found after upsert`);
+  if (r.userId !== args.userId) throw new ChatSessionOwnershipError(args.sessionId);
+  return rowToSession(r);
 }
 
-/** Overwrite the slot-filling state (pass `null` to clear it back to a fresh session). */
+/**
+ * Overwrite the slot-filling state (pass `null` to clear it back to a fresh
+ * session). Owner-scoped: a non-owner matches zero rows and writes nothing.
+ */
 export async function updateSlotState(
   db: Db,
   sessionId: string,
+  userId: string,
   slotState: unknown,
 ): Promise<void> {
   await db
@@ -100,29 +187,35 @@ export async function updateSlotState(
       slotState: (slotState === null ? JSON_NULL : slotState) as Record<string, unknown>,
       updatedAt: new Date(),
     })
-    .where(eq(chatSessions.id, sessionId));
+    .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)));
 }
 
-/** Link the session to the enquiry it created (chat_sessions.enquiry_id is not an FK — see schema). */
+/**
+ * Link the session to the enquiry it created (chat_sessions.enquiry_id is not an
+ * FK — see schema). Owner-scoped: a non-owner matches zero rows and writes nothing.
+ */
 export async function linkSessionEnquiry(
   db: Db,
   sessionId: string,
+  userId: string,
   enquiryId: string,
 ): Promise<void> {
   await db
     .update(chatSessions)
     .set({ enquiryId, updatedAt: new Date() })
-    .where(eq(chatSessions.id, sessionId));
+    .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)));
 }
 
 /**
  * Overwrite the Gemini-Flash running summary and advance its watermark
  * (`summaryUptoMessageId`). Called by the summary-refresh trigger once more
- * than `PEBBLE_CHAT_WINDOW` unsummarized turns have accumulated.
+ * than `PEBBLE_CHAT_WINDOW` unsummarized turns have accumulated. Owner-scoped:
+ * a non-owner matches zero rows and writes nothing.
  */
 export async function updateSessionSummary(
   db: Db,
   sessionId: string,
+  userId: string,
   args: { summary: string; uptoMessageId: string },
 ): Promise<void> {
   await db
@@ -132,24 +225,35 @@ export async function updateSessionSummary(
       summaryUptoMessageId: args.uptoMessageId,
       updatedAt: new Date(),
     })
-    .where(eq(chatSessions.id, sessionId));
+    .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)));
 }
 
-/** Overwrite the contradiction counter outright (e.g. reset on `reset_enquiry_capture`). */
-export async function setContradictions(db: Db, sessionId: string, count: number): Promise<void> {
+/**
+ * Overwrite the contradiction counter outright (e.g. reset on
+ * `reset_enquiry_capture`). Owner-scoped: a non-owner matches zero rows and
+ * writes nothing.
+ */
+export async function setContradictions(
+  db: Db,
+  sessionId: string,
+  userId: string,
+  count: number,
+): Promise<void> {
   await db
     .update(chatSessions)
     .set({ contradictions: count, updatedAt: new Date() })
-    .where(eq(chatSessions.id, sessionId));
+    .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)));
 }
 
 /**
  * Atomically bump the contradiction counter and return the new value — the
- * Opus escalation guard reads this to decide `contradictions >= 2`.
+ * Opus escalation guard reads this to decide `contradictions >= 2`. Owner-scoped:
+ * a non-owner matches zero rows and throws (there is no owned session to bump).
  */
 export async function incrementContradictions(
   db: Db,
   sessionId: string,
+  userId: string,
   by = 1,
 ): Promise<number> {
   const rows = await db
@@ -158,7 +262,7 @@ export async function incrementContradictions(
       contradictions: sql`${chatSessions.contradictions} + ${by}`,
       updatedAt: new Date(),
     })
-    .where(eq(chatSessions.id, sessionId))
+    .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)))
     .returning({ contradictions: chatSessions.contradictions });
   const row = rows[0];
   if (!row) throw new Error(`Chat session ${sessionId} not found`);
@@ -166,7 +270,15 @@ export async function incrementContradictions(
 }
 
 // ─── Messages ────────────────────────────────────────────────────────────────
+//
+// Messages are keyed by `session_id` only. These three helpers are INTERNAL and
+// server-only: a caller must have already established ownership of `sessionId`
+// (via `getChatSession`/`getOrCreateChatSession` with the acting `userId`)
+// before appending, listing or counting messages. They never take a `userId`
+// because they are only reached after that ownership check on the turn/router
+// path — do not expose them to a client without an upstream owner check.
 
+/** INTERNAL/server-only — call only after the session's ownership is established (see above). */
 export async function appendChatMessage(
   db: Db,
   args: {
@@ -179,6 +291,7 @@ export async function appendChatMessage(
   },
 ): Promise<string> {
   const id = newUlid();
+  const now = new Date();
   await db.insert(chatMessages).values({
     id,
     sessionId: args.sessionId,
@@ -187,13 +300,29 @@ export async function appendChatMessage(
     lane: args.lane ?? null,
     model: args.model ?? null,
     parts: args.parts ?? null,
+    createdAt: now,
   });
+  // Denormalize the newest-message pointer onto the parent session so the
+  // session list (next WP) sorts + previews without scanning chat_messages.
+  // INTERNAL invariant: keyed by session_id only (no owner predicate), exactly
+  // like the insert above — the caller must have already resolved an owned
+  // session (see the block comment for the message helpers). last_message_at
+  // is the message's own created time so the two never drift.
+  await db
+    .update(chatSessions)
+    .set({ lastMessageAt: now, lastMessagePreview: args.content.slice(0, 120) })
+    .where(eq(chatSessions.id, args.sessionId));
   return id;
 }
 
 /**
  * The `limit` most recent messages for a session, returned in chronological
  * (oldest-first) order — the shape a model prompt or a transcript expects.
+ *
+ * INTERNAL/server-only — keyed by `session_id`, no ownership predicate. The
+ * caller MUST have resolved an owned session first (router `history` throws
+ * NOT_FOUND on a non-owned session before reaching here; the turn path calls
+ * `getOrCreateChatSession` with the user up front).
  */
 export async function listChatMessages(
   db: Db,
@@ -225,6 +354,9 @@ export async function listChatMessages(
  * chronologically, so this is a plain `id > watermark` count. `null` counts
  * every message in the session. Feeds the summary-refresh trigger
  * (`> PEBBLE_CHAT_WINDOW` unsummarized turns).
+ *
+ * INTERNAL/server-only — keyed by `session_id`, no ownership predicate; only
+ * reached on the turn path after `getOrCreateChatSession` established ownership.
  */
 export async function countMessagesAfter(
   db: Db,
@@ -253,6 +385,10 @@ export interface InsertLlmCallArgs {
   inputTokens: number;
   outputTokens: number;
   costUsd: number;
+  /** Anthropic prompt-cache reads (reporting-only; already folded into costUsd). */
+  cacheReadTokens?: number | null;
+  /** Anthropic prompt-cache writes (reporting-only; already folded into costUsd). */
+  cacheWriteTokens?: number | null;
 }
 
 export async function insertLlmCall(db: Db, log: InsertLlmCallArgs): Promise<string> {
@@ -266,6 +402,8 @@ export async function insertLlmCall(db: Db, log: InsertLlmCallArgs): Promise<str
     inputTokens: log.inputTokens,
     outputTokens: log.outputTokens,
     costUsd: String(log.costUsd), // NUMERIC(10,6) is bound as a string
+    cacheReadTokens: log.cacheReadTokens ?? null,
+    cacheWriteTokens: log.cacheWriteTokens ?? null,
   });
   return id;
 }

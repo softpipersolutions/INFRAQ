@@ -37,13 +37,13 @@ async function run(ctx: EvalCtx): Promise<CaseResult> {
   const notes: string[] = [];
   const sessionId = ctx.makeSession();
   await getOrCreateChatSession(ctx.db, { sessionId, userId: ctx.user.firebaseUid });
-  await updateSlotState(ctx.db, sessionId, corruptLegacyState());
+  await updateSlotState(ctx.db, sessionId, ctx.user.firebaseUid, corruptLegacyState());
 
   const turn1 = await ctx.sendTurn(sessionId, FIRST_ASK);
   const noCrash1 = turn1.response.status === 200 && turn1.text.trim().length > 0;
   notes.push(noCrash1 ? "turn 1: no crash, got a reply" : `turn 1 CRASHED or empty (status ${turn1.response.status})`);
 
-  let session = await getChatSession(ctx.db, sessionId);
+  let session = await getChatSession(ctx.db, sessionId, ctx.user.firebaseUid);
   let createdWithValidSystems =
     Boolean(session?.enquiryId) &&
     !((session?.slotState as { systemsRequired?: { value?: unknown[] } } | null)?.systemsRequired?.value ?? []).includes(
@@ -66,7 +66,7 @@ async function run(ctx: EvalCtx): Promise<CaseResult> {
     diagnosedTurn2 = turn2.parts.some(
       (p) => p.type === "tool-get_enquiry_state" || p.type === "tool-repair_enquiry_state",
     );
-    session = await getChatSession(ctx.db, sessionId);
+    session = await getChatSession(ctx.db, sessionId, ctx.user.firebaseUid);
     createdWithValidSystems =
       Boolean(session?.enquiryId) &&
       !((session?.slotState as { systemsRequired?: { value?: unknown[] } } | null)?.systemsRequired?.value ?? []).includes(

@@ -21,7 +21,7 @@ async function run(ctx: EvalCtx): Promise<CaseResult> {
   });
 
   const turn = await ctx.sendTurn(sessionId, RECALL_QUESTION);
-  const session = await getChatSession(ctx.db, sessionId);
+  const session = await getChatSession(ctx.db, sessionId, ctx.user.firebaseUid);
   const state = resolveSlotState(session?.slotState ?? null);
 
   const searchUsed = turn.parts.some((p) => p.type === "tool-search_past_estimates");

@@ -104,6 +104,14 @@ export interface LlmCallLog {
   outputTokens: number;
   costUsd: number;
   sessionId?: string | null;
+  /**
+   * Cache read/write token counts, surfaced onto the ledger row (llm_calls
+   * cache_read_tokens / cache_write_tokens). Reporting-only: `costUsd` already
+   * prices cache usage via `estimateCostUsd`. `null` when the lane/model
+   * reported no cache usage.
+   */
+  cacheReadTokens: number | null;
+  cacheWriteTokens: number | null;
 }
 
 export function toLlmCallLog(args: {
@@ -123,5 +131,7 @@ export function toLlmCallLog(args: {
     outputTokens: args.outputTokens,
     costUsd: estimateCostUsd(args.model, args.inputTokens, args.outputTokens, args.cache),
     sessionId: args.sessionId ?? null,
+    cacheReadTokens: args.cache?.cacheReadTokens ?? null,
+    cacheWriteTokens: args.cache?.cacheWriteTokens ?? null,
   };
 }

@@ -159,7 +159,7 @@ class PebbleAiServicesImpl implements PebbleAiServices {
     const state = await this.loadSlotState(sessionId);
     await this.recordContradictions(sessionId, state, fields);
     const next = applyExtracted(state, fields);
-    await updateSlotState(this.db, sessionId, next);
+    await updateSlotState(this.db, sessionId, this.actor, next);
     const na = nextAction(next);
     return {
       nextQuestion: na.kind === "ask" ? na.question : null,
@@ -206,7 +206,7 @@ class PebbleAiServicesImpl implements PebbleAiServices {
 
     await this.recordContradictions(sessionId, state, fields);
     const next = applyExtracted(state, fields);
-    await updateSlotState(this.db, sessionId, next);
+    await updateSlotState(this.db, sessionId, this.actor, next);
     return this.buildSnapshot(sessionId);
   }
 
@@ -217,7 +217,7 @@ class PebbleAiServicesImpl implements PebbleAiServices {
    * derived record fails the shared validation gate.
    */
   async createEnquiryFromState(sessionId: string): Promise<CreateEnquiryResult> {
-    const session = await getChatSession(this.db, sessionId);
+    const session = await getChatSession(this.db, sessionId, this.actor);
     if (session?.enquiryId) {
       return { ok: false, issues: [`enquiry already created: ${session.enquiryId}`] };
     }
@@ -234,8 +234,8 @@ class PebbleAiServicesImpl implements PebbleAiServices {
       this.actor,
       this.actorRole,
     );
-    await linkSessionEnquiry(this.db, sessionId, enquiryId);
-    await updateSlotState(this.db, sessionId, confirmed);
+    await linkSessionEnquiry(this.db, sessionId, this.actor, enquiryId);
+    await updateSlotState(this.db, sessionId, this.actor, confirmed);
     return { ok: true, enquiryId, estimateId };
   }
 
@@ -247,7 +247,7 @@ class PebbleAiServicesImpl implements PebbleAiServices {
    */
   async createEnquiry(input: Parameters<PebbleAiServices["createEnquiry"]>[0]) {
     const { enquiryId } = await createEnquiryAndGenerate(this.db, input, this.actor, this.actorRole);
-    if (this.sessionId) await linkSessionEnquiry(this.db, this.sessionId, enquiryId);
+    if (this.sessionId) await linkSessionEnquiry(this.db, this.sessionId, this.actor, enquiryId);
     return { enquiryId };
   }
 
@@ -262,7 +262,7 @@ class PebbleAiServicesImpl implements PebbleAiServices {
    * enquiry is linked — a created enquiry cannot be rewritten conversationally.
    */
   async repairEnquiryState(sessionId: string, args: RepairEnquiryArgs): Promise<RepairEnquiryResult> {
-    const session = await getChatSession(this.db, sessionId);
+    const session = await getChatSession(this.db, sessionId, this.actor);
     if (session?.enquiryId) {
       return {
         ok: false,
@@ -280,7 +280,7 @@ class PebbleAiServicesImpl implements PebbleAiServices {
       next = { ...next };
       for (const f of args.clear) next[f] = { status: "missing", value: null };
     }
-    await updateSlotState(this.db, sessionId, next);
+    await updateSlotState(this.db, sessionId, this.actor, next);
     return { ok: true, snapshot: await this.buildSnapshot(sessionId) };
   }
 
@@ -290,10 +290,10 @@ class PebbleAiServicesImpl implements PebbleAiServices {
    * current snapshot unchanged so the agent can explain.
    */
   async resetEnquiryCapture(sessionId: string): Promise<EnquiryStateSnapshot> {
-    const session = await getChatSession(this.db, sessionId);
+    const session = await getChatSession(this.db, sessionId, this.actor);
     if (session?.enquiryId) return this.buildSnapshot(sessionId);
-    await updateSlotState(this.db, sessionId, null);
-    await setContradictions(this.db, sessionId, 0);
+    await updateSlotState(this.db, sessionId, this.actor, null);
+    await setContradictions(this.db, sessionId, this.actor, 0);
     return this.buildSnapshot(sessionId);
   }
 
@@ -393,7 +393,7 @@ class PebbleAiServicesImpl implements PebbleAiServices {
   // ── Internal helpers ────────────────────────────────────────────────────────
 
   private async loadSlotState(sessionId: string): Promise<SlotState> {
-    const session = await getChatSession(this.db, sessionId);
+    const session = await getChatSession(this.db, sessionId, this.actor);
     return resolveSlotState(session?.slotState ?? null);
   }
 
@@ -404,12 +404,12 @@ class PebbleAiServicesImpl implements PebbleAiServices {
     fields: ExtractedFields,
   ): Promise<void> {
     const overwrites = detectConfirmedOverwrite(prev, fields);
-    if (overwrites.length > 0) await incrementContradictions(this.db, sessionId, overwrites.length);
+    if (overwrites.length > 0) await incrementContradictions(this.db, sessionId, this.actor, overwrites.length);
   }
 
   /** Build the `EnquiryStateSnapshot` from the current slot state + any linked records. */
   private async buildSnapshot(sessionId: string): Promise<EnquiryStateSnapshot> {
-    const session = await getChatSession(this.db, sessionId);
+    const session = await getChatSession(this.db, sessionId, this.actor);
     const state = resolveSlotState(session?.slotState ?? null);
     const enquiryId = session?.enquiryId ?? null;
 

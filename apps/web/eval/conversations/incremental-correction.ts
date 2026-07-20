@@ -25,7 +25,7 @@ async function run(ctx: EvalCtx): Promise<CaseResult> {
   await ctx.sendTurn(sessionId, TURN_3);
   const turn4 = await ctx.sendTurn(sessionId, TURN_4);
 
-  const session = await getChatSession(ctx.db, sessionId);
+  const session = await getChatSession(ctx.db, sessionId, ctx.user.firebaseUid);
   const state = resolveSlotState(session?.slotState ?? null);
 
   const correctedFloors = state.floorsAbove.value === 6;

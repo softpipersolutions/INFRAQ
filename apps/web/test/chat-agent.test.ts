@@ -64,11 +64,34 @@ function arrayToStream<T>(items: T[]): ReadableStream<T> {
 
 type ScriptTurn = { text: string } | { toolCall: { toolName: string; input: unknown } };
 
-/** A streaming LanguageModel stub: one scripted turn per `doStream` (= per agent step). */
-function streamStub(modelId: string, script: ScriptTurn[]) {
+/**
+ * A streaming LanguageModel stub: one scripted turn per `doStream` (= per agent
+ * step). `cache` (optional) makes each step report Anthropic prompt-cache usage
+ * — `read` on the shared usage object (surfaces as `totalUsage.cachedInputTokens`)
+ * and `write` via provider metadata (`cache_creation_input_tokens`), so the
+ * ledger's cache-token columns can be exercised.
+ */
+function streamStub(
+  modelId: string,
+  script: ScriptTurn[],
+  cache?: { read?: number; write?: number },
+) {
   const invoked = { count: 0 };
   let step = 0;
-  const usage = { inputTokens: 100, outputTokens: 20, totalTokens: 120 };
+  const usage = {
+    inputTokens: 100,
+    outputTokens: 20,
+    totalTokens: 120,
+    ...(cache?.read ? { cachedInputTokens: cache.read } : {}),
+  };
+  const finish = (finishReason: string): Record<string, unknown> => ({
+    type: "finish",
+    finishReason,
+    usage,
+    ...(cache?.write
+      ? { providerMetadata: { anthropic: { usage: { cache_creation_input_tokens: cache.write } } } }
+      : {}),
+  });
   const model = {
     specificationVersion: "v2",
     provider: "test",
@@ -89,13 +112,13 @@ function streamStub(modelId: string, script: ScriptTurn[]) {
           toolName: turn.toolCall.toolName,
           input: JSON.stringify(turn.toolCall.input),
         });
-        chunks.push({ type: "finish", finishReason: "tool-calls", usage });
+        chunks.push(finish("tool-calls"));
       } else {
         const id = `txt-${step}`;
         chunks.push({ type: "text-start", id });
         chunks.push({ type: "text-delta", id, delta: turn.text });
         chunks.push({ type: "text-end", id });
-        chunks.push({ type: "finish", finishReason: "stop", usage });
+        chunks.push(finish("stop"));
       }
       return { stream: arrayToStream(chunks) };
     },
@@ -169,7 +192,7 @@ describe("agent turn + services", () => {
   it("createEnquiryFromState: happy path creates a real enquiry + LOCKED v1 estimate", async () => {
     const sessionId = "svc-create-ok";
     await getOrCreateChatSession(db, { sessionId, userId: USER.firebaseUid });
-    await updateSlotState(db, sessionId, fullSlotState());
+    await updateSlotState(db, sessionId, USER.firebaseUid, fullSlotState());
 
     const result = await servicesFor(sessionId).createEnquiryFromState(sessionId);
     expect(result.ok).toBe(true);
@@ -183,7 +206,7 @@ describe("agent turn + services", () => {
     expect((view?.lines.length ?? 0)).toBeGreaterThan(0);
 
     // Session is now linked + confirmed.
-    const session = await getChatSession(db, sessionId);
+    const session = await getChatSession(db, sessionId, USER.firebaseUid);
     expect(session?.enquiryId).toBe(result.enquiryId);
     expect(session?.slotState?.clientName).toMatchObject({ status: "confirmed" });
   });
@@ -191,7 +214,7 @@ describe("agent turn + services", () => {
   it("createEnquiryFromState: refuses an invalid state, and refuses a duplicate", async () => {
     const sessionId = "svc-create-bad";
     await getOrCreateChatSession(db, { sessionId, userId: USER.firebaseUid });
-    await updateSlotState(db, sessionId, applyExtracted(initSlotState(), { clientName: "Only a name" }));
+    await updateSlotState(db, sessionId, USER.firebaseUid, applyExtracted(initSlotState(), { clientName: "Only a name" }));
 
     const bad = await servicesFor(sessionId).createEnquiryFromState(sessionId);
     expect(bad.ok).toBe(false);
@@ -199,7 +222,7 @@ describe("agent turn + services", () => {
     expect(bad.issues.length).toBeGreaterThan(0);
 
     // Now make it valid + create, then a second create is refused (already linked).
-    await updateSlotState(db, sessionId, fullSlotState());
+    await updateSlotState(db, sessionId, USER.firebaseUid, fullSlotState());
     const ok = await servicesFor(sessionId).createEnquiryFromState(sessionId);
     expect(ok.ok).toBe(true);
     const dup = await servicesFor(sessionId).createEnquiryFromState(sessionId);
@@ -213,7 +236,7 @@ describe("agent turn + services", () => {
   it("getEnquiryState reports readiness, issues and missing fields", async () => {
     const readySession = "svc-state-ready";
     await getOrCreateChatSession(db, { sessionId: readySession, userId: USER.firebaseUid });
-    await updateSlotState(db, readySession, fullSlotState());
+    await updateSlotState(db, readySession, USER.firebaseUid, fullSlotState());
     const ready = await servicesFor(readySession).getEnquiryState(readySession);
     expect(ready.readyToConfirm).toBe(true);
     expect(ready.issues).toEqual([]);
@@ -221,7 +244,7 @@ describe("agent turn + services", () => {
 
     const partialSession = "svc-state-partial";
     await getOrCreateChatSession(db, { sessionId: partialSession, userId: USER.firebaseUid });
-    await updateSlotState(db, partialSession, applyExtracted(initSlotState(), { clientName: "Acme" }));
+    await updateSlotState(db, partialSession, USER.firebaseUid, applyExtracted(initSlotState(), { clientName: "Acme" }));
     const partial = await servicesFor(partialSession).getEnquiryState(partialSession);
     expect(partial.readyToConfirm).toBe(false);
     expect(partial.missingRequired.length).toBeGreaterThan(0);
@@ -230,7 +253,7 @@ describe("agent turn + services", () => {
   it("repairEnquiryState sets/clears fields and is blocked once an enquiry is linked", async () => {
     const sessionId = "svc-repair";
     await getOrCreateChatSession(db, { sessionId, userId: USER.firebaseUid });
-    await updateSlotState(db, sessionId, fullSlotState());
+    await updateSlotState(db, sessionId, USER.firebaseUid, fullSlotState());
 
     const repaired = await servicesFor(sessionId).repairEnquiryState(sessionId, {
       set: { floorAreaSqm: 600 },
@@ -242,7 +265,7 @@ describe("agent turn + services", () => {
     expect(repaired.snapshot.slots.projectTier.status).toBe("missing");
 
     // Once linked, repair is blocked.
-    await linkSessionEnquiry(db, sessionId, "GBE-ENQ-2026-999");
+    await linkSessionEnquiry(db, sessionId, USER.firebaseUid, "GBE-ENQ-2026-999");
     const blocked = await servicesFor(sessionId).repairEnquiryState(sessionId, { set: { floorsAbove: 9 } });
     expect(blocked.ok).toBe(false);
   });
@@ -250,18 +273,18 @@ describe("agent turn + services", () => {
   it("resetEnquiryCapture clears an unlinked session, refuses a linked one", async () => {
     const sessionId = "svc-reset";
     await getOrCreateChatSession(db, { sessionId, userId: USER.firebaseUid });
-    await updateSlotState(db, sessionId, fullSlotState());
+    await updateSlotState(db, sessionId, USER.firebaseUid, fullSlotState());
     const snap = await servicesFor(sessionId).resetEnquiryCapture(sessionId);
     expect(snap.confirmed).toEqual([]);
     expect(snap.proposed).toEqual([]);
-    const cleared = await getChatSession(db, sessionId);
+    const cleared = await getChatSession(db, sessionId, USER.firebaseUid);
     expect(cleared?.slotState).toBeNull();
 
     // Linked → refuse (state left intact, snapshot returned).
-    await updateSlotState(db, sessionId, fullSlotState());
-    await linkSessionEnquiry(db, sessionId, "GBE-ENQ-2026-998");
+    await updateSlotState(db, sessionId, USER.firebaseUid, fullSlotState());
+    await linkSessionEnquiry(db, sessionId, USER.firebaseUid, "GBE-ENQ-2026-998");
     await servicesFor(sessionId).resetEnquiryCapture(sessionId);
-    const stillThere = await getChatSession(db, sessionId);
+    const stillThere = await getChatSession(db, sessionId, USER.firebaseUid);
     expect(stillThere?.slotState?.clientName).toBeTruthy();
   });
 
@@ -275,15 +298,15 @@ describe("agent turn + services", () => {
     for (const f of Object.keys(confirmed) as (keyof SlotState)[]) {
       if (confirmed[f].value !== null) confirmed[f] = { status: "confirmed", value: confirmed[f].value };
     }
-    await updateSlotState(db, sessionId, confirmed);
+    await updateSlotState(db, sessionId, USER.firebaseUid, confirmed);
 
     await servicesFor(sessionId).updateEnquiryDraft(sessionId, { floorsAbove: 8 });
-    const after = await getChatSession(db, sessionId);
+    const after = await getChatSession(db, sessionId, USER.firebaseUid);
     expect(after?.contradictions).toBe(1);
 
     // Re-stating the SAME value is not a contradiction.
     await servicesFor(sessionId).updateEnquiryDraft(sessionId, { clientName: "Acme Fire Pvt Ltd" });
-    const after2 = await getChatSession(db, sessionId);
+    const after2 = await getChatSession(db, sessionId, USER.firebaseUid);
     expect(after2?.contradictions).toBe(1);
   });
 
@@ -299,7 +322,7 @@ describe("agent turn + services", () => {
         content: `turn ${i}`,
       });
     }
-    const before = await getChatSession(db, sessionId);
+    const before = await getChatSession(db, sessionId, USER.firebaseUid);
     const all = await listChatMessages(db, sessionId, 100);
 
     await maybeRefreshSummary(
@@ -307,7 +330,7 @@ describe("agent turn + services", () => {
       { sessionId, session: before! },
     );
 
-    const after = await getChatSession(db, sessionId);
+    const after = await getChatSession(db, sessionId, USER.firebaseUid);
     expect(after?.summary).toMatch(/FACTS CAPTURED/);
     // Window 2 → the last 2 messages stay verbatim, so the watermark is the 10th message.
     expect(after?.summaryUptoMessageId).toBe(all[9]!.id);
@@ -318,7 +341,7 @@ describe("agent turn + services", () => {
   it("escalation: a challenge on a linked estimate selects Opus", async () => {
     const sessionId = "agent-esc-opus";
     await getOrCreateChatSession(db, { sessionId, userId: USER.firebaseUid });
-    await updateSlotState(db, sessionId, fullSlotState());
+    await updateSlotState(db, sessionId, USER.firebaseUid, fullSlotState());
     await servicesFor(sessionId).createEnquiryFromState(sessionId); // links a real enquiry + estimate
 
     const dflt = streamStub("claude-sonnet-4-6", [{ text: "default reply" }]);
@@ -339,7 +362,7 @@ describe("agent turn + services", () => {
   it("escalation: past the Opus daily cap it stays on default and ledgers the suppression", async () => {
     const sessionId = "agent-esc-supp";
     await getOrCreateChatSession(db, { sessionId, userId: USER.firebaseUid });
-    await updateSlotState(db, sessionId, fullSlotState());
+    await updateSlotState(db, sessionId, USER.firebaseUid, fullSlotState());
     await servicesFor(sessionId).createEnquiryFromState(sessionId);
     // Blow past the $1 daily Opus cap for this user.
     await insertLlmCall(db, {
@@ -384,6 +407,29 @@ describe("agent turn + services", () => {
     expect(assistant.content).toContain("how can I help");
     expect(assistant.lane).toBe("claude");
     expect(assistant.model).toBe("claude-sonnet-4-6");
+  });
+
+  it("ledgers the Anthropic cache read/write token counts on the turn", async () => {
+    const sessionId = "agent-cache-ledger";
+    const res = await runAgentTurn(
+      {
+        db,
+        models: models({
+          claudeDefault: streamStub("claude-sonnet-4-6", [{ text: "cached hello" }], {
+            read: 25,
+            write: 40,
+          }).model,
+        }),
+      },
+      { sessionId, message: "hi cached", user: actor },
+    );
+    await drainBody(res);
+    const row = await waitFor(async () => {
+      const rows = await db.select().from(schema.llmCalls);
+      return rows.find((r) => r.sessionId === sessionId) ?? null;
+    });
+    expect(row.cacheReadTokens).toBe(25);
+    expect(row.cacheWriteTokens).toBe(40);
   });
 
   it("persists tool-activity parts for a tool-using turn", async () => {
