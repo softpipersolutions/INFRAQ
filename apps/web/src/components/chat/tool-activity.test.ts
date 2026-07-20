@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isCreateEnquirySuccessPart,
   isToolPart,
+  toolIcon,
   toolLabel,
   toolNameFromPart,
   toolSummary,
@@ -43,6 +44,35 @@ describe("toolLabel", () => {
   it("prettifies an unknown tool name as a fallback", () => {
     expect(toolLabel("some_future_tool")).toBe("Some future tool");
     expect(toolLabel("")).toBe("Used a tool");
+  });
+});
+
+describe("toolIcon", () => {
+  it("has an icon for all 15 Module-02 tools", () => {
+    const tools = [
+      "lookup_material",
+      "search_past_estimates",
+      "get_design_rules",
+      "update_enquiry_draft",
+      "extract_enquiry_fields",
+      "create_enquiry",
+      "get_enquiry_state",
+      "repair_enquiry_state",
+      "reset_enquiry_capture",
+      "prepare_documents",
+      "get_current_price",
+      "explain_line",
+      "get_estimate_version",
+      "list_makes_for_material",
+      "propose_line_edit",
+    ];
+    for (const toolName of tools) {
+      expect(toolIcon(toolName)).toBeTypeOf("object");
+    }
+  });
+
+  it("falls back to a default icon for an unknown tool", () => {
+    expect(toolIcon("some_future_tool")).toBe(toolIcon("some_other_future_tool"));
   });
 });
 

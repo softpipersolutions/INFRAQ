@@ -23,6 +23,7 @@ export * from "./agent/module02";
 export * from "./agent/escalation";
 export * from "./agent/compaction";
 export * from "./agent/context";
+export * from "./agent/title";
 
 export * from "./models";
 export * from "./slots";

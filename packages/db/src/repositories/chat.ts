@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, gte, like, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, isNotNull, isNull, like, sql } from "drizzle-orm";
 import type { Db } from "../client";
 import { newUlid } from "../ids";
 import { chatMessages, chatSessions, llmCalls } from "../schema";
@@ -267,6 +267,148 @@ export async function incrementContradictions(
   const row = rows[0];
   if (!row) throw new Error(`Chat session ${sessionId} not found`);
   return row.contradictions;
+}
+
+// ─── Session list (Chat overhaul WP2) ───────────────────────────────────────
+
+/** One row of the owner's session list — the sidebar's read shape. */
+export interface ChatSessionListItem {
+  id: string;
+  /** Raw user/agent-set label; null if never titled (`effectiveTitle` covers the fallback). */
+  title: string | null;
+  /** `title`, else the first 60 chars of `lastMessagePreview`, else "New chat" — always renderable. */
+  effectiveTitle: string;
+  lastMessageAt: Date | null;
+  lastMessagePreview: string | null;
+  pinnedAt: Date | null;
+  archivedAt: Date | null;
+  enquiryId: string | null;
+  createdAt: Date;
+}
+
+function effectiveTitleOf(title: string | null, lastMessagePreview: string | null): string {
+  if (title && title.trim().length > 0) return title;
+  if (lastMessagePreview && lastMessagePreview.trim().length > 0) return lastMessagePreview.slice(0, 60);
+  return "New chat";
+}
+
+/**
+ * The signed-in user's session list, newest-active-first: pinned sessions
+ * float to the top (`pinned_at DESC NULLS LAST`), then by most recent activity
+ * (`last_message_at DESC NULLS LAST`). Archived sessions are excluded unless
+ * `includeArchived` is set (which then mixes active + archived, still ordered
+ * the same way — the caller splits by `archivedAt` if it wants two sections).
+ *
+ * ALWAYS excludes sessions with no `last_message_at`: a session row is created
+ * (`getOrCreateChatSession`) before the first message is appended, so a user
+ * who opens a fresh chat and never sends anything (or repeatedly hits "start
+ * over") leaves behind zero-message orphan rows that would otherwise clutter
+ * the list forever. `last_message_at` is only ever set by `appendChatMessage`,
+ * so this filter is exactly "has at least one message" without a join. Owner-
+ * scoped: only ever returns `userId`'s own sessions.
+ */
+export async function listChatSessions(
+  db: Db,
+  args: { userId: string; includeArchived?: boolean; limit?: number },
+): Promise<ChatSessionListItem[]> {
+  const { userId, includeArchived = false, limit = 100 } = args;
+  const predicate = includeArchived
+    ? and(eq(chatSessions.userId, userId), isNotNull(chatSessions.lastMessageAt))
+    : and(
+        eq(chatSessions.userId, userId),
+        isNull(chatSessions.archivedAt),
+        isNotNull(chatSessions.lastMessageAt),
+      );
+
+  const rows = await db
+    .select()
+    .from(chatSessions)
+    .where(predicate)
+    .orderBy(
+      sql`${chatSessions.pinnedAt} DESC NULLS LAST`,
+      sql`${chatSessions.lastMessageAt} DESC NULLS LAST`,
+    )
+    .limit(limit);
+
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title ?? null,
+    effectiveTitle: effectiveTitleOf(r.title ?? null, r.lastMessagePreview ?? null),
+    lastMessageAt: r.lastMessageAt ?? null,
+    lastMessagePreview: r.lastMessagePreview ?? null,
+    pinnedAt: r.pinnedAt ?? null,
+    archivedAt: r.archivedAt ?? null,
+    enquiryId: r.enquiryId ?? null,
+    createdAt: r.createdAt,
+  }));
+}
+
+/**
+ * Rename a session. Owner-scoped: a non-owner (or missing row) matches zero
+ * rows and is a no-op. Trimming and the 1..80 char length are enforced by the
+ * router's zod schema (consistent with WP0 style — repos take already-valid
+ * input; routers own user-input validation), so this writes `title` verbatim.
+ */
+export async function renameChatSession(
+  db: Db,
+  args: { sessionId: string; userId: string; title: string },
+): Promise<void> {
+  await db
+    .update(chatSessions)
+    .set({ title: args.title, updatedAt: new Date() })
+    .where(and(eq(chatSessions.id, args.sessionId), eq(chatSessions.userId, args.userId)));
+}
+
+/**
+ * Soft-archive/unarchive a session (sets or clears `archived_at`). Owner-
+ * scoped: a non-owner (or missing row) matches zero rows and is a no-op.
+ */
+export async function setSessionArchived(
+  db: Db,
+  args: { sessionId: string; userId: string; archived: boolean },
+): Promise<void> {
+  await db
+    .update(chatSessions)
+    .set({ archivedAt: args.archived ? new Date() : null, updatedAt: new Date() })
+    .where(and(eq(chatSessions.id, args.sessionId), eq(chatSessions.userId, args.userId)));
+}
+
+/**
+ * Pin/unpin a session (sets or clears `pinned_at`). Owner-scoped: a non-owner
+ * (or missing row) matches zero rows and is a no-op.
+ */
+export async function setSessionPinned(
+  db: Db,
+  args: { sessionId: string; userId: string; pinned: boolean },
+): Promise<void> {
+  await db
+    .update(chatSessions)
+    .set({ pinnedAt: args.pinned ? new Date() : null, updatedAt: new Date() })
+    .where(and(eq(chatSessions.id, args.sessionId), eq(chatSessions.userId, args.userId)));
+}
+
+/**
+ * Internal auto-title setter for the `onFinish` hook (chat-agent.ts): sets
+ * `title` ONLY when it is currently NULL, so a fire-and-forget auto-title call
+ * — which may resolve well after the turn, racing a user rename — can never
+ * clobber a user-chosen title. The `title IS NULL` guard lives in the SQL
+ * predicate itself (not a check-then-set from the caller), so it is race-safe
+ * even against a concurrent rename. Owner-scoped like every other write here.
+ */
+export async function setSessionTitle(
+  db: Db,
+  args: { sessionId: string; userId: string; title: string },
+): Promise<void> {
+  await db
+    .update(chatSessions)
+    .set({ title: args.title, updatedAt: new Date() })
+    .where(
+      and(
+        eq(chatSessions.id, args.sessionId),
+        eq(chatSessions.userId, args.userId),
+        isNull(chatSessions.title),
+      ),
+    );
 }
 
 // ─── Messages ────────────────────────────────────────────────────────────────

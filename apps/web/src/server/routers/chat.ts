@@ -11,8 +11,13 @@ import {
   getOrCreateChatSession,
   linkSessionEnquiry,
   listChatMessages,
+  listChatSessions,
+  renameChatSession,
+  setSessionArchived,
+  setSessionPinned,
   sumOpusSpendSince,
   updateSlotState,
+  type Db,
 } from "@pebble/db";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -45,7 +50,84 @@ function notFoundIfForeign(err: unknown): never {
   throw err;
 }
 
+/**
+ * `renameChatSession`/`setSessionArchived`/`setSessionPinned` are no-ops on a
+ * foreign/missing row (WP0 style — a write simply matches zero rows), so the
+ * router resolves ownership FIRST with a plain owner-scoped read and throws
+ * `NOT_FOUND` itself before ever reaching the mutator, matching every other
+ * session procedure's owner-only contract (never leaks that a foreign session
+ * exists).
+ */
+async function requireOwnedSession(db: Db, sessionId: string, userId: string): Promise<void> {
+  const session = await getChatSession(db, sessionId, userId);
+  if (!session) throw SESSION_NOT_FOUND;
+}
+
 export const chatRouter = router({
+  /**
+   * The signed-in user's session list for the sidebar: pinned first, then most
+   * recently active; archived sessions are hidden unless `includeArchived`.
+   * Zero-message orphan rows never appear (see `listChatSessions`).
+   */
+  listSessions: protectedProcedure
+    .input(z.object({ includeArchived: z.boolean().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const sessions = await listChatSessions(ctx.db, {
+        userId: ctx.user.firebaseUid,
+        includeArchived: input?.includeArchived ?? false,
+      });
+      return sessions.map((s) => ({
+        id: s.id,
+        title: s.title,
+        effectiveTitle: s.effectiveTitle,
+        lastMessageAt: s.lastMessageAt ? s.lastMessageAt.toISOString() : null,
+        lastMessagePreview: s.lastMessagePreview,
+        pinnedAt: s.pinnedAt ? s.pinnedAt.toISOString() : null,
+        archivedAt: s.archivedAt ? s.archivedAt.toISOString() : null,
+        enquiryId: s.enquiryId,
+        createdAt: s.createdAt.toISOString(),
+      }));
+    }),
+
+  /** Rename a session (1..80 trimmed chars). Owner-only (NOT_FOUND otherwise). */
+  rename: protectedProcedure
+    .input(z.object({ sessionId: z.string().min(1), title: z.string().trim().min(1).max(80) }))
+    .mutation(async ({ ctx, input }) => {
+      await requireOwnedSession(ctx.db, input.sessionId, ctx.user.firebaseUid);
+      await renameChatSession(ctx.db, {
+        sessionId: input.sessionId,
+        userId: ctx.user.firebaseUid,
+        title: input.title,
+      });
+      return { ok: true };
+    }),
+
+  /** Archive/unarchive a session. Owner-only (NOT_FOUND otherwise). */
+  archive: protectedProcedure
+    .input(z.object({ sessionId: z.string().min(1), archived: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      await requireOwnedSession(ctx.db, input.sessionId, ctx.user.firebaseUid);
+      await setSessionArchived(ctx.db, {
+        sessionId: input.sessionId,
+        userId: ctx.user.firebaseUid,
+        archived: input.archived,
+      });
+      return { ok: true };
+    }),
+
+  /** Pin/unpin a session. Owner-only (NOT_FOUND otherwise). */
+  pin: protectedProcedure
+    .input(z.object({ sessionId: z.string().min(1), pinned: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      await requireOwnedSession(ctx.db, input.sessionId, ctx.user.firebaseUid);
+      await setSessionPinned(ctx.db, {
+        sessionId: input.sessionId,
+        userId: ctx.user.firebaseUid,
+        pinned: input.pinned,
+      });
+      return { ok: true };
+    }),
+
   /** Current slot-filling state for a session (fresh sessions read as empty). */
   sessionState: protectedProcedure.input(sessionInput).query(async ({ ctx, input }) => {
     const session = await getChatSession(ctx.db, input.sessionId, ctx.user.firebaseUid);

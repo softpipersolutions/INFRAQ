@@ -1,5 +1,23 @@
 "use client";
 
+import {
+  AlertCircle,
+  BookOpen,
+  ClipboardEdit,
+  FileOutput,
+  FilePlus,
+  FileText,
+  HelpCircle,
+  IndianRupee,
+  List,
+  Package,
+  PenLine,
+  RotateCcw,
+  ScanText,
+  Search,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
 import { formatINR } from "@/lib/format";
 import { Card } from "@/components/ui";
 
@@ -52,6 +70,32 @@ const TOOL_LABELS: Record<string, string> = {
 /** `toolLabel("lookup_material")` -> `"Looked up material"`; unknown tools fall back to a prettified name. */
 export function toolLabel(toolName: string): string {
   return TOOL_LABELS[toolName] ?? prettifyToolName(toolName);
+}
+
+/** Per-tool glyph for the activity row (size 14-16, strokeWidth 1.5, text-ink-muted by default). Unknown tools fall back to `DEFAULT_TOOL_ICON`. */
+const TOOL_ICONS: Record<string, LucideIcon> = {
+  lookup_material: Package,
+  search_past_estimates: Search,
+  get_design_rules: BookOpen,
+  update_enquiry_draft: ClipboardEdit,
+  extract_enquiry_fields: ScanText,
+  create_enquiry: FilePlus,
+  get_enquiry_state: Wrench,
+  repair_enquiry_state: Wrench,
+  reset_enquiry_capture: RotateCcw,
+  prepare_documents: FileOutput,
+  get_current_price: IndianRupee,
+  explain_line: HelpCircle,
+  get_estimate_version: FileText,
+  list_makes_for_material: List,
+  propose_line_edit: PenLine,
+};
+
+const DEFAULT_TOOL_ICON: LucideIcon = Wrench;
+
+/** `toolIcon("lookup_material")` -> `Package`; unknown tools fall back to a generic icon. */
+export function toolIcon(toolName: string): LucideIcon {
+  return TOOL_ICONS[toolName] ?? DEFAULT_TOOL_ICON;
 }
 
 function prettifyToolName(toolName: string): string {
@@ -179,12 +223,20 @@ export function ToolActivityRow({ part }: { part: ToolPart }) {
   const toolName = toolNameFromPart(part);
   const label = toolLabel(toolName);
   const state = part.state ?? "output-available";
+  const Icon = toolIcon(toolName);
 
   if (PENDING_STATES.has(state)) {
+    // WP5 streaming feel: once the tool's input has fully arrived and it is
+    // actually executing (`input-available`), the label gets a subtle
+    // shimmer sweep instead of the plain pulse used while the input itself
+    // is still streaming in (`input-streaming`) — a running tool "feels"
+    // different from one still being called. `.shimmer-text` degrades to a
+    // plain muted label under `prefers-reduced-motion: reduce`.
+    const isRunning = state === "input-available";
     return (
       <div className="flex items-center gap-2 text-xs text-ink-muted">
-        <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full border border-border-strong" />
-        <span>{label}…</span>
+        <Icon size={14} strokeWidth={1.5} className="shrink-0 animate-pulse text-ink-muted/40" aria-hidden />
+        <span className={isRunning ? "shimmer-text font-medium" : undefined}>{label}…</span>
       </div>
     );
   }
@@ -192,7 +244,7 @@ export function ToolActivityRow({ part }: { part: ToolPart }) {
   if (state === "output-error") {
     return (
       <div className="flex items-start gap-2 text-xs text-danger">
-        <span className="mt-0.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-danger" />
+        <AlertCircle size={14} strokeWidth={1.5} className="mt-0.5 shrink-0" aria-hidden />
         <span>
           <span className="font-medium">{label} — failed.</span>
           {part.errorText ? <span> {part.errorText}</span> : null}
@@ -204,7 +256,7 @@ export function ToolActivityRow({ part }: { part: ToolPart }) {
   const summary = toolSummary(toolName, part.output);
   return (
     <div className="flex items-start gap-2 text-xs text-ink-muted">
-      <span className="mt-0.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-ink" />
+      <Icon size={14} strokeWidth={1.5} className="mt-0.5 shrink-0 text-ink-muted" aria-hidden />
       <span>
         <span className="font-medium text-ink">{label}</span>
         {summary ? <span> — {summary}</span> : null}

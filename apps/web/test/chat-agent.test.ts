@@ -9,6 +9,7 @@ import {
   linkSessionEnquiry,
   listChatMessages,
   migrateDb,
+  renameChatSession,
   schema,
   seedDatabase,
   updateSlotState,
@@ -20,7 +21,7 @@ import {
 import type { LanguageModel } from "ai";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createAiServices } from "../src/server/ai-services";
-import { maybeRefreshSummary, runAgentTurn } from "../src/server/chat-agent";
+import { maybeGenerateTitle, maybeRefreshSummary, runAgentTurn } from "../src/server/chat-agent";
 
 /**
  * Agent-turn plumbing over an in-memory PGlite db with scripted stub models (no
@@ -336,6 +337,68 @@ describe("agent turn + services", () => {
     expect(after?.summaryUptoMessageId).toBe(all[9]!.id);
   });
 
+  // ── auto-title ────────────────────────────────────────────────────────────
+
+  it("maybeGenerateTitle titles a fresh (first-exchange) session and ledgers a Gemini 'title' call", async () => {
+    const sessionId = "svc-autotitle-direct";
+    await getOrCreateChatSession(db, { sessionId, userId: USER.firebaseUid });
+    await appendChatMessage(db, { sessionId, role: "user", content: "4 storey office FAS enquiry" });
+    await appendChatMessage(db, { sessionId, role: "assistant", content: "Sure, let's get started." });
+    const session = await getChatSession(db, sessionId, USER.firebaseUid);
+
+    await maybeGenerateTitle(
+      { db, models: models({ classifier: generateStub("4-Storey Office FAS Enquiry") }) },
+      {
+        sessionId,
+        session: session!,
+        userText: "4 storey office FAS enquiry",
+        assistantText: "Sure, let's get started.",
+      },
+    );
+
+    const after = await getChatSession(db, sessionId, USER.firebaseUid);
+    expect(after?.title).toBe("4-Storey Office FAS Enquiry");
+
+    const rows = await db.select().from(schema.llmCalls);
+    const titleCall = rows.find((r) => r.sessionId === sessionId && r.intent === "title");
+    expect(titleCall?.lane).toBe("gemini");
+  });
+
+  it("maybeGenerateTitle is a no-op once the session already has a title", async () => {
+    const sessionId = "svc-autotitle-existing";
+    await getOrCreateChatSession(db, { sessionId, userId: USER.firebaseUid });
+    await renameChatSession(db, { sessionId, userId: USER.firebaseUid, title: "Existing Title" });
+    const session = await getChatSession(db, sessionId, USER.firebaseUid);
+
+    await maybeGenerateTitle(
+      { db, models: models({ classifier: generateStub("Should Not Be Used") }) },
+      { sessionId, session: session!, userText: "another message", assistantText: "another reply" },
+    );
+
+    expect((await getChatSession(db, sessionId, USER.firebaseUid))?.title).toBe("Existing Title");
+  });
+
+  it("maybeGenerateTitle is a no-op once more than the first exchange has landed", async () => {
+    const sessionId = "svc-autotitle-late";
+    await getOrCreateChatSession(db, { sessionId, userId: USER.firebaseUid });
+    // Three exchanges already on the row (6 messages) — past the "first exchange" window.
+    for (let i = 0; i < 6; i += 1) {
+      await appendChatMessage(db, {
+        sessionId,
+        role: i % 2 === 0 ? "user" : "assistant",
+        content: `turn ${i}`,
+      });
+    }
+    const session = await getChatSession(db, sessionId, USER.firebaseUid);
+
+    await maybeGenerateTitle(
+      { db, models: models({ classifier: generateStub("Too Late Title") }) },
+      { sessionId, session: session!, userText: "turn 6", assistantText: "turn 7" },
+    );
+
+    expect((await getChatSession(db, sessionId, USER.firebaseUid))?.title).toBeNull();
+  });
+
   // ── escalation model selection + budget suppression ─────────────────────────
 
   it("escalation: a challenge on a linked estimate selects Opus", async () => {
@@ -454,6 +517,62 @@ describe("agent turn + services", () => {
       (p) => p.type === "tool-get_design_rules",
     );
     expect(toolPart?.state).toBe("output-available");
+  });
+
+  // ── auto-title, end to end via runAgentTurn's onFinish ──────────────────────
+
+  it("runAgentTurn onFinish auto-titles a brand-new session after the first exchange (fire-and-forget)", async () => {
+    const sessionId = "agent-autotitle-e2e";
+    const res = await runAgentTurn(
+      {
+        db,
+        models: models({
+          claudeDefault: streamStub("claude-sonnet-4-6", [{ text: "Sure, let's get started." }]).model,
+          classifier: generateStub("4-Storey Office FAS Enquiry"),
+        }),
+      },
+      { sessionId, message: "I need a quote for a 4-storey office", user: actor },
+    );
+    await drainBody(res);
+
+    // Auto-title is fire-and-forget (not awaited by onFinish), so poll for it.
+    const titled = await waitFor(async () => {
+      const session = await getChatSession(db, sessionId, USER.firebaseUid);
+      return session?.title ? session : null;
+    });
+    expect(titled.title).toBe("4-Storey Office FAS Enquiry");
+
+    const rows = await db.select().from(schema.llmCalls);
+    const titleCall = rows.find((r) => r.sessionId === sessionId && r.intent === "title");
+    expect(titleCall).toBeTruthy();
+    expect(titleCall?.lane).toBe("gemini");
+  });
+
+  it("runAgentTurn onFinish leaves a pre-titled session's title untouched", async () => {
+    const sessionId = "agent-autotitle-e2e-existing";
+    await getOrCreateChatSession(db, { sessionId, userId: USER.firebaseUid });
+    await renameChatSession(db, { sessionId, userId: USER.firebaseUid, title: "Existing Title" });
+
+    const res = await runAgentTurn(
+      {
+        db,
+        models: models({
+          claudeDefault: streamStub("claude-sonnet-4-6", [{ text: "Continuing the conversation." }]).model,
+          classifier: generateStub("Should Not Be Used"),
+        }),
+      },
+      { sessionId, message: "another message", user: actor },
+    );
+    await drainBody(res);
+
+    // Wait for the turn to fully persist (proxy for onFinish having run, including
+    // the fire-and-forget auto-title attempt it kicks off), then assert unchanged.
+    await waitFor(async () => {
+      const msgs = await listChatMessages(db, sessionId, 100);
+      return msgs.find((m) => m.role === "assistant" && m.content.includes("Continuing")) ?? null;
+    });
+    await new Promise((r) => setTimeout(r, 25)); // let any (incorrect) fire-and-forget settle
+    expect((await getChatSession(db, sessionId, USER.firebaseUid))?.title).toBe("Existing Title");
   });
 
   // ── guards ──────────────────────────────────────────────────────────────────

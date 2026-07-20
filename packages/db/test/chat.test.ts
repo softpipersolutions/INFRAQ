@@ -16,8 +16,13 @@ import {
   insertLlmCall,
   linkSessionEnquiry,
   listChatMessages,
+  listChatSessions,
   migrateDb,
+  renameChatSession,
   setContradictions,
+  setSessionArchived,
+  setSessionPinned,
+  setSessionTitle,
   sumLlmCostSince,
   sumOpusSpendSince,
   updateSessionSummary,
@@ -360,6 +365,181 @@ describe("chat messages", () => {
     // A session with no messages at all.
     await getOrCreateChatSession(db, { sessionId: "sess-count-empty", userId: DEV_UID });
     expect(await countMessagesAfter(db, "sess-count-empty", null)).toBe(0);
+  });
+});
+
+describe("session list (Chat overhaul WP2)", () => {
+  async function sleep(ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  it("orders pinned sessions first, then by most recent activity", async () => {
+    await getOrCreateChatSession(db, { sessionId: "list-a", userId: DEV_UID });
+    await appendChatMessage(db, { sessionId: "list-a", role: "user", content: "a" });
+    await sleep(5);
+
+    await getOrCreateChatSession(db, { sessionId: "list-b", userId: DEV_UID });
+    await appendChatMessage(db, { sessionId: "list-b", role: "user", content: "b" });
+    await sleep(5);
+
+    await getOrCreateChatSession(db, { sessionId: "list-c", userId: DEV_UID });
+    await appendChatMessage(db, { sessionId: "list-c", role: "user", content: "c" });
+
+    // Newest activity first: c, b, a — until a is pinned, which floats it to the top.
+    expect((await listChatSessions(db, { userId: DEV_UID })).map((s) => s.id)).toEqual([
+      "list-c",
+      "list-b",
+      "list-a",
+    ]);
+
+    await setSessionPinned(db, { sessionId: "list-a", userId: DEV_UID, pinned: true });
+    expect((await listChatSessions(db, { userId: DEV_UID })).map((s) => s.id)).toEqual([
+      "list-a",
+      "list-c",
+      "list-b",
+    ]);
+  });
+
+  it("excludes archived sessions unless includeArchived is set", async () => {
+    await getOrCreateChatSession(db, { sessionId: "list-active", userId: DEV_UID });
+    await appendChatMessage(db, { sessionId: "list-active", role: "user", content: "active" });
+    await getOrCreateChatSession(db, { sessionId: "list-archived", userId: DEV_UID });
+    await appendChatMessage(db, { sessionId: "list-archived", role: "user", content: "archived" });
+    await setSessionArchived(db, { sessionId: "list-archived", userId: DEV_UID, archived: true });
+
+    const active = await listChatSessions(db, { userId: DEV_UID });
+    expect(active.map((s) => s.id)).toEqual(["list-active"]);
+    expect(active.find((s) => s.id === "list-active")?.archivedAt).toBeNull();
+
+    const all = await listChatSessions(db, { userId: DEV_UID, includeArchived: true });
+    expect(all.map((s) => s.id).sort()).toEqual(["list-active", "list-archived"]);
+    expect(all.find((s) => s.id === "list-archived")?.archivedAt).toBeInstanceOf(Date);
+  });
+
+  it("excludes zero-message sessions (no last_message_at) from the list", async () => {
+    // A bare get-or-create with no message appended (e.g. a "Start over" orphan).
+    await getOrCreateChatSession(db, { sessionId: "list-empty", userId: DEV_UID });
+    await getOrCreateChatSession(db, { sessionId: "list-with-msg", userId: DEV_UID });
+    await appendChatMessage(db, { sessionId: "list-with-msg", role: "user", content: "hi" });
+
+    const list = await listChatSessions(db, { userId: DEV_UID });
+    expect(list.map((s) => s.id)).toEqual(["list-with-msg"]);
+
+    // Still excluded even with includeArchived (it isn't archived — it just has no messages).
+    const all = await listChatSessions(db, { userId: DEV_UID, includeArchived: true });
+    expect(all.map((s) => s.id)).toEqual(["list-with-msg"]);
+  });
+
+  it("effectiveTitle falls back title -> first 60 chars of preview -> 'New chat'", async () => {
+    await getOrCreateChatSession(db, { sessionId: "list-titled", userId: DEV_UID });
+    await appendChatMessage(db, { sessionId: "list-titled", role: "user", content: "hello" });
+    await renameChatSession(db, { sessionId: "list-titled", userId: DEV_UID, title: "My Custom Title" });
+
+    await getOrCreateChatSession(db, { sessionId: "list-preview", userId: DEV_UID });
+    const long = "B".repeat(200);
+    await appendChatMessage(db, { sessionId: "list-preview", role: "user", content: long });
+
+    const list = await listChatSessions(db, { userId: DEV_UID });
+    const titled = list.find((s) => s.id === "list-titled");
+    const previewOnly = list.find((s) => s.id === "list-preview");
+    expect(titled?.title).toBe("My Custom Title");
+    expect(titled?.effectiveTitle).toBe("My Custom Title");
+    expect(previewOnly?.title).toBeNull();
+    expect(previewOnly?.effectiveTitle).toBe("B".repeat(60));
+  });
+
+  it("is owner-scoped: only returns the requesting user's sessions", async () => {
+    await upsertUser(db, {
+      firebaseUid: "list-owner",
+      email: "list-owner@greenberg.test",
+      displayName: "List Owner",
+      role: "estimator",
+      active: true,
+    });
+    await getOrCreateChatSession(db, { sessionId: "list-mine", userId: "list-owner" });
+    await appendChatMessage(db, { sessionId: "list-mine", role: "user", content: "mine" });
+    await getOrCreateChatSession(db, { sessionId: "list-theirs", userId: DEV_UID });
+    await appendChatMessage(db, { sessionId: "list-theirs", role: "user", content: "theirs" });
+
+    expect((await listChatSessions(db, { userId: "list-owner" })).map((s) => s.id)).toEqual(["list-mine"]);
+  });
+});
+
+describe("session rename/archive/pin", () => {
+  it("renameChatSession sets the title; a non-owner rename is a no-op", async () => {
+    await upsertUser(db, {
+      firebaseUid: "rename-attacker",
+      email: "rename-attacker@greenberg.test",
+      displayName: "Rename Attacker",
+      role: "estimator",
+      active: true,
+    });
+    await getOrCreateChatSession(db, { sessionId: "sess-rename", userId: DEV_UID });
+    await renameChatSession(db, { sessionId: "sess-rename", userId: DEV_UID, title: "Named Chat" });
+    expect((await getChatSession(db, "sess-rename", DEV_UID))?.title).toBe("Named Chat");
+
+    // A non-owner rename matches zero rows — a no-op, not an error.
+    await renameChatSession(db, { sessionId: "sess-rename", userId: "rename-attacker", title: "Hijacked" });
+    expect((await getChatSession(db, "sess-rename", DEV_UID))?.title).toBe("Named Chat");
+  });
+
+  it("setSessionArchived sets/clears archived_at; a non-owner call is a no-op", async () => {
+    await upsertUser(db, {
+      firebaseUid: "archive-attacker",
+      email: "archive-attacker@greenberg.test",
+      displayName: "Archive Attacker",
+      role: "estimator",
+      active: true,
+    });
+    await getOrCreateChatSession(db, { sessionId: "sess-archive", userId: DEV_UID });
+    await setSessionArchived(db, { sessionId: "sess-archive", userId: DEV_UID, archived: true });
+    expect((await getChatSession(db, "sess-archive", DEV_UID))?.archivedAt).toBeInstanceOf(Date);
+
+    // A non-owner unarchive matches zero rows — the archive sticks.
+    await setSessionArchived(db, { sessionId: "sess-archive", userId: "archive-attacker", archived: false });
+    expect((await getChatSession(db, "sess-archive", DEV_UID))?.archivedAt).toBeInstanceOf(Date);
+
+    await setSessionArchived(db, { sessionId: "sess-archive", userId: DEV_UID, archived: false });
+    expect((await getChatSession(db, "sess-archive", DEV_UID))?.archivedAt).toBeNull();
+  });
+
+  it("setSessionPinned sets/clears pinned_at; a non-owner call is a no-op", async () => {
+    await upsertUser(db, {
+      firebaseUid: "pin-attacker",
+      email: "pin-attacker@greenberg.test",
+      displayName: "Pin Attacker",
+      role: "estimator",
+      active: true,
+    });
+    await getOrCreateChatSession(db, { sessionId: "sess-pin", userId: DEV_UID });
+    await setSessionPinned(db, { sessionId: "sess-pin", userId: DEV_UID, pinned: true });
+    expect((await getChatSession(db, "sess-pin", DEV_UID))?.pinnedAt).toBeInstanceOf(Date);
+
+    await setSessionPinned(db, { sessionId: "sess-pin", userId: "pin-attacker", pinned: false });
+    expect((await getChatSession(db, "sess-pin", DEV_UID))?.pinnedAt).toBeInstanceOf(Date);
+
+    await setSessionPinned(db, { sessionId: "sess-pin", userId: DEV_UID, pinned: false });
+    expect((await getChatSession(db, "sess-pin", DEV_UID))?.pinnedAt).toBeNull();
+  });
+
+  it("setSessionTitle (auto-title) only writes when title IS NULL — never overwrites a rename", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-autotitle", userId: DEV_UID });
+
+    // Fresh (untitled) session: the auto-title path sets it.
+    await setSessionTitle(db, { sessionId: "sess-autotitle", userId: DEV_UID, title: "Auto Title" });
+    expect((await getChatSession(db, "sess-autotitle", DEV_UID))?.title).toBe("Auto Title");
+
+    // A second auto-title call (e.g. a duplicate fire-and-forget) must not clobber the first.
+    await setSessionTitle(db, { sessionId: "sess-autotitle", userId: DEV_UID, title: "Second Auto Title" });
+    expect((await getChatSession(db, "sess-autotitle", DEV_UID))?.title).toBe("Auto Title");
+
+    // A user rename still works — the NULL-guard is specific to setSessionTitle.
+    await renameChatSession(db, { sessionId: "sess-autotitle", userId: DEV_UID, title: "User Renamed" });
+    expect((await getChatSession(db, "sess-autotitle", DEV_UID))?.title).toBe("User Renamed");
+
+    // And once titled (by rename OR auto-title), setSessionTitle never overwrites it again.
+    await setSessionTitle(db, { sessionId: "sess-autotitle", userId: DEV_UID, title: "Would Overwrite" });
+    expect((await getChatSession(db, "sess-autotitle", DEV_UID))?.title).toBe("User Renamed");
   });
 });
 

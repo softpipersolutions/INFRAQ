@@ -5,6 +5,7 @@ import {
   chatWindowFromEnv,
   composeAgent,
   decideEscalation,
+  generateSessionTitle,
   module02Toolset,
   modelConfigFromEnv,
   opusCapFromEnv,
@@ -21,12 +22,14 @@ import {
   getOrCreateChatSession,
   insertLlmCall,
   listChatMessages,
+  setSessionTitle,
   sumOpusSpendSince,
   updateSessionSummary,
   type ChatSessionRow,
   type Db,
 } from "@pebble/db";
 import {
+  smoothStream,
   stepCountIs,
   streamText,
   type LanguageModelUsage,
@@ -221,6 +224,13 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
     allowSystemInMessages: true,
     tools: composition.tools,
     stopWhen: stepCountIs(8),
+    // WP5 streaming feel: re-chunk the model's raw text deltas into
+    // word-sized pieces on a short internal delay so the UI receives a
+    // steady drip instead of large, bursty deltas. Purely a client-perceived
+    // pacing change — it does not alter the UI-message-stream's event
+    // semantics (still text-start/text-delta/tool-*), only how finely the
+    // text-delta payloads are sliced, so the eval harness is unaffected.
+    experimental_transform: smoothStream({ chunking: "word" }),
     onError: (err) => {
       const e = (err as { error?: unknown }).error ?? err;
       console.error("[chat] stream error:", e instanceof Error ? e.message : e);
@@ -271,6 +281,21 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
         );
 
         await maybeRefreshSummary(deps, { sessionId, session });
+
+        // Auto-title (fire-and-forget): mint a short session-list label from the
+        // first exchange via Gemini Flash. Deliberately NOT awaited — onFinish
+        // has already persisted everything the UI needs, and a slow/failed
+        // title call must never hold up the response or (via the outer catch)
+        // ever be mistaken for a persistence failure. `.catch` swallows so an
+        // unhandled rejection can't surface elsewhere.
+        void maybeGenerateTitle(deps, {
+          sessionId,
+          session,
+          userText: message,
+          assistantText: content,
+        }).catch((err) => {
+          console.error("[chat] auto-title failed:", err instanceof Error ? err.message : err);
+        });
       } catch (err) {
         console.error("[chat] persist onFinish failed:", err instanceof Error ? err.message : err);
       }
@@ -332,6 +357,54 @@ export async function maybeRefreshSummary(
       intent: "summary",
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
+      sessionId,
+    }),
+  );
+}
+
+// ─── Auto-title ───────────────────────────────────────────────────────────────
+
+/**
+ * Mint a session-list title from the first exchange via Gemini Flash
+ * (`@pebble/ai`'s `generateSessionTitle`) and persist it. Exported so it is
+ * unit-testable without the stream, mirroring `maybeRefreshSummary`. A no-op
+ * — and never throws to the caller — when:
+ *   - the session already has a title (a user rename OR an earlier auto-title
+ *     — `session.title` was read at the START of this turn, so a rename that
+ *     landed mid-turn is still caught by `setSessionTitle`'s own `title IS
+ *     NULL` guard even if this check raced past it);
+ *   - more than the first exchange has landed (`countMessagesAfter` counts
+ *     the user+assistant messages THIS turn just persisted, so a fresh
+ *     session's total is exactly 2 here — later turns see a higher count and
+ *     skip);
+ *   - no Gemini lane is configured, or the model declines to produce a usable
+ *     title (`generateSessionTitle` itself never throws — see `@pebble/ai`).
+ */
+export async function maybeGenerateTitle(
+  deps: RunAgentTurnDeps,
+  args: { sessionId: string; session: ChatSessionRow; userText: string; assistantText: string },
+): Promise<void> {
+  const { db, models } = deps;
+  const { sessionId, session, userText, assistantText } = args;
+  if (session.title) return;
+  if (!models.classifier) return;
+
+  const totalMessages = await countMessagesAfter(db, sessionId, null);
+  if (totalMessages > 2) return;
+
+  const generated = await generateSessionTitle({ model: models.classifier, userText, assistantText });
+  if (!generated) return;
+
+  await setSessionTitle(db, { sessionId, userId: session.userId, title: generated.title });
+  const cfg = modelConfigFromEnv(deps.env ?? process.env);
+  await insertLlmCall(
+    db,
+    toLlmCallLog({
+      lane: "gemini",
+      model: cfg.gemini,
+      intent: "title",
+      inputTokens: generated.usage.inputTokens,
+      outputTokens: generated.usage.outputTokens,
       sessionId,
     }),
   );

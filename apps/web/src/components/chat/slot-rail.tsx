@@ -1,6 +1,8 @@
 "use client";
 
 import type { SlotState } from "@pebble/ai";
+import { CheckCircle2, CircleDashed, CircleDot, type LucideIcon } from "lucide-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { fieldLabel, SLOT_DISPLAY_ORDER } from "./field-labels";
 
 /** Slot-rail-specific chip treatment — distinct from the generic Badge tones. */
@@ -9,6 +11,19 @@ const CHIP_STYLES = {
   proposed: "border border-border-strong text-ink",
   missing: "border border-dashed border-border-strong text-ink-muted",
 } as const;
+
+/** Status glyph per chip: dashed outline missing, half-filled proposed, solid check confirmed. */
+const STATUS_ICON: Record<keyof typeof CHIP_STYLES, LucideIcon> = {
+  missing: CircleDashed,
+  proposed: CircleDot,
+  confirmed: CheckCircle2,
+};
+
+const STATUS_NAME: Record<keyof typeof CHIP_STYLES, string> = {
+  missing: "Missing",
+  proposed: "Proposed — not yet confirmed",
+  confirmed: "Confirmed",
+};
 
 /**
  * One chip per A.08 slot field (spec §4.4): dashed grey outline missing, grey
@@ -25,17 +40,24 @@ export function SlotRail({ slotState }: { slotState: SlotState | undefined }) {
         const slot = slotState[field];
         const status = slot?.status === "confirmed" ? "confirmed" : slot?.status === "proposed" ? "proposed" : "missing";
         const label = fieldLabel(field);
-        const title = slot && slot.status !== "missing" ? `${label}: ${slot.value ?? "—"}` : label;
+        const Icon = STATUS_ICON[status];
+        const tooltipLabel =
+          slot && slot.status !== "missing"
+            ? `${STATUS_NAME[status]} — ${label}: ${slot.value ?? "—"}`
+            : `${STATUS_NAME[status]} — ${label}`;
         return (
-          <span
-            key={field}
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${CHIP_STYLES[status]}`}
-          >
-            <span title={title}>
-              {label}
-              {required ? "" : " (optional)"}
+          <Tooltip key={field} label={tooltipLabel}>
+            <span
+              tabIndex={0}
+              className={`inline-flex max-w-[10rem] items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${CHIP_STYLES[status]}`}
+            >
+              <Icon size={12} strokeWidth={1.5} className="shrink-0" aria-hidden />
+              <span className="truncate">
+                {label}
+                {required ? "" : " (optional)"}
+              </span>
             </span>
-          </span>
+          </Tooltip>
         );
       })}
     </div>

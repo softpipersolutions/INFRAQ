@@ -2,10 +2,13 @@ import { applyExtracted, initSlotState, type SlotState } from "@pebble/ai";
 import {
   appendChatMessage,
   createDb,
+  getChatSession,
   getOrCreateChatSession,
   insertLlmCall,
   migrateDb,
   seedDatabase,
+  setSessionArchived,
+  setSessionPinned,
   updateSlotState,
   upsertUser,
   type AppUser,
@@ -233,6 +236,124 @@ describe("chat router", () => {
     // A legacy text-only user row has null parts.
     const userRow = history.find((m) => m.role === "user");
     expect(userRow?.parts).toBeNull();
+  });
+
+  it("listSessions: newest-active-first, excludes archived + zero-message sessions, includeArchived surfaces both", async () => {
+    const caller = callerFor(ESTIMATOR);
+    // A zero-message session (e.g. a "start over" orphan) — never appears.
+    await getOrCreateChatSession(db, { sessionId: "list-orphan", userId: ESTIMATOR.firebaseUid });
+
+    await getOrCreateChatSession(db, { sessionId: "list-active", userId: ESTIMATOR.firebaseUid });
+    await appendChatMessage(db, { sessionId: "list-active", role: "user", content: "hi" });
+
+    await getOrCreateChatSession(db, { sessionId: "list-archived", userId: ESTIMATOR.firebaseUid });
+    await appendChatMessage(db, { sessionId: "list-archived", role: "user", content: "old" });
+    await setSessionArchived(db, {
+      sessionId: "list-archived",
+      userId: ESTIMATOR.firebaseUid,
+      archived: true,
+    });
+
+    const active = await caller.chat.listSessions();
+    const ids = active.map((s) => s.id);
+    expect(ids).toContain("list-active");
+    expect(ids).not.toContain("list-archived");
+    expect(ids).not.toContain("list-orphan");
+    const activeRow = active.find((s) => s.id === "list-active");
+    expect(activeRow?.effectiveTitle).toBe("hi");
+    expect(activeRow?.archivedAt).toBeNull();
+
+    const withArchived = await caller.chat.listSessions({ includeArchived: true });
+    const archivedRow = withArchived.find((s) => s.id === "list-archived");
+    expect(archivedRow).toBeTruthy();
+    expect(archivedRow?.archivedAt).not.toBeNull();
+    expect(withArchived.map((s) => s.id)).not.toContain("list-orphan");
+  });
+
+  it("rename/archive/pin: mutate an owned session and its listSessions/sessionState reflect it", async () => {
+    const caller = callerFor(ESTIMATOR);
+    const sessionId = "mutate-session";
+    await getOrCreateChatSession(db, { sessionId, userId: ESTIMATOR.firebaseUid });
+    await appendChatMessage(db, { sessionId, role: "user", content: "seed" });
+
+    await caller.chat.rename({ sessionId, title: "  My Renamed Chat  " });
+    const afterRename = await getChatSession(db, sessionId, ESTIMATOR.firebaseUid);
+    expect(afterRename?.title).toBe("My Renamed Chat"); // zod .trim()
+
+    await caller.chat.pin({ sessionId, pinned: true });
+    expect((await getChatSession(db, sessionId, ESTIMATOR.firebaseUid))?.pinnedAt).toBeInstanceOf(Date);
+    await caller.chat.pin({ sessionId, pinned: false });
+    expect((await getChatSession(db, sessionId, ESTIMATOR.firebaseUid))?.pinnedAt).toBeNull();
+
+    await caller.chat.archive({ sessionId, archived: true });
+    expect((await getChatSession(db, sessionId, ESTIMATOR.firebaseUid))?.archivedAt).toBeInstanceOf(Date);
+    let inActiveList = (await caller.chat.listSessions()).map((s) => s.id);
+    expect(inActiveList).not.toContain(sessionId);
+
+    await caller.chat.archive({ sessionId, archived: false });
+    expect((await getChatSession(db, sessionId, ESTIMATOR.firebaseUid))?.archivedAt).toBeNull();
+    inActiveList = (await caller.chat.listSessions()).map((s) => s.id);
+    expect(inActiveList).toContain(sessionId);
+  });
+
+  it("rename rejects an empty/too-long title with BAD_REQUEST (zod)", async () => {
+    const caller = callerFor(ESTIMATOR);
+    const sessionId = "rename-validation";
+    await getOrCreateChatSession(db, { sessionId, userId: ESTIMATOR.firebaseUid });
+
+    let code: string | null = null;
+    try {
+      await caller.chat.rename({ sessionId, title: "   " }); // trims to empty
+    } catch (err) {
+      if (err instanceof TRPCError) code = err.code;
+      else throw err;
+    }
+    expect(code).toBe("BAD_REQUEST");
+
+    code = null;
+    try {
+      await caller.chat.rename({ sessionId, title: "x".repeat(81) });
+    } catch (err) {
+      if (err instanceof TRPCError) code = err.code;
+      else throw err;
+    }
+    expect(code).toBe("BAD_REQUEST");
+  });
+
+  it("session ownership: rename/archive/pin on a non-owned session is NOT_FOUND for a non-owner (incl. admin); the owner is unaffected", async () => {
+    const owner = callerFor(ESTIMATOR);
+    const other = callerFor(OTHER);
+    const admin = callerFor(ADMIN);
+
+    const sessionId = "xuser-rename-session";
+    await getOrCreateChatSession(db, { sessionId, userId: ESTIMATOR.firebaseUid });
+    await appendChatMessage(db, { sessionId, role: "user", content: "owner only" });
+
+    const codeOf = async (fn: () => Promise<unknown>): Promise<string | null> => {
+      try {
+        await fn();
+        return null;
+      } catch (err) {
+        if (err instanceof TRPCError) return err.code;
+        throw err;
+      }
+    };
+
+    for (const caller of [other, admin]) {
+      expect(await codeOf(() => caller.chat.rename({ sessionId, title: "Hijacked" }))).toBe("NOT_FOUND");
+      expect(await codeOf(() => caller.chat.archive({ sessionId, archived: true }))).toBe("NOT_FOUND");
+      expect(await codeOf(() => caller.chat.pin({ sessionId, pinned: true }))).toBe("NOT_FOUND");
+    }
+
+    // The owner's session is untouched by the foreign attempts.
+    const stillOwned = await getChatSession(db, sessionId, ESTIMATOR.firebaseUid);
+    expect(stillOwned?.title).toBeNull();
+    expect(stillOwned?.archivedAt).toBeNull();
+    expect(stillOwned?.pinnedAt).toBeNull();
+
+    // And the owner can still rename/archive/pin it.
+    await owner.chat.rename({ sessionId, title: "Owner Renamed" });
+    expect((await getChatSession(db, sessionId, ESTIMATOR.firebaseUid))?.title).toBe("Owner Renamed");
   });
 
   it("session ownership: a non-owner (incl. admin) gets NOT_FOUND on every session procedure; the owner still succeeds", async () => {
