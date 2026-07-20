@@ -182,8 +182,8 @@ export function ToolActivityRow({ part }: { part: ToolPart }) {
 
   if (PENDING_STATES.has(state)) {
     return (
-      <div className="flex items-center gap-2 text-xs text-[var(--pebble-muted)]">
-        <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--pebble-accent)]" />
+      <div className="flex items-center gap-2 text-xs text-ink-muted">
+        <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full border border-border-strong" />
         <span>{label}…</span>
       </div>
     );
@@ -191,8 +191,8 @@ export function ToolActivityRow({ part }: { part: ToolPart }) {
 
   if (state === "output-error") {
     return (
-      <div className="flex items-start gap-2 text-xs text-red-700">
-        <span className="mt-0.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
+      <div className="flex items-start gap-2 text-xs text-danger">
+        <span className="mt-0.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-danger" />
         <span>
           <span className="font-medium">{label} — failed.</span>
           {part.errorText ? <span> {part.errorText}</span> : null}
@@ -203,10 +203,10 @@ export function ToolActivityRow({ part }: { part: ToolPart }) {
 
   const summary = toolSummary(toolName, part.output);
   return (
-    <div className="flex items-start gap-2 text-xs text-[var(--pebble-muted)]">
-      <span className="mt-0.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400" />
+    <div className="flex items-start gap-2 text-xs text-ink-muted">
+      <span className="mt-0.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-ink" />
       <span>
-        <span className="font-medium text-[var(--pebble-ink)]">{label}</span>
+        <span className="font-medium text-ink">{label}</span>
         {summary ? <span> — {summary}</span> : null}
       </span>
     </div>
@@ -225,9 +225,9 @@ export function ReceiptCard({ output }: { output: unknown }) {
   if (!enquiryId || !estimateId) return null;
 
   return (
-    <Card className="border-emerald-200 bg-emerald-50 p-3">
-      <div className="text-sm font-semibold text-emerald-900">Enquiry created</div>
-      <dl className="mt-1 text-sm text-emerald-800">
+    <Card className="p-3">
+      <div className="text-sm font-semibold text-ink">Enquiry created</div>
+      <dl className="mt-1 text-sm text-ink">
         <div>
           <dt className="inline font-medium">Enquiry no. </dt>
           <dd className="inline">{enquiryId}</dd>
@@ -239,7 +239,7 @@ export function ReceiptCard({ output }: { output: unknown }) {
       </dl>
       <a
         href={`/estimates/${estimateId}`}
-        className="mt-2 inline-block text-sm font-medium text-emerald-900 underline"
+        className="mt-2 inline-block text-sm font-medium text-ink underline"
       >
         Open estimate
       </a>

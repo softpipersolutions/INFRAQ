@@ -204,7 +204,7 @@ function MaterialBundleForm({ proposed, onChange }: { proposed: Json; onChange: 
         <TextInput type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} />
       </Field>
       <div className="md:col-span-2">
-        <label className="mb-1 flex items-center gap-2 text-sm font-medium text-[var(--pebble-ink)]">
+        <label className="mb-1 flex items-center gap-2 text-sm font-medium text-ink">
           <input type="checkbox" checked={hasInstallRate} onChange={(e) => setHasInstallRate(e.target.checked)} />
           Install rate observed
         </label>

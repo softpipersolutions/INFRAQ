@@ -33,19 +33,19 @@ export function DedupCard({
     <Card className="p-4">
       <div className="mb-2 text-sm font-semibold">Possible duplicates</div>
       {isLoading ? (
-        <div className="text-sm text-[var(--pebble-muted)]">Checking…</div>
+        <div className="text-sm text-ink-muted">Checking…</div>
       ) : !suggestions || suggestions.length === 0 ? (
-        <div className="text-sm text-[var(--pebble-muted)]">No similar materials found.</div>
+        <div className="text-sm text-ink-muted">No similar materials found.</div>
       ) : (
         <ul className="space-y-2">
           {suggestions.map((c) => (
             <li key={c.materialCode} className="flex items-center justify-between gap-2 text-sm">
               <div className="min-w-0">
                 <div className="truncate font-medium">{c.materialName}</div>
-                <div className="font-mono text-xs text-[var(--pebble-muted)]">{c.materialCode}</div>
+                <div className="font-mono text-xs text-ink-muted">{c.materialCode}</div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <Badge tone={c.similarity >= DEDUP_SIMILARITY_THRESHOLD ? "amber" : "neutral"}>
+                <Badge tone={c.similarity >= DEDUP_SIMILARITY_THRESHOLD ? "warning" : "neutral"}>
                   {Math.round(c.similarity * 100)}%
                 </Badge>
                 <Button variant="secondary" onClick={() => onMergeInto(c.materialCode)}>

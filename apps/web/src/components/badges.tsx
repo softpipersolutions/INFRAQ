@@ -13,13 +13,13 @@ export function SitcBadge({
   const ratioLabel = ratio === null ? "n/a" : ratio.toFixed(4);
   if (status === "PASS") {
     return (
-      <Badge tone="green">
+      <Badge tone="success">
         SITC PASS · {ratioLabel} (band {SITC_MIN_RATIO}–{SITC_MAX_RATIO})
       </Badge>
     );
   }
   return (
-    <Badge tone="red">
+    <Badge tone="danger">
       SITC ALERT · {ratioLabel} outside {SITC_MIN_RATIO}–{SITC_MAX_RATIO}
     </Badge>
   );
@@ -38,10 +38,10 @@ export function MarginBadge({
   if (!status) return <Badge tone="neutral">Margin —</Badge>;
   const pctLabel = marginPct === null ? "n/a" : `${marginPct.toFixed(2)}%`;
   if (status === "OK") {
-    return <Badge tone="green">Margin OK · {pctLabel}</Badge>;
+    return <Badge tone="success">Margin OK · {pctLabel}</Badge>;
   }
   return (
-    <Badge tone="amber">
+    <Badge tone="warning">
       Margin BELOW_FLOOR · {pctLabel}
       {requiredAuthority ? ` · needs ${requiredAuthority}` : ""}
     </Badge>

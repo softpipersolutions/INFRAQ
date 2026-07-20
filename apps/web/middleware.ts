@@ -11,8 +11,19 @@ export function middleware(req: NextRequest): NextResponse {
   if (process.env.AUTH_MODE !== "firebase") return NextResponse.next();
 
   const { pathname } = req.nextUrl;
-  const isPublic = pathname === "/login" || pathname.startsWith("/api/auth/");
-  if (isPublic || req.cookies.has(SESSION_COOKIE_NAME)) return NextResponse.next();
+  const isPublic =
+    pathname === "/" || pathname === "/login" || pathname.startsWith("/api/auth/");
+  const hasSession = req.cookies.has(SESSION_COOKIE_NAME);
+
+  // Signed-in users hitting the public landing get sent to their dashboard.
+  if (hasSession && pathname === "/") {
+    const url = req.nextUrl.clone();
+    url.pathname = "/dashboard";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  if (isPublic || hasSession) return NextResponse.next();
 
   const url = req.nextUrl.clone();
   url.pathname = "/login";

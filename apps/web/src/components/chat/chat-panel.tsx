@@ -179,15 +179,15 @@ export function ChatPanel() {
             <MessageBubble key={message.id} message={message} />
           ))}
           {streaming ? (
-            <div className="flex items-center gap-2 text-xs text-[var(--pebble-muted)]">
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--pebble-accent)]" />
+            <div className="flex items-center gap-2 text-xs text-ink-muted">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full border border-border-strong" />
               Thinking…
             </div>
           ) : null}
         </div>
 
         {errorMessage ? (
-          <div className="flex items-center justify-between gap-3 border-t border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+          <div className="flex items-center justify-between gap-3 border-t border-danger-border bg-danger-soft px-4 py-2 text-sm text-danger">
             <span>{errorMessage}</span>
             <button type="button" className="shrink-0 underline" onClick={() => chat.clearError()}>
               Dismiss
@@ -196,7 +196,7 @@ export function ChatPanel() {
         ) : null}
 
         <form
-          className="flex items-center gap-2 border-t border-[var(--pebble-border)] p-3"
+          className="flex items-center gap-2 border-t border-border p-3"
           onSubmit={(e) => {
             e.preventDefault();
             void send();
@@ -225,7 +225,7 @@ export function ChatPanel() {
       </Card>
 
       {sessionState.isError ? (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-md border border-danger-border bg-danger-soft px-4 py-3 text-sm text-danger">
           {sessionState.error.message}
         </div>
       ) : null}
@@ -238,10 +238,10 @@ export function ChatPanel() {
           error={confirmError}
         />
       ) : sessionState.data?.enquiryId ? (
-        <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <div className="rounded-md border border-border-strong bg-surface px-4 py-3 text-sm text-ink">
           Enquiry <span className="font-semibold">{sessionState.data.enquiryId}</span> has been
           created from this conversation — find its estimate on the{" "}
-          <a href="/" className="underline">
+          <a href="/dashboard" className="underline">
             dashboard
           </a>
           , or start over for a new enquiry.
@@ -269,8 +269,8 @@ function MessageBubble({ message }: { message: UIMessage }) {
               key={i}
               className={`max-w-[80%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm ${
                 isUser
-                  ? "bg-[var(--pebble-accent)] text-white"
-                  : "border border-[var(--pebble-border)] bg-slate-50 text-[var(--pebble-ink)]"
+                  ? "bg-ink text-inverse"
+                  : "border border-border bg-surface-sunken text-ink"
               }`}
             >
               {part.text}

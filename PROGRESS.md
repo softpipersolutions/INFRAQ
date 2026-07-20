@@ -246,13 +246,14 @@ PGLITE_DIR=.data/smoke SEED_ON_BOOT=1 pnpm --filter @pebble/web dev
 # → expect a locked v1 draft, SITC badge PASS, zero warnings
 ```
 
-## 7. How to continue in a NEW session
+## 7. Current status and what remains
 
-1. Read this file, then `docs/PLAN.md`, then skim `packages/shared/src/` (the contract) and the two partial packages.
-2. Build order (respects dependencies): **finish `expr` tests → finish `db` (migrations+repos+seed+tests) → `engines` → `documents` + `dispatch` (parallel-safe) → `ai` → `apps/worker` + `infra` → `apps/web` core → `apps/web` admin → integration (typecheck/test/build/smoke) → commit & push per layer.**
-3. The original orchestration prompts (full per-package specs incl. every table column and seed row) are preserved verbatim inside the workflow script from the previous session — if unavailable locally, `docs/PLAN.md` §4 + this file are sufficient.
-4. Commit and push after each completed layer; never leave the branch broken.
+The build is complete and live: `packages/shared`, `expr`, `db`, `engines`, `documents`, `dispatch`, `ai`, `apps/worker`, `infra`, and `apps/web` (core + admin) are all built, tested, and deployed via `.github/workflows/deploy.yml`.
 
-### Copy-paste continuation prompt
+For day-to-day operations (adding/removing teammates, roles, deploy, logs, ingestion queue triage, secrets), see **`docs/RUNBOOK.md`**.
 
-> Continue building Pebble v1.0 Module 02 (fire-safety BOQ estimation web app) in this repo. First read `PROGRESS.md` and `docs/PLAN.md` at the repo root — they contain the full approved architecture, current build state, and remaining work. The `packages/shared` contract layer is frozen and complete; `packages/expr` needs its test suites; `packages/db` needs drizzle migration generation (+ hand-edited SQL for extensions/triggers/exclusion constraints), repositories, seed data, and tests as specified in PROGRESS.md §2/§5; then build `engines`, `documents`, `dispatch`, `ai`, `apps/worker`, `infra`, and the `apps/web` Next.js app per PROGRESS.md §7 build order and `docs/PLAN.md`. Honor the invariants in PROGRESS.md §3 (deterministic paise math, append-only audit, copy-on-write versions, SITC 1.43 band, extensionless bundler-style imports, PGlite dev mode with zero cloud creds). Verify with `pnpm -r typecheck && pnpm -r test`, the web smoke test in §6, then commit and push each completed layer to the working branch.
+What remains before full cutover:
+
+1. **Ingestion queue** — 25 thin records awaiting review at `/admin/ingestion/queue` (approve/edit/reject).
+2. **Phase D UAT + goldens** — re-quote 5 real historical jobs (chat or enquiry form), compare against original proposals, sign off totals; engineering then freezes them as engine goldens. See `docs/RUNBOOK.md` for the full procedure.
+3. **Cutover** — once UAT is signed off and the queue is clear, switch the go-live team over to Pebble as the system of record.

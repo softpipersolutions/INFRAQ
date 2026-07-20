@@ -28,7 +28,7 @@ export function ConfirmationCard({
   return (
     <Card className="p-4">
       <div className="mb-1 text-sm font-semibold">Prefer a button?</div>
-      <p className="mb-3 text-sm text-[var(--pebble-muted)]">
+      <p className="mb-3 text-sm text-ink-muted">
         Review the captured details and confirm here — or just tell Pebble to go ahead in the chat.
       </p>
       <table className="w-full text-sm">
@@ -36,8 +36,8 @@ export function ConfirmationCard({
           {rows.map(({ field }) => {
             const slot = slotState[field];
             return (
-              <tr key={field} className="border-b border-[var(--pebble-border)] last:border-0">
-                <td className="py-1.5 pr-4 align-top font-medium text-[var(--pebble-muted)]">
+              <tr key={field} className="border-b border-border last:border-0">
+                <td className="py-1.5 pr-4 align-top font-medium text-ink-muted">
                   {fieldLabel(field)}
                 </td>
                 <td className="py-1.5">{formatSlotValue(slot!.value)}</td>
@@ -46,7 +46,7 @@ export function ConfirmationCard({
           })}
         </tbody>
       </table>
-      {error ? <div className="mt-3 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="mt-3 text-sm text-danger">{error}</div> : null}
       <div className="mt-3">
         <Button variant="primary" disabled={pending} onClick={onConfirm}>
           {pending ? "Creating…" : "Create enquiry & generate"}

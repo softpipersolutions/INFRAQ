@@ -22,10 +22,10 @@ interface DispatchOutcome {
   error: string | null;
 }
 
-function statusTone(status: string): "green" | "amber" | "red" | "neutral" {
-  if (status === "SENT" || status === "DELIVERED") return "green";
-  if (status === "QUEUED") return "amber";
-  if (status === "FAILED") return "red";
+function statusTone(status: string): "success" | "info" | "danger" | "neutral" {
+  if (status === "SENT" || status === "DELIVERED") return "success";
+  if (status === "QUEUED") return "info";
+  if (status === "FAILED") return "danger";
   return "neutral";
 }
 
@@ -72,33 +72,33 @@ export function DocumentsPanel({
           {render.isPending ? "Generating…" : "Generate PDF + Excel"}
         </Button>
         {!locked ? (
-          <span className="text-sm text-[var(--pebble-muted)]">
+          <span className="text-sm text-ink-muted">
             Current version is WORKING — approve (lock) it before generating documents.
           </span>
         ) : null}
-        {renderMsg ? <span className="text-sm text-red-700">{renderMsg}</span> : null}
+        {renderMsg ? <span className="text-sm text-danger">{renderMsg}</span> : null}
       </div>
 
       {documents.isLoading ? (
-        <div className="text-sm text-[var(--pebble-muted)]">Loading documents…</div>
+        <div className="text-sm text-ink-muted">Loading documents…</div>
       ) : !hasDocuments ? (
-        <div className="text-sm text-[var(--pebble-muted)]">No documents generated yet.</div>
+        <div className="text-sm text-ink-muted">No documents generated yet.</div>
       ) : (
-        <ul className="mb-1 divide-y divide-[var(--pebble-border)]">
+        <ul className="mb-1 divide-y divide-border">
           {documents.data!.map((doc) => (
             <li key={doc.id} className="flex flex-wrap items-center gap-3 py-2">
-              <Badge tone={doc.docType === "PDF" ? "red" : "green"}>{doc.docType}</Badge>
+              <Badge tone="neutral">{doc.docType}</Badge>
               <Badge tone="neutral">v{doc.versionNo}</Badge>
               <a
                 href={`/api/documents/${doc.id}`}
-                className="text-sm font-medium text-[var(--pebble-accent)] hover:underline"
+                className="text-sm font-medium text-ink hover:underline"
               >
                 Download
               </a>
-              <span className="font-mono text-xs text-[var(--pebble-muted)]" title={doc.sha256}>
+              <span className="tabular font-mono text-xs text-ink-muted" title={doc.sha256}>
                 sha256 {doc.sha256.slice(0, 12)}…
               </span>
-              <span className="ml-auto text-xs text-[var(--pebble-muted)]">
+              <span className="ml-auto text-xs text-ink-muted">
                 {formatDateTime(doc.createdAt)}
               </span>
             </li>
@@ -115,25 +115,25 @@ export function DocumentsPanel({
         />
       ) : null}
 
-      <div className="mt-4 border-t border-[var(--pebble-border)] pt-3">
+      <div className="mt-4 border-t border-border pt-3">
         <div className="mb-2 text-sm font-semibold">Dispatch history</div>
         {dispatches.isLoading ? (
-          <div className="text-sm text-[var(--pebble-muted)]">Loading…</div>
+          <div className="text-sm text-ink-muted">Loading…</div>
         ) : (dispatches.data?.length ?? 0) === 0 ? (
-          <div className="text-sm text-[var(--pebble-muted)]">Nothing sent yet.</div>
+          <div className="text-sm text-ink-muted">Nothing sent yet.</div>
         ) : (
-          <ul className="divide-y divide-[var(--pebble-border)]">
+          <ul className="divide-y divide-border">
             {dispatches.data!.map((d) => (
               <li key={d.id} className="flex flex-wrap items-center gap-3 py-2">
-                <Badge tone="blue">{d.channel}</Badge>
+                <Badge tone="info">{d.channel}</Badge>
                 <Badge tone={statusTone(d.status)}>{d.status}</Badge>
                 <span className="text-sm">{d.recipient}</span>
-                <span className="text-xs text-[var(--pebble-muted)]">
+                <span className="text-xs text-ink-muted">
                   {d.provider}
                   {d.providerMessageId ? ` · ${d.providerMessageId}` : ""}
                 </span>
-                {d.error ? <span className="text-xs text-red-700">{d.error}</span> : null}
-                <span className="ml-auto text-xs text-[var(--pebble-muted)]">
+                {d.error ? <span className="text-xs text-danger">{d.error}</span> : null}
+                <span className="ml-auto text-xs text-ink-muted">
                   {formatDateTime(d.createdAt)}
                 </span>
               </li>
@@ -203,7 +203,7 @@ function SendSection({
   }
 
   return (
-    <div className="mt-4 border-t border-[var(--pebble-border)] pt-3">
+    <div className="mt-4 border-t border-border pt-3">
       <div className="mb-2 text-sm font-semibold">Send to client</div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div className="flex items-start gap-2">
@@ -245,11 +245,11 @@ function SendSection({
         </div>
       </div>
       {!hasDocuments ? (
-        <div className="mt-2 text-sm text-[var(--pebble-muted)]">
+        <div className="mt-2 text-sm text-ink-muted">
           Generate documents first — the dispatch attaches the latest PDF + Excel.
         </div>
       ) : null}
-      {error ? <div className="mt-2 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="mt-2 text-sm text-danger">{error}</div> : null}
       {outcomes ? (
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {outcomes.map((o) => (
