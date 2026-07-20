@@ -2,8 +2,32 @@
 
 > **Purpose of this file:** hand off the build to a fresh Claude Code session (local or remote) with zero context loss. Read this top-to-bottom, then follow "How to continue" at the end. The full approved architecture/build plan is in **`docs/PLAN.md`** — read that too before writing code.
 
-Last updated: 2026-07-19 · Branch: `claude/fire-safety-boq-webapp-f5n921`
+Last updated: 2026-07-20 · Branch: `claude/fire-safety-boq-webapp-f5n921`
 
+> ## ✅ STAGED QUEUE DRAINED — GEMINI FULL AUTO-APPROVE (2026-07-20)
+> The founder chose full auto-approval over a manual G6 review of the 3,560
+> PROPOSED staged records. A second-pass Gemini 3.5 Flash audit
+> (`packages/ai/src/ingest/verify.ts`, prompt `staged-verify-v2` — a genuine
+> temperature-0 gate: approve/reject/unsure, never an editor) ran over the
+> whole queue via `POST /tasks/auto-approve` (`apps/worker/src/auto-approve.ts`,
+> driver `apps/worker/scripts/auto-approve-drive.ts`). **Final: 2,081 approved
+> · 1,454 rejected · 25 left PROPOSED for humans (of 3,560), total model cost
+> ≈ $1.22.** Every decision is stamped `reviewedBy: "gemini-auto"`, ledgered in
+> `llm_calls` (intent `staged-verify`), and committed through the same audited
+> `commitStagedRecord` path humans use. The rejects are real catches, not
+> noise: Novec 1230 suppression rows misfiled as FAS/Panel, "UL listed"
+> stripped from material names, section-header categories (a 150 mm pipe filed
+> as "Pump"), and **same-day duplicate prices** — a duplicate for one
+> (material, make) violates `prices_no_overlapping_validity` on every retry
+> (only one price per pair per instant exists by design; the first commit won),
+> so the batch now detects the exclusion error across drizzle's cause chain and
+> rejects it as `duplicate price point` instead of recycling it as unsure —
+> the head-of-line-blocking fix that let the queue actually drain. The 25
+> survivors are genuinely thin source lines ("SITC of 15 mm", "40 mm dia") a
+> human should eyeball in /admin/ingestion/queue. Prompt lesson burned in
+> (`staged-verify-v2`): the auditor sees ONLY the description cell — v1 marked
+> hundreds unsure for prices/units living in table columns it was never shown.
+>
 > ## 🤖 PHASE C.5 — THE AGENTIC CHAT SYSTEM (2026-07-19)
 > The templated slot-filling lane is gone. **Claude Sonnet 5 now owns every
 > user-visible reply** and orchestrates the whole Module-02 workflow itself
