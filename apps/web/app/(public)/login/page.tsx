@@ -48,7 +48,7 @@ async function signInWithGoogle(): Promise<void> {
     const body = (await res.json().catch(() => null)) as { error?: string } | null;
     throw new Error(body?.error ?? `Sign-in failed (${res.status})`);
   }
-  window.location.href = "/dashboard";
+  window.location.href = "/chat";
 }
 
 export default function LoginPage() {

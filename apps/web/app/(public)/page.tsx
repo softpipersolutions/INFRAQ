@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
  * Public landing page for Pebble — strict-monochrome (black / white / grey, no
  * red anywhere), generous whitespace, crisp 1px borders. Fully static server
  * component: no tRPC, no client JS. Middleware serves "/" publicly and
- * redirects signed-in users to /dashboard before they reach this page.
+ * redirects signed-in users to /chat before they reach this page.
  */
 
 const btnPrimary =

@@ -12,13 +12,13 @@ interface NavItem {
   label: string;
 }
 
-/** Visible to every signed-in role. */
+/** Visible to every signed-in role. Chat-first order (Phase C.5 chat overhaul WP3). */
 const BASE_NAV: NavItem[] = [
+  { href: "/chat", label: "Chat" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/enquiries/new", label: "New Enquiry" },
-  { href: "/admin", label: "Masters" },
   { href: "/history", label: "History" },
-  { href: "/chat", label: "Chat" },
+  { href: "/admin", label: "Masters" },
 ];
 
 /** Admin-only — appended when users.me resolves the current user's role to admin. */

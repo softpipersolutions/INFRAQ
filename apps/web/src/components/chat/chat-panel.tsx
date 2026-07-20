@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, type UIMessage } from "ai";
-import { ArrowDown, ArrowUp, Check, Copy, RotateCw, Square } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Copy, PanelLeft, RotateCw, Square } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -13,13 +13,13 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { Badge, Button, Card } from "@/components/ui";
+import { Badge, Button, Card, TextInput } from "@/components/ui";
 import { Tooltip } from "@/components/ui/tooltip";
 import { trpc } from "@/trpc/react";
+import { useChatSidebarToggle } from "./chat-sidebar-context";
 import { ConfirmationCard } from "./confirmation-card";
 import { historyRowsToUIMessages } from "./history-to-ui-messages";
 import { Markdown } from "./markdown";
-import { getOrCreateSessionId, resetSessionId } from "./session-id";
 import { SlotRail } from "./slot-rail";
 import { isCreateEnquirySuccessPart, isToolPart, ReceiptCard, ToolActivityRow } from "./tool-activity";
 import { useAutoscroll } from "./use-autoscroll";
@@ -92,15 +92,26 @@ function calendarDayLabel(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
 }
 
-export function ChatPanel() {
+export function ChatPanel({
+  sessionId,
+  onFirstMessageSent,
+}: {
+  /** Always present — the lobby mints one client-side, `[sessionId]` reads it from the route param. */
+  sessionId: string;
+  /**
+   * Lobby-only: fired synchronously the moment the FIRST message of a
+   * brand-new session is sent, so `chat/page.tsx` can promote the URL from
+   * `/chat` to `/chat/{sessionId}` (via `window.history.replaceState`,
+   * which — unlike `router.replace` — is guaranteed not to remount this
+   * component, so the in-flight stream survives the swap). Omitted on the
+   * `[sessionId]` route, where the URL is already correct.
+   */
+  onFirstMessageSent?: () => void;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const utils = trpc.useUtils();
-
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  useEffect(() => {
-    setSessionId(getOrCreateSessionId());
-  }, []);
+  const toggleSidebar = useChatSidebarToggle();
 
   const [input, setInput] = useState("");
   const prefilledAsk = useRef(false);
@@ -114,30 +125,34 @@ export function ChatPanel() {
   }, [searchParams]);
 
   // Auto-grow the composer to fit `input` (covers the prefill above and the
-  // post-send/start-over resets below, not just direct typing).
+  // post-send reset below, not just direct typing).
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (textareaRef.current) autoGrowTextarea(textareaRef.current);
   }, [input]);
 
-  const sessionState = trpc.chat.sessionState.useQuery(
-    { sessionId: sessionId ?? "" },
-    { enabled: !!sessionId },
-  );
+  // tRPC keys these queries by their input, so `sessionId` changing (a real
+  // navigation to a different session) is enough to refetch both — no extra
+  // effect/dep wiring needed beyond passing the prop through.
+  const sessionState = trpc.chat.sessionState.useQuery({ sessionId });
 
   // Full transcript (parts + createdAt + model included) for hydrating a
   // reloaded session — a fresh session simply returns an empty list and the
   // empty-state panel stays put.
-  const history = trpc.chat.history.useQuery(
-    { sessionId: sessionId ?? "" },
-    { enabled: !!sessionId },
-  );
+  const history = trpc.chat.history.useQuery({ sessionId });
+
+  // The signed-in user's session list — used here only to resolve the
+  // current session's title for the slim header below; the sidebar (a
+  // sibling under the shared `/chat` layout) issues the identical query, so
+  // React Query dedupes the two into a single request/cache entry.
+  const sessions = trpc.chat.listSessions.useQuery();
+  const activeSession = sessions.data?.find((s) => s.id === sessionId) ?? null;
 
   const transport = useMemo(
     () =>
       new DefaultChatTransport<UIMessage>({
         api: "/api/chat",
-        body: { sessionId: sessionId ?? "" },
+        body: { sessionId },
         prepareSendMessagesRequest: ({ messages, body }) => ({
           body: { ...body, message: extractText(messages[messages.length - 1]) },
         }),
@@ -146,7 +161,7 @@ export function ChatPanel() {
   );
 
   const chat = useChat<UIMessage>({
-    id: sessionId ?? undefined,
+    id: sessionId,
     messages: [],
     transport,
     // WP5 streaming feel: coalesce rapid text-delta re-renders into ~20fps
@@ -157,6 +172,11 @@ export function ChatPanel() {
     onFinish: ({ message, isAbort, isError }) => {
       if (isAbort || isError) return;
       void sessionState.refetch();
+      // The sidebar list orders by last-message activity and shows the title
+      // the server may have just generated; the lobby's history.replaceState
+      // URL promotion fires no router event, so this invalidation is the only
+      // thing that makes a first exchange appear in the list.
+      void utils.chat.listSessions.invalidate();
       // A receipt (successful create_enquiry) means the enquiry/estimate and
       // dashboard tiles just changed underneath this session.
       if (messageHasSuccessfulCreateEnquiry(message)) {
@@ -173,7 +193,7 @@ export function ChatPanel() {
   // session can flash the empty state for one frame while history loads.
   const hydratedSessionIdRef = useRef<string | null>(null);
   useLayoutEffect(() => {
-    if (!sessionId || !history.data) return;
+    if (!history.data) return;
     if (hydratedSessionIdRef.current === sessionId) return;
     hydratedSessionIdRef.current = sessionId;
     if (history.data.length > 0) {
@@ -216,8 +236,11 @@ export function ChatPanel() {
 
   async function send(explicitText?: string) {
     const text = (explicitText ?? input).trim();
-    if (!text || !sessionId || streaming) return;
+    if (!text || streaming) return;
     if (explicitText === undefined) setInput("");
+    // Fire BEFORE awaiting the send — the lobby's URL swap (see chat/page.tsx)
+    // must happen at send-time, not once the turn finishes streaming.
+    if (chat.messages.length === 0) onFirstMessageSent?.();
     await chat.sendMessage({ text });
   }
 
@@ -225,7 +248,6 @@ export function ChatPanel() {
   const [confirmError, setConfirmError] = useState<string | null>(null);
 
   async function onConfirm() {
-    if (!sessionId) return;
     setConfirmError(null);
     try {
       const result = await confirmEnquiry.mutateAsync({ sessionId });
@@ -236,18 +258,32 @@ export function ChatPanel() {
     }
   }
 
-  const resetSession = trpc.chat.reset.useMutation();
-  async function onStartOver() {
-    if (sessionId) {
-      try {
-        await resetSession.mutateAsync({ sessionId });
-      } catch {
-        // Best-effort — a fresh session id below makes this moot either way.
-      }
-    }
-    setConfirmError(null);
-    setInput("");
-    setSessionId(resetSessionId());
+  // "Start over" is now "New chat" (spec WP3 §4) — it navigates to the
+  // lobby, which mints a brand-new session id, rather than resetting this
+  // one in place. The old in-place reset survives as "Reset capture" in the
+  // sidebar's per-session menu (see session-sidebar.tsx).
+  function onNewChat() {
+    router.push("/chat");
+  }
+
+  // ─── Slim conversation header: session title, rename-on-click ──────────
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
+  const renameSession = trpc.chat.rename.useMutation({
+    onSuccess: () => void utils.chat.listSessions.invalidate(),
+  });
+
+  function startEditingTitle() {
+    if (!activeSession) return;
+    setTitleDraft(activeSession.effectiveTitle);
+    setEditingTitle(true);
+  }
+
+  function commitTitle() {
+    setEditingTitle(false);
+    const trimmed = titleDraft.trim();
+    if (!activeSession || !trimmed || trimmed === activeSession.effectiveTitle) return;
+    void renameSession.mutateAsync({ sessionId, title: trimmed });
   }
 
   /**
@@ -285,7 +321,7 @@ export function ChatPanel() {
   const showGenericThinking =
     streaming && (!lastMessage || lastMessage.role !== "assistant" || lastMessage.parts.length === 0);
 
-  const showEmptyState = !!sessionId && chat.messages.length === 0 && !streaming && !history.isLoading;
+  const showEmptyState = chat.messages.length === 0 && !streaming && !history.isLoading;
 
   const errorMessage = friendlyError(chat.error);
 
@@ -296,10 +332,49 @@ export function ChatPanel() {
       <SlotRail slotState={sessionState.data?.slotState} />
 
       <Card className="flex h-[60vh] min-h-[420px] flex-col overflow-hidden">
+        <div className="flex items-center gap-1.5 border-b border-border px-3 py-2">
+          <button
+            type="button"
+            aria-label="Toggle sessions"
+            onClick={toggleSidebar}
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ink-muted transition hover:bg-surface-sunken hover:text-ink md:hidden"
+          >
+            <PanelLeft size={15} strokeWidth={1.75} aria-hidden />
+          </button>
+          {editingTitle ? (
+            <TextInput
+              autoFocus
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commitTitle();
+                } else if (e.key === "Escape") {
+                  e.preventDefault();
+                  setEditingTitle(false);
+                }
+              }}
+              onBlur={commitTitle}
+              className="h-7 max-w-xs py-0.5 text-sm"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={startEditingTitle}
+              disabled={!activeSession}
+              title={activeSession ? "Click to rename" : undefined}
+              className="truncate rounded px-1.5 py-0.5 text-left text-sm font-medium text-ink transition hover:bg-surface-sunken disabled:cursor-default disabled:hover:bg-transparent"
+            >
+              {activeSession?.effectiveTitle ?? "New chat"}
+            </button>
+          )}
+        </div>
+
         <div className="relative flex-1 overflow-hidden">
           <div ref={autoscroll.containerRef} className="h-full overflow-y-auto p-4">
             {showEmptyState ? (
-              <EmptyState disabled={!sessionId || streaming} onPick={(text) => void send(text)} />
+              <EmptyState disabled={streaming} onPick={(text) => void send(text)} />
             ) : (
               <div className="space-y-3">
                 {chat.messages.map((message, i) => {
@@ -388,8 +463,8 @@ export function ChatPanel() {
                 void send();
               }
             }}
-            disabled={!sessionId || streaming}
-            placeholder={sessionId ? "Tell me about the enquiry, or ask a question…" : "Starting chat…"}
+            disabled={streaming}
+            placeholder="Tell me about the enquiry, or ask a question…"
             enterKeyHint="send"
             className="max-h-48 flex-1 resize-none overflow-y-auto rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-muted outline-none focus:border-ink disabled:cursor-not-allowed disabled:opacity-50"
           />
@@ -409,15 +484,15 @@ export function ChatPanel() {
               <button
                 type="submit"
                 aria-label="Send message"
-                disabled={!sessionId || streaming || input.trim() === ""}
+                disabled={streaming || input.trim() === ""}
                 className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-inverse transition hover:bg-grey-800 disabled:cursor-not-allowed disabled:bg-grey-200 disabled:text-ink-muted"
               >
                 <ArrowUp size={18} strokeWidth={2} aria-hidden />
               </button>
             </Tooltip>
           )}
-          <Button type="button" variant="ghost" onClick={() => void onStartOver()}>
-            Start over
+          <Button type="button" variant="ghost" onClick={onNewChat}>
+            New chat
           </Button>
         </form>
       </Card>
@@ -442,7 +517,7 @@ export function ChatPanel() {
           <a href="/dashboard" className="underline">
             dashboard
           </a>
-          , or start over for a new enquiry.
+          , or start a new chat for a new enquiry.
         </div>
       ) : null}
     </div>

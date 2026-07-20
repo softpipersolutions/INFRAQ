@@ -15,10 +15,11 @@ export function middleware(req: NextRequest): NextResponse {
     pathname === "/" || pathname === "/login" || pathname.startsWith("/api/auth/");
   const hasSession = req.cookies.has(SESSION_COOKIE_NAME);
 
-  // Signed-in users hitting the public landing get sent to their dashboard.
+  // Signed-in users hitting the public landing get sent straight into chat
+  // (Phase C.5 chat overhaul WP3 — chat-first shell).
   if (hasSession && pathname === "/") {
     const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/chat";
     url.search = "";
     return NextResponse.redirect(url);
   }
