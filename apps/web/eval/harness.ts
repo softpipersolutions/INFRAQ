@@ -42,6 +42,7 @@ import {
 import {
   createDb,
   ensureDevUser,
+  getLatestLlmCallForSession,
   insertLlmCall,
   migrateDb,
   registerSourceDocument,
@@ -333,6 +334,40 @@ export async function timed<T>(fn: () => Promise<T>): Promise<{ value: T; wallMs
   const start = Date.now();
   const value = await fn();
   return { value, wallMs: Date.now() - start };
+}
+
+// ─── Cache-prefix tripwire (WP10) ──────────────────────────────────────────
+
+export interface CacheTripwireResult {
+  ok: boolean;
+  cacheReadTokens: number | null;
+  note: string;
+}
+
+/**
+ * The regression tripwire for prompt-cache prefix busting. ANY scenario that
+ * runs 2+ turns on the same session should call this after its last turn: a
+ * second-or-later turn that reads ZERO tokens from the prompt cache means the
+ * cached prefix (persona → module fragments/policy → digest, breakpoint 1;
+ * the previous turn's user message, breakpoint 2) was silently invalidated —
+ * a reordered message, an accidentally-mutated digest, a dropped
+ * `cache_control` breakpoint, or a ttl mismatch between the two breakpoints
+ * (WP10) — which would quietly multiply live cost on every turn forever. Live
+ * numbers only: this reads whatever the real Anthropic response actually
+ * reported on `llm_calls.cache_read_tokens` for the LAST call ledgered on
+ * `sessionId` (highest ULID id = most recent, see `getLatestLlmCallForSession`).
+ */
+export async function assertCachePrefixIntact(db: Db, sessionId: string): Promise<CacheTripwireResult> {
+  const last = await getLatestLlmCallForSession(db, sessionId);
+  const cacheReadTokens = last?.cacheReadTokens ?? null;
+  const ok = (cacheReadTokens ?? 0) > 0;
+  return {
+    ok,
+    cacheReadTokens,
+    note: ok
+      ? `cache prefix intact: last turn read ${cacheReadTokens} cache tokens`
+      : `CACHE TRIPWIRE FAILED: last turn's llm_calls row read ${cacheReadTokens ?? 0} cache tokens — the cached prefix was likely busted`,
+  };
 }
 
 // ─── Case result / scenario contract ──────────────────────────────────────

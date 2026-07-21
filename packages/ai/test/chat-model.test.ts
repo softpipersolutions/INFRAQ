@@ -49,4 +49,24 @@ describe("createChatModelsFromEnv", () => {
     });
     expect((models.classifier as { modelId: string }).modelId).toBe("gemini-2.5-flash");
   });
+
+  // WP12 advisor pilot: the `anthropic-beta` header rides on the Anthropic
+  // provider ONLY when PEBBLE_ADVISOR=1. The AI-SDK model surfaces its resolved
+  // request headers via `config.headers()`, so we can assert presence/absence
+  // without a network call.
+  function anthropicHeaders(model: unknown): Record<string, string> {
+    return (model as { config: { headers: () => Record<string, string> } }).config.headers();
+  }
+
+  it("omits the advisor beta header when PEBBLE_ADVISOR is off", () => {
+    const models = createChatModelsFromEnv({ ANTHROPIC_API_KEY: "sk-ant-test" });
+    expect("anthropic-beta" in anthropicHeaders(models.claudeDefault)).toBe(false);
+    expect("anthropic-beta" in anthropicHeaders(models.claudeOpus)).toBe(false);
+  });
+
+  it("adds the advisor beta header on BOTH Claude models when PEBBLE_ADVISOR=1", () => {
+    const models = createChatModelsFromEnv({ ANTHROPIC_API_KEY: "sk-ant-test", PEBBLE_ADVISOR: "1" });
+    expect(anthropicHeaders(models.claudeDefault)["anthropic-beta"]).toBe("advisor-tool-2026-03-01");
+    expect(anthropicHeaders(models.claudeOpus)["anthropic-beta"]).toBe("advisor-tool-2026-03-01");
+  });
 });

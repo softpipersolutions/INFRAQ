@@ -10,6 +10,8 @@
  * Every id is env-overridable so ops can pin/upgrade models without a redeploy.
  */
 
+import { DEFAULT_CACHE_TTL, type CacheTtl } from "./cache";
+
 export type Lane = "gemini" | "claude" | "engine";
 
 export interface ModelConfig {
@@ -64,7 +66,17 @@ export function rateForModel(model: string): Rate {
 
 /** Anthropic prompt-caching billing multipliers on the input rate. */
 const CACHE_READ_MULTIPLIER = 0.1; // cache hits bill at 10% of input
-const CACHE_WRITE_MULTIPLIER = 1.25; // 5-minute cache writes bill at 125%
+/**
+ * Cache-WRITE multiplier on the input rate, TTL-aware (WP10): a 5-minute
+ * ephemeral write bills at 125% of the input rate; the opt-in 1-hour tier
+ * bills at 200% (Anthropic's own published ratio between the two tiers).
+ * Keyed by `CacheTtl` so `estimateCostUsd`/`toLlmCallLog` price the write at
+ * whatever ttl the caller actually requested on the breakpoint.
+ */
+const CACHE_WRITE_MULTIPLIER: Record<CacheTtl, number> = {
+  "5m": 1.25,
+  "1h": 2,
+};
 
 export interface CacheUsage {
   /** Tokens read from the prompt cache (usage.cachedInputTokens). */
@@ -78,20 +90,24 @@ export interface CacheUsage {
  *
  * `inputTokens` is the FRESH (uncached) input; cached reads/writes bill at
  * their own multipliers and were previously ignored, which understated every
- * cached Claude turn on the dashboard tile.
+ * cached Claude turn on the dashboard tile. `ttl` (default 5m) selects the
+ * cache-WRITE multiplier — reads always bill at the same 10% regardless of
+ * ttl, only the write price changes between the 5m and 1h tiers.
  */
 export function estimateCostUsd(
   model: string,
   inputTokens: number,
   outputTokens: number,
   cache?: CacheUsage,
+  ttl: CacheTtl = DEFAULT_CACHE_TTL,
 ): number {
   const rate = rateForModel(model);
+  const writeMultiplier = CACHE_WRITE_MULTIPLIER[ttl];
   const usd =
     (inputTokens / 1_000_000) * rate.inPerM +
     (outputTokens / 1_000_000) * rate.outPerM +
     (((cache?.cacheReadTokens ?? 0) / 1_000_000) * rate.inPerM) * CACHE_READ_MULTIPLIER +
-    (((cache?.cacheWriteTokens ?? 0) / 1_000_000) * rate.inPerM) * CACHE_WRITE_MULTIPLIER;
+    (((cache?.cacheWriteTokens ?? 0) / 1_000_000) * rate.inPerM) * writeMultiplier;
   return Math.round(usd * 1_000_000) / 1_000_000; // 6dp — matches NUMERIC(10,6)
 }
 
@@ -122,14 +138,17 @@ export function toLlmCallLog(args: {
   outputTokens: number;
   sessionId?: string | null;
   cache?: CacheUsage;
+  /** The cache ttl in effect on this turn's breakpoints (default 5m — see `resolveCacheTtl`). */
+  ttl?: CacheTtl;
 }): LlmCallLog {
+  const ttl = args.ttl ?? DEFAULT_CACHE_TTL;
   return {
     lane: args.lane,
     model: args.model,
     intent: args.intent ?? null,
     inputTokens: args.inputTokens,
     outputTokens: args.outputTokens,
-    costUsd: estimateCostUsd(args.model, args.inputTokens, args.outputTokens, args.cache),
+    costUsd: estimateCostUsd(args.model, args.inputTokens, args.outputTokens, args.cache, ttl),
     sessionId: args.sessionId ?? null,
     cacheReadTokens: args.cache?.cacheReadTokens ?? null,
     cacheWriteTokens: args.cache?.cacheWriteTokens ?? null,

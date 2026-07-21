@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isCreateEnquirySuccessPart,
+  isEmptyToolOutput,
   isGenerateFileSuccessPart,
   isMemoryPart,
   isToolPart,
@@ -247,6 +248,19 @@ describe("toolSummary — generate_file / read_attachment", () => {
   it("list_attachments summarises the count", () => {
     expect(toolSummary("list_attachments", [{ attachmentId: "a" }, { attachmentId: "b" }])).toBe("2 files");
     expect(toolSummary("list_attachments", [])).toBe("No files uploaded yet");
+  });
+});
+
+describe("isEmptyToolOutput (WP13)", () => {
+  it("is true for null/undefined, empty array/object/string", () => {
+    for (const output of [null, undefined, [], {}, ""]) {
+      expect(isEmptyToolOutput(output)).toBe(true);
+    }
+  });
+  it("is false for a non-empty output", () => {
+    for (const output of [[1], { a: 1 }, "x", 0, false]) {
+      expect(isEmptyToolOutput(output)).toBe(false);
+    }
   });
 });
 

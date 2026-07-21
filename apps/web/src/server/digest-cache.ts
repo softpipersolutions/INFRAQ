@@ -32,11 +32,15 @@ export interface CachedDigest {
   hit: boolean;
 }
 
-export async function getCachedDigest(db: Db): Promise<CachedDigest> {
+export async function getCachedDigest(
+  db: Db,
+  env: Record<string, string | undefined> = process.env,
+): Promise<CachedDigest> {
   const snapshot = await loadMasterSnapshot(db);
   const previous = cached;
   const assembled = assembleSystemPrompt(snapshot, {
     cachedDigest: previous ?? undefined,
+    env,
   });
   const hit = previous !== null && previous.hash === assembled.digestHash;
 

@@ -157,6 +157,13 @@ export function module02Toolset(
       confirmRequired: ["create_enquiry"],
       humanOnly: ["approve_estimate", "dispatch_quote"],
     },
+    // WP11 tool-search pilot — Module 02's HOT contract tools: the capture
+    // read/write loop the agent runs on almost every estimating turn. These stay
+    // non-deferred (always in the cached tool prefix); the remaining read/RAG/
+    // explain/document tools are cold (deferred & tool-searched on demand once
+    // the provider supports it). Reference hot set for future modules: name only
+    // the one-or-two tools you touch nearly every turn.
+    hotTools: ["update_enquiry_draft", "get_enquiry_state", "search_past_estimates", "create_enquiry"],
     // buildTurnContext intentionally unset — the /api/chat route builds the
     // session-state block via agent/context.ts (it holds the loaded slot state).
   };

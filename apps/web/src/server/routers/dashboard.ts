@@ -18,6 +18,11 @@ export const dashboardRouter = router({
    * house style in queries.ts. Deliberately independent of the chat router
    * (owned by a parallel lane) so this tile works even before that lane
    * lands; the UI layers chat.costToday's daily budget on top when present.
+   *
+   * WP10: also sums the cache_read_tokens/cache_write_tokens columns (WP1)
+   * for today + this month, so the tile can show a secondary "cache: 120k
+   * read · 8k written today" line — a live signal that prompt caching is
+   * actually landing, not just theoretically wired.
    */
   llmCost: protectedProcedure.query(async ({ ctx }) => {
     const rows = await ctx.db.select().from(schema.llmCalls);
@@ -27,24 +32,44 @@ export const dashboardRouter = router({
 
     let todayCostUsd = 0;
     let todayCalls = 0;
+    let todayCacheReadTokens = 0;
+    let todayCacheWriteTokens = 0;
     let monthCostUsd = 0;
     let monthCalls = 0;
+    let monthCacheReadTokens = 0;
+    let monthCacheWriteTokens = 0;
 
     for (const r of rows) {
       const cost = r.costUsd === null ? 0 : Number(r.costUsd);
+      const cacheRead = r.cacheReadTokens ?? 0;
+      const cacheWrite = r.cacheWriteTokens ?? 0;
       if (r.createdAt >= startOfMonth) {
         monthCostUsd += cost;
         monthCalls += 1;
+        monthCacheReadTokens += cacheRead;
+        monthCacheWriteTokens += cacheWrite;
       }
       if (r.createdAt >= startOfDay) {
         todayCostUsd += cost;
         todayCalls += 1;
+        todayCacheReadTokens += cacheRead;
+        todayCacheWriteTokens += cacheWrite;
       }
     }
 
     return {
-      today: { costUsd: todayCostUsd, calls: todayCalls },
-      month: { costUsd: monthCostUsd, calls: monthCalls },
+      today: {
+        costUsd: todayCostUsd,
+        calls: todayCalls,
+        cacheReadTokens: todayCacheReadTokens,
+        cacheWriteTokens: todayCacheWriteTokens,
+      },
+      month: {
+        costUsd: monthCostUsd,
+        calls: monthCalls,
+        cacheReadTokens: monthCacheReadTokens,
+        cacheWriteTokens: monthCacheWriteTokens,
+      },
     };
   }),
 });

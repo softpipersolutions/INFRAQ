@@ -38,6 +38,9 @@ export async function POST(req: Request): Promise<Response> {
         message: parsed.message,
         user: { firebaseUid: user.firebaseUid, role: user.role },
         attachmentIds: parsed.attachmentIds,
+        // WP13: the request aborts when the client disconnects (composer Stop /
+        // navigation), cancelling the model call so the partial turn persists.
+        abortSignal: req.signal,
       },
     );
   } catch (err) {

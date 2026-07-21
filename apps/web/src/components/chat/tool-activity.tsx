@@ -372,15 +372,27 @@ export function ToolActivityRow({ part }: { part: ToolPart }) {
   }
 
   const summary = toolSummary(toolName, part.output);
+  // WP13: a finished tool with a null/empty output and no summary of its own
+  // gets a neutral "Tool returned no result" caption rather than a bare label.
+  const fallback = summary === null && isEmptyToolOutput(part.output) ? "Tool returned no result" : null;
   return (
     <div className="flex items-start gap-2 text-xs text-ink-muted">
       <Icon size={14} strokeWidth={1.5} className="mt-0.5 shrink-0 text-ink-muted" aria-hidden />
       <span>
         <span className="font-medium text-ink">{label}</span>
-        {summary ? <span> — {summary}</span> : null}
+        {summary ? <span> — {summary}</span> : fallback ? <span> — {fallback}</span> : null}
       </span>
     </div>
   );
+}
+
+/** True when a finished tool's output carries nothing renderable: null/undefined, an empty array/object, or an empty string. */
+export function isEmptyToolOutput(output: unknown): boolean {
+  if (output === null || output === undefined) return true;
+  if (typeof output === "string") return output.length === 0;
+  if (Array.isArray(output)) return output.length === 0;
+  if (typeof output === "object") return Object.keys(output as Record<string, unknown>).length === 0;
+  return false;
 }
 
 /**

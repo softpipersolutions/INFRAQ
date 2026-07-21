@@ -136,6 +136,11 @@ export function attachmentsToolset(
     promptFragment: skillsEnabled ? ATTACHMENTS_FRAGMENT_WITH_SKILLS : ATTACHMENTS_FRAGMENT,
     tools,
     policy: { confirmRequired: [], humanOnly: [] },
+    // WP11 tool-search pilot — `list_attachments` is the HOT entry point: the
+    // agent calls it to discover what the user uploaded before doing anything
+    // file-related, so it must never be a tool-search miss. `read_attachment`
+    // (and the flagged analyze/generate tools) are cold — expanded on demand.
+    hotTools: ["list_attachments"],
   };
 }
 

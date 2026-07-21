@@ -27,6 +27,7 @@ function mod(part: Partial<ModuleToolset> & { id: string }): ModuleToolset {
     promptFragment: part.promptFragment ?? `fragment for ${part.id}`,
     tools: part.tools ?? {},
     policy: part.policy ?? { confirmRequired: [], humanOnly: [] },
+    hotTools: part.hotTools,
     buildTurnContext: part.buildTurnContext,
     id: part.id,
   };
@@ -85,6 +86,45 @@ describe("composeAgent — tool union + collision prefixing", () => {
     const only = mod({ id: "module02", tools: { create_enquiry: noopTool(), get_enquiry_state: noopTool() } });
     const comp = await composeAgent({ persona: PERSONA, modules: [only], digestBlock, turn });
     expect(Object.keys(comp.tools).sort()).toEqual(["ask_user", "create_enquiry", "get_enquiry_state"]);
+  });
+});
+
+describe("composeAgent — WP11 hot/cold toolMeta", () => {
+  it("flags a module's hotTools as hot and everything else cold, keyed like tools", async () => {
+    const m = mod({
+      id: "module02",
+      tools: { update_enquiry_draft: noopTool(), lookup_material: noopTool(), create_enquiry: noopTool() },
+      hotTools: ["update_enquiry_draft", "create_enquiry"],
+    });
+    const comp = await composeAgent({ persona: PERSONA, modules: [m], digestBlock, turn });
+
+    // toolMeta is keyed identically to tools (same key set, no drift).
+    expect(Object.keys(comp.toolMeta).sort()).toEqual(Object.keys(comp.tools).sort());
+    expect(comp.toolMeta.update_enquiry_draft).toEqual({ hot: true });
+    expect(comp.toolMeta.create_enquiry).toEqual({ hot: true });
+    expect(comp.toolMeta.lookup_material).toEqual({ hot: false });
+  });
+
+  it("marks the core ask_user hot even when no module declares hotTools", async () => {
+    const comp = await composeAgent({
+      persona: PERSONA,
+      modules: [mod({ id: "m", tools: { a: noopTool() } })],
+      digestBlock,
+      turn,
+    });
+    expect(comp.toolMeta.ask_user).toEqual({ hot: true });
+    // A module without hotTools contributes only cold tools.
+    expect(comp.toolMeta.a).toEqual({ hot: false });
+  });
+
+  it("keeps a collision-PREFIXED tool hot (hotness is by the module's bare name)", async () => {
+    const a = mod({ id: "modA", tools: { create_enquiry: noopTool() }, hotTools: ["create_enquiry"] });
+    const b = mod({ id: "modB", tools: { create_enquiry: noopTool() } });
+    const comp = await composeAgent({ persona: PERSONA, modules: [a, b], digestBlock, turn });
+    // Names collide → both prefixed; only modA declared it hot.
+    expect(comp.toolMeta["modA:create_enquiry"]).toEqual({ hot: true });
+    expect(comp.toolMeta["modB:create_enquiry"]).toEqual({ hot: false });
+    expect(comp.toolMeta.create_enquiry).toBeUndefined();
   });
 });
 

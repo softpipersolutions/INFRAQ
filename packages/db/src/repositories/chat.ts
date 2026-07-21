@@ -551,6 +551,36 @@ export async function insertLlmCall(db: Db, log: InsertLlmCallArgs): Promise<str
 }
 
 /**
+ * The most-recently-inserted llm_calls row for a session, or null when the
+ * session has no ledgered calls yet. Small-table select-then-reduce-in-JS
+ * (house style, `sumOpusSpendSince`) rather than an `ORDER BY id DESC LIMIT 1`
+ * query — ids are monotonic ULIDs so "highest id" IS "most recent". Used by
+ * the WP10 eval-harness cache tripwire (`apps/web/eval/harness.ts`), which
+ * asserts a multi-turn scenario's LAST turn read from the prompt cache.
+ */
+export async function getLatestLlmCallForSession(
+  db: Db,
+  sessionId: string,
+): Promise<(InsertLlmCallArgs & { id: string; createdAt: Date }) | null> {
+  const rows = await db.select().from(llmCalls).where(eq(llmCalls.sessionId, sessionId));
+  if (rows.length === 0) return null;
+  const last = rows.reduce((a, b) => (b.id > a.id ? b : a));
+  return {
+    id: last.id,
+    sessionId: last.sessionId,
+    lane: last.lane,
+    model: last.model,
+    intent: last.intent,
+    inputTokens: last.inputTokens,
+    outputTokens: last.outputTokens,
+    costUsd: last.costUsd === null ? 0 : Number(last.costUsd),
+    cacheReadTokens: last.cacheReadTokens,
+    cacheWriteTokens: last.cacheWriteTokens,
+    createdAt: last.createdAt,
+  };
+}
+
+/**
  * Total estimated LLM spend (USD) since an instant, for the daily budget guard.
  *
  * With `userId` set, the sum joins llm_calls → chat_sessions on session id and

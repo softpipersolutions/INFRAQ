@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   budgetFromEnv,
   resolveSlotState,
+  startOfNextUtcDayISO,
   startOfUtcDayISO,
 } from "../src/server/chat-runtime";
 
@@ -28,6 +29,22 @@ describe("budgetFromEnv", () => {
 describe("startOfUtcDayISO", () => {
   it("truncates to UTC midnight", () => {
     expect(startOfUtcDayISO(new Date("2026-07-19T15:42:11.000Z"))).toBe("2026-07-19T00:00:00.000Z");
+  });
+});
+
+describe("startOfNextUtcDayISO", () => {
+  it("returns the following UTC midnight (the daily-budget reset instant)", () => {
+    expect(startOfNextUtcDayISO(new Date("2026-07-19T15:42:11.000Z"))).toBe("2026-07-20T00:00:00.000Z");
+  });
+  it("rolls over month and year boundaries", () => {
+    expect(startOfNextUtcDayISO(new Date("2026-07-31T23:59:59.000Z"))).toBe("2026-08-01T00:00:00.000Z");
+    expect(startOfNextUtcDayISO(new Date("2026-12-31T10:00:00.000Z"))).toBe("2027-01-01T00:00:00.000Z");
+  });
+  it("is exactly 24h after the current UTC-day start", () => {
+    const now = new Date("2026-07-19T15:42:11.000Z");
+    const start = Date.parse(startOfUtcDayISO(now));
+    const next = Date.parse(startOfNextUtcDayISO(now));
+    expect(next - start).toBe(24 * 60 * 60 * 1000);
   });
 });
 

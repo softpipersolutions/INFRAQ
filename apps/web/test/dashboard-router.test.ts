@@ -64,6 +64,8 @@ describe("dashboard.llmCost", () => {
         inputTokens: 500,
         outputTokens: 200,
         costUsd: "0.045000",
+        cacheReadTokens: 120_000,
+        cacheWriteTokens: 8_000,
       },
     ]);
 
@@ -72,6 +74,12 @@ describe("dashboard.llmCost", () => {
     expect(after.today.costUsd).toBeCloseTo(0.001234 + 0.045, 6);
     expect(after.month.calls).toBeGreaterThanOrEqual(2);
     expect(after.month.costUsd).toBeGreaterThanOrEqual(after.today.costUsd);
+    // WP10: the tile's secondary cache line sums cache_read_tokens/cache_write_tokens
+    // (the gemini row above has neither column set, i.e. null — must not NaN the sum).
+    expect(after.today.cacheReadTokens).toBe(120_000);
+    expect(after.today.cacheWriteTokens).toBe(8_000);
+    expect(after.month.cacheReadTokens).toBeGreaterThanOrEqual(120_000);
+    expect(after.month.cacheWriteTokens).toBeGreaterThanOrEqual(8_000);
   });
 
   it("requires sign-in", async () => {

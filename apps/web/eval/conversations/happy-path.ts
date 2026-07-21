@@ -1,5 +1,6 @@
 import { resolveSlotState } from "../../src/server/chat-runtime";
 import {
+  assertCachePrefixIntact,
   caseCostUsd,
   checkNoInventedNumbers,
   findEstimateForEnquiry,
@@ -161,6 +162,13 @@ async function run(ctx: EvalCtx): Promise<CaseResult> {
   notes.push(`cost=$${costUsd.toFixed(4)} (<$0.25 ${withinCost ? "ok" : "FAIL"})`);
   notes.push(`wall=${wallMs}ms (<90000ms ${withinWall ? "ok" : "FAIL"})`);
 
+  // WP10 cache-prefix tripwire: this is a 2-turn session (turn1 capture, turn2
+  // go-ahead), so turn2 — reading the SAME persona/digest/policy prefix and
+  // turn1's own cached user message — must show a nonzero cache read. A zero
+  // here means the cached prefix got busted somewhere upstream.
+  const cacheTripwire = await assertCachePrefixIntact(ctx.db, sessionId);
+  notes.push(cacheTripwire.note);
+
   const pass =
     systemsExact &&
     otherFieldsCaptured &&
@@ -172,7 +180,8 @@ async function run(ctx: EvalCtx): Promise<CaseResult> {
     lockedV1 &&
     noInventedNumbers &&
     withinCost &&
-    withinWall;
+    withinWall &&
+    cacheTripwire.ok;
 
   return { pass, notes };
 }

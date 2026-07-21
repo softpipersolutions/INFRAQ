@@ -42,6 +42,26 @@ export interface ModuleToolset {
     humanOnly: string[];
   };
   /**
+   * WP11 tool-search seam. The module's HOT tools: bare tool names (as this
+   * module keys them in `tools`) that MUST stay non-deferred when the
+   * `PEBBLE_TOOL_SEARCH` pilot is on — the contract tools the agent reaches for
+   * on almost every turn, which must never be a tool-search miss. Every tool NOT
+   * listed here is COLD: eligible to be deferred (kept out of the cached tool
+   * prefix and expanded on demand by the server-side tool-search tool). Unset ⇒
+   * the module has no hot tools (all cold).
+   *
+   * `composeAgent` folds these into `AgentComposition.toolMeta` (per composed
+   * tool, `{hot}`), which `agent/tool-search.ts` reads to pick the deferral set.
+   * The pilot is functionally off today (the installed provider ships no
+   * tool-search tool), so this only shapes metadata — it changes no behaviour
+   * until the provider supports deferral.
+   *
+   * MODULE 03+ REGISTRATION: a new module declares its hot contract tools here
+   * (e.g. the one or two tools it calls on nearly every turn); everything else it
+   * exposes is automatically cold. See `module02.ts` for the reference hot set.
+   */
+  hotTools?: string[];
+  /**
    * Optional fresh, per-turn context block (NEVER cached). Return null to
    * contribute nothing this turn. Module 02 leaves this unset — the /api/chat
    * route builds the session-state block via `agent/context.ts` directly.
@@ -60,6 +80,17 @@ export interface AgentComposition {
    * modules; `ask_user` is reserved for the core and no module may define it.
    */
   tools: Record<string, Tool>;
+  /**
+   * WP11: per composed-tool metadata, keyed by the SAME (possibly
+   * collision-prefixed) keys as `tools`. `hot` marks a tool that must stay
+   * non-deferred under the `PEBBLE_TOOL_SEARCH` pilot (from each module's
+   * `hotTools`); the core `ask_user` is ALWAYS hot (a contract tool must never be
+   * a tool-search miss). `agent/tool-search.ts#deferredToolNames` reads this to
+   * pick the cold set to defer. Purely additive to `tools` — the tool union
+   * itself is byte-identical whether or not any module declares `hotTools`, so
+   * with the pilot off nothing about the composition changes.
+   */
+  toolMeta: Record<string, { hot: boolean }>;
 }
 
 /**
@@ -109,7 +140,8 @@ export async function composeAgent(opts: {
   );
   const turnContextBlocks = resolved.filter((b): b is string => b != null && b.length > 0);
 
-  return { systemBlocks, turnContextBlocks, tools: composeTools(modules) };
+  const { tools, toolMeta } = composeTools(modules);
+  return { systemBlocks, turnContextBlocks, tools, toolMeta };
 }
 
 /**
@@ -142,8 +174,18 @@ export function buildPolicyDigest(modules: ModuleToolset[]): string {
  * tool. A tool key is prefixed with `${moduleId}:` ONLY when its bare name
  * collides across modules; `ask_user` is reserved for the core, so we assert no
  * module ever defines a tool of that name.
+ *
+ * Also emits `toolMeta` (WP11): each composed tool tagged `hot`/cold from its
+ * module's `hotTools`, keyed identically to `tools`. The hot flag is derived
+ * from the BARE name (before collision-prefixing) so a hot tool stays hot even
+ * when its key gets prefixed. The core `ask_user` is always hot. The `tools`
+ * record is produced exactly as before — `toolMeta` is a parallel map, so adding
+ * `hotTools` to a module never perturbs the tool union or its key order.
  */
-function composeTools(modules: ModuleToolset[]): Record<string, Tool> {
+function composeTools(modules: ModuleToolset[]): {
+  tools: Record<string, Tool>;
+  toolMeta: Record<string, { hot: boolean }>;
+} {
   for (const m of modules) {
     if (ASK_USER_TOOL_NAME in m.tools) {
       throw new Error(
@@ -157,14 +199,21 @@ function composeTools(modules: ModuleToolset[]): Record<string, Tool> {
     for (const name of Object.keys(m.tools)) counts.set(name, (counts.get(name) ?? 0) + 1);
   }
   const tools: Record<string, Tool> = {};
+  const toolMeta: Record<string, { hot: boolean }> = {};
   for (const m of modules) {
+    const hot = new Set(m.hotTools ?? []);
     for (const [name, t] of Object.entries(m.tools)) {
       const key = (counts.get(name) ?? 0) > 1 ? `${m.id}:${name}` : name;
       tools[key] = t;
+      toolMeta[key] = { hot: hot.has(name) };
     }
   }
   tools[ASK_USER_TOOL_NAME] = buildAskUserTool();
-  return tools;
+  // The clarification tool is a CORE contract tool — always non-deferred so the
+  // agent can always reach it (never a tool-search miss). This also guarantees
+  // the ">=1 non-deferred tool" invariant even for an all-cold module set.
+  toolMeta[ASK_USER_TOOL_NAME] = { hot: true };
+  return { tools, toolMeta };
 }
 
 function dedupe(items: string[]): string[] {

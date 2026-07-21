@@ -60,3 +60,39 @@ describe("estimateCostUsd with prompt-cache usage", () => {
     expect(withCache.costUsd).toBeGreaterThan(withoutCache.costUsd);
   });
 });
+
+describe("TTL-aware cache-write pricing (WP10)", () => {
+  it("defaults to the 5m (1.25x) write multiplier when ttl is omitted", () => {
+    // sonnet: $3/M input. 1M cache-write @ 1.25x = $3.75.
+    const dflt = estimateCostUsd("claude-sonnet-5", 0, 0, { cacheWriteTokens: 1_000_000 });
+    const explicit5m = estimateCostUsd("claude-sonnet-5", 0, 0, { cacheWriteTokens: 1_000_000 }, "5m");
+    expect(dflt).toBeCloseTo(3.75, 6);
+    expect(explicit5m).toBeCloseTo(3.75, 6);
+  });
+
+  it("bills 1h writes at 2x the input rate — strictly more than the 5m 1.25x tier", () => {
+    // sonnet: $3/M input. 1M cache-write @ 2x = $6.00.
+    const oneHour = estimateCostUsd("claude-sonnet-5", 0, 0, { cacheWriteTokens: 1_000_000 }, "1h");
+    expect(oneHour).toBeCloseTo(6.0, 6);
+    const fiveMin = estimateCostUsd("claude-sonnet-5", 0, 0, { cacheWriteTokens: 1_000_000 }, "5m");
+    expect(oneHour).toBeGreaterThan(fiveMin);
+  });
+
+  it("does not change the cache-READ multiplier across ttls (reads are always 0.1x)", () => {
+    const read5m = estimateCostUsd("claude-sonnet-5", 0, 0, { cacheReadTokens: 1_000_000 }, "5m");
+    const read1h = estimateCostUsd("claude-sonnet-5", 0, 0, { cacheReadTokens: 1_000_000 }, "1h");
+    expect(read5m).toBeCloseTo(0.3, 6);
+    expect(read1h).toBeCloseTo(0.3, 6);
+  });
+
+  it("toLlmCallLog threads its optional ttl arg into the priced costUsd", () => {
+    const cache = { cacheReadTokens: 0, cacheWriteTokens: 1_000_000 };
+    const fiveMin = toLlmCallLog({ lane: "claude", model: "claude-sonnet-5", inputTokens: 0, outputTokens: 0, cache });
+    const oneHour = toLlmCallLog({ lane: "claude", model: "claude-sonnet-5", inputTokens: 0, outputTokens: 0, cache, ttl: "1h" });
+    expect(fiveMin.costUsd).toBeCloseTo(3.75, 6);
+    expect(oneHour.costUsd).toBeCloseTo(6.0, 6);
+    expect(oneHour.costUsd).toBeGreaterThan(fiveMin.costUsd);
+    // Reporting-only raw counts are identical regardless of ttl — only the price differs.
+    expect(oneHour.cacheWriteTokens).toBe(fiveMin.cacheWriteTokens);
+  });
+});

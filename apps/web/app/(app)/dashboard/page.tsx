@@ -153,12 +153,26 @@ function Tile({ label, value }: { label: string; value: number }) {
   );
 }
 
+/** Compact token-count formatting for the cache line ("120k", "8k", "340" — no decimals below 1k). */
+function formatTokenCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}m`;
+  if (n >= 1_000) return `${Math.round(n / 1_000)}k`;
+  return `${n}`;
+}
+
 /**
  * LLM spend tile (spec §4.4 cost dashboard): today's spend + call count from
  * dashboard.llmCost (works standalone), layered with today's daily budget
  * from chat.costToday when that router is available. The chat router is
  * owned by a parallel lane — the budget query is allowed to fail (retry
  * disabled) and is simply omitted from the tile until it lands.
+ *
+ * WP10: a small secondary line under the spend surfaces today's cache
+ * read/write token totals (`llm_calls.cache_read_tokens`/`cache_write_tokens`,
+ * columns since WP1) — a live "is prompt caching actually landing" signal.
+ * Omitted entirely when today has no cache activity yet (e.g. a fresh env or
+ * before the first Claude turn), so the tile never shows a misleading "0
+ * read · 0 written" on day one.
  */
 function LlmCostTile() {
   const cost = trpc.dashboard.llmCost.useQuery();
@@ -180,6 +194,12 @@ function LlmCostTile() {
             {budgetUsd !== null ? ` · budget $${budgetUsd.toFixed(2)}` : ""}
             {" · "}${cost.data.month.costUsd.toFixed(2)} this month ({cost.data.month.calls} calls)
           </div>
+          {cost.data.today.cacheReadTokens > 0 || cost.data.today.cacheWriteTokens > 0 ? (
+            <div className="mt-0.5 text-xs text-ink-muted">
+              cache: {formatTokenCount(cost.data.today.cacheReadTokens)} read ·{" "}
+              {formatTokenCount(cost.data.today.cacheWriteTokens)} written today
+            </div>
+          ) : null}
         </>
       )}
     </Card>

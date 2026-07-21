@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { historyRowsToUIMessages } from "./history-to-ui-messages";
+import { describe, expect, it, vi } from "vitest";
+import { historyRowsToUIMessages, UNAVAILABLE_PART } from "./history-to-ui-messages";
 
 /**
  * Pure-function coverage for the chat.history -> UIMessage hydration mapping
@@ -128,5 +128,84 @@ describe("historyRowsToUIMessages", () => {
       { type: "file", mediaType: "application/pdf", filename: "a.pdf", url: "/api/chat/attachments/att-1" },
       { type: "text", text: "text" },
     ]);
+  });
+
+  // ── WP13 tolerant reader ──────────────────────────────────────────────────
+
+  it("passes the data-stopped marker through untouched", () => {
+    const parts = [
+      { type: "text", text: "Half an answer", v: 1 },
+      { type: "data-stopped", v: 1 },
+    ];
+    const messages = historyRowsToUIMessages([
+      { id: "01STOP", role: "assistant", content: "Half an answer\n\n(stopped)", parts },
+    ]);
+    expect(messages[0]?.parts).toEqual(parts);
+  });
+
+  it("skips unknown part types (forward-compatible against schema drift)", () => {
+    const debug = vi.spyOn(console, "debug").mockImplementation(() => {});
+    const messages = historyRowsToUIMessages([
+      {
+        id: "01UNK",
+        role: "assistant",
+        content: "hi",
+        parts: [
+          { type: "text", text: "kept", v: 1 },
+          { type: "reasoning", text: "future part shape" },
+          { type: "some-future-type", payload: { a: 1 } },
+        ],
+      },
+    ]);
+    expect(messages[0]?.parts).toEqual([{ type: "text", text: "kept", v: 1 }]);
+    expect(debug).toHaveBeenCalled();
+    debug.mockRestore();
+  });
+
+  it("repairs a malformed tool part (missing state / input) into a neutral data-unavailable placeholder", () => {
+    const debug = vi.spyOn(console, "debug").mockImplementation(() => {});
+    const messages = historyRowsToUIMessages([
+      {
+        id: "01MALFORMED",
+        role: "assistant",
+        content: "x",
+        parts: [
+          { type: "tool-get_design_rules" }, // no state, no input/output
+          { type: "tool-lookup_material", state: "output-available" }, // state but no payload
+          { type: "dynamic-tool", toolName: "memory" }, // dynamic tool, no state/payload
+        ],
+      },
+    ]);
+    expect(messages[0]?.parts).toEqual([{ ...UNAVAILABLE_PART }, { ...UNAVAILABLE_PART }, { ...UNAVAILABLE_PART }]);
+    debug.mockRestore();
+  });
+
+  it("drops garbage (null / non-object / typeless / malformed text) parts without crashing", () => {
+    const debug = vi.spyOn(console, "debug").mockImplementation(() => {});
+    const messages = historyRowsToUIMessages([
+      {
+        id: "01GARBAGE",
+        role: "assistant",
+        content: "fallback text",
+        parts: [
+          null,
+          42,
+          "a string",
+          {}, // no type
+          { type: 123 }, // non-string type
+          { type: "text" }, // text part with no text
+          { type: "text", text: "survivor", v: 1 },
+        ] as unknown[],
+      },
+    ]);
+    expect(messages[0]?.parts).toEqual([{ type: "text", text: "survivor", v: 1 }]);
+    debug.mockRestore();
+  });
+
+  it("still falls back to synthetic text for a legacy null-parts row alongside garbage handling", () => {
+    const messages = historyRowsToUIMessages([
+      { id: "01LEGACY", role: "assistant", content: "legacy body", parts: null },
+    ]);
+    expect(messages[0]?.parts).toEqual([{ type: "text", text: "legacy body" }]);
   });
 });

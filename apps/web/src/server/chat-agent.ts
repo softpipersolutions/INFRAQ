@@ -8,16 +8,23 @@ import {
   composeAgent,
   createSkillsLaneFromEnv,
   decideEscalation,
+  ephemeralCacheControl,
   generateSessionTitle,
   memoryToolset,
   module02Toolset,
   modelConfigFromEnv,
   opusCapFromEnv,
+  parseAdvisorIterations,
   PEBBLE_PERSONA,
   refreshSummary,
+  resolveCacheTtl,
+  resolveToolSearchSupport,
+  resolveTurnStrategy,
   shouldRefreshSummary,
   skillsLaneEnabled,
   toLlmCallLog,
+  TOOL_SEARCH_UNSUPPORTED_WARNING,
+  toolSearchEnabled,
   type ChatModels,
 } from "@pebble/ai";
 import {
@@ -60,6 +67,7 @@ import {
   checkDailyBudget,
   MODEL_UNCONFIGURED_MESSAGE,
   resolveSlotState,
+  startOfNextUtcDayISO,
   startOfUtcDayISO,
 } from "@/server/chat-runtime";
 import { getCachedDigest } from "@/server/digest-cache";
@@ -118,6 +126,13 @@ export interface RunAgentTurnArgs {
   user: { firebaseUid: string; role: string | null };
   /** Uploaded-attachment ids to attach to THIS turn (owner-scoped, cost-guarded). */
   attachmentIds?: string[];
+  /**
+   * The request's abort signal (WP13). Threaded from `req.signal` in the route
+   * handler and forwarded to `streamText`, so a client disconnect / composer
+   * Stop cancels the model call. On abort, the partial turn is persisted (text
+   * so far + a `data-stopped` marker) with NO summary refresh or auto-title.
+   */
+  abortSignal?: AbortSignal;
 }
 
 /**
@@ -134,6 +149,12 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
   const storage = deps.storage ?? createStorage(env);
   const { sessionId, message, user } = args;
   const attachmentIds = args.attachmentIds ?? [];
+  const abortSignal = args.abortSignal;
+  // WP10: the ONE ttl resolution for this turn — threaded to BOTH cache
+  // breakpoints (the digest block via `getCachedDigest`, and the per-turn user
+  // message below) and into the ledger's write-price math, so a turn's two
+  // breakpoints and its cost row always agree on the ttl in effect.
+  const cacheTtl = resolveCacheTtl(env);
 
   // 1. Ensure the session row exists (slot state + summary + contradictions + link).
   //    Owner-checked BEFORE any streaming: a UUID that already belongs to another
@@ -157,6 +178,9 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
       message: `Daily AI budget of $${budget.budgetUsd.toFixed(2)} reached (spent $${budget.spentUsd.toFixed(2)}). It resets at UTC midnight.`,
       spentUsd: budget.spentUsd,
       budgetUsd: budget.budgetUsd,
+      // The next UTC-midnight instant — the client renders a live "resets in …"
+      // countdown from this and disables the composer until it passes.
+      resetsAtISO: startOfNextUtcDayISO(now),
     });
   }
 
@@ -203,11 +227,21 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
     capUsd: opusCapFromEnv(env),
   });
 
+  // WP12 advisor pilot (PEBBLE_ADVISOR=1, default OFF). `resolveTurnStrategy`
+  // turns the deterministic escalation into the turn's actual plan: flag OFF (or
+  // no escalation) → the plain Sonnet/Opus switch; flag ON + escalation on a
+  // provider that ships the advisor factory → keep Sonnet and attach the Opus
+  // advisor tool (intent prefix `agent-advisor`); flag ON + escalation on the
+  // installed provider (no factory) → log the unsupported warning once and fall
+  // back to the identical Opus model switch. `extraTools` is empty except on the
+  // supported branch, so today this is byte-identical to the pre-pilot switch.
+  const strategy = resolveTurnStrategy(decision, env);
+
   const bothNull = !models.claudeDefault && !models.claudeOpus;
   if (bothNull) {
     return jsonResponse(503, { error: "model_unconfigured", message: MODEL_UNCONFIGURED_MESSAGE });
   }
-  const useOpus = decision.model === "opus" && !!models.claudeOpus;
+  const useOpus = strategy.model === "opus" && !!models.claudeOpus;
   const model = useOpus ? models.claudeOpus! : (models.claudeDefault ?? models.claudeOpus!);
   const modelId = useOpus ? cfg.claudeOpus : cfg.claudeDefault;
 
@@ -218,7 +252,7 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
     actorRole: user.role,
     sessionId,
   });
-  const digest = await getCachedDigest(db);
+  const digest = await getCachedDigest(db, env);
 
   // Second module: the module-agnostic attachments toolset (re-read tools always;
   // the Office analyze/generate tools ONLY when the skills-lane flag is on, so
@@ -249,6 +283,40 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
     digestBlock: digest.digestBlock,
     turn: { sessionId, userId: user.firebaseUid, userRole: user.role },
   });
+
+  // 4b. WP11 — tool-search + defer_loading PILOT (PEBBLE_TOOL_SEARCH=1, default
+  //     OFF). `composeAgent` has already tagged every tool hot/cold
+  //     (`composition.toolMeta`); when the pilot is on AND the installed
+  //     @ai-sdk/anthropic exposes a tool-search tool factory, the supported
+  //     branch would add that tool and clone every COLD tool with
+  //     `providerOptions.anthropic.defer_loading=true` (the exact cold set is
+  //     `deferredToolNames(composition)`), keeping the hot contract tools —
+  //     module02 capture loop + list_attachments + memory + ask_user — in the
+  //     cached prefix. The two prompt-cache breakpoints sit on the digest SYSTEM
+  //     block and the user MESSAGE, never on a tool, so deferral can't strand a
+  //     breakpoint. The installed provider (2.0.86/2.0.87) ships NO such factory,
+  //     so the flag logs one warning and stays functionally off: we stream with
+  //     the full, undeferred tool set exactly as with the flag off. Module 03+
+  //     flips on automatically once `resolveToolSearchSupport()` reports support.
+  let turnTools = composition.tools;
+  if (toolSearchEnabled(env)) {
+    const support = resolveToolSearchSupport();
+    if (!support.supported) {
+      console.warn(`[chat] ${TOOL_SEARCH_UNSUPPORTED_WARNING}`);
+    } else {
+      // Support present: wire deferral here (add the tool-search tool from
+      // support.factoryName + mark deferredToolNames(composition) tools deferred).
+      // No supported provider ships today, so this branch is the documented seam.
+      turnTools = composition.tools;
+    }
+  }
+  // WP12: fold in the advisor tool when `resolveTurnStrategy` attached one (the
+  // supported branch keeps the Sonnet executor + hands it the Opus advisor).
+  // `extraTools` is empty on every other path — flag off, no escalation, or the
+  // installed-provider fallback — so this is a no-op today.
+  if (Object.keys(strategy.extraTools).length > 0) {
+    turnTools = { ...turnTools, ...strategy.extraTools };
+  }
 
   // 5. Build the ModelMessages: cached system prefix (providerOptions forwarded
   //    verbatim — the digest carries cache breakpoint 1), then the fresh suffix
@@ -295,11 +363,13 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
   // from cache. `@ai-sdk/anthropic` lands message-level cacheControl on the LAST
   // content block of a user message — whether that content is a plain string
   // (no attachments) or a multi-part array (attachments last), so the breakpoint
-  // always sits on the final block of the current turn.
+  // always sits on the final block of the current turn. `cacheTtl` (WP10) is the
+  // SAME ttl passed to `getCachedDigest` above for breakpoint 1, so both
+  // breakpoints on this turn always agree.
   messages.push({
     role: "user",
     content: built.content,
-    providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
+    providerOptions: { anthropic: { cacheControl: ephemeralCacheControl(cacheTtl) } },
   });
 
   // 6. Persist the user turn BEFORE streaming. When files are attached, persist
@@ -315,13 +385,24 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
   });
 
   // 7. Stream. streamText is the only author of visible text.
+  //
+  // `aborted` is a shared latch: the `onAbort` callback (fired from the UI
+  // stream the moment `abortSignal` trips) sets it and persists the PARTIAL
+  // turn, so the `onFinish` callback — which the SDK still invokes on an
+  // aborted stream — must bail early to avoid double-persisting (and to skip
+  // the summary refresh + auto-title that an aborted turn must never trigger).
+  const turnState = { aborted: false };
   const result = streamText({
     model,
     messages,
+    // WP13: forward the request's abort signal so a client disconnect / composer
+    // Stop cancels the model call mid-flight (see `onAbort` below for the
+    // partial-turn persistence).
+    abortSignal,
     // The digest system block must live in `messages` (not the `system` option)
     // to carry its cache_control breakpoint; opt into leading system messages.
     allowSystemInMessages: true,
-    tools: composition.tools,
+    tools: turnTools,
     // Stop at 8 steps, OR the moment the agent asks a structured clarification:
     // `ask_user` has no executor, so the SDK cannot feed a result back and the
     // loop ends there anyway — this `hasToolCall` guard makes that a stated
@@ -339,7 +420,24 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
       const e = (err as { error?: unknown }).error ?? err;
       console.error("[chat] stream error:", e instanceof Error ? e.message : e);
     },
+    // WP13 abort persistence: fired the moment `abortSignal` trips (client
+    // disconnect / Stop). Persist ONLY the partial turn — the finished steps'
+    // text + a trailing `data-stopped` marker — and ledger the partial usage as
+    // `agent-aborted`. Deliberately NO summary refresh and NO auto-title. The
+    // `aborted` latch makes the (still-invoked) `onFinish` below a no-op.
+    onAbort: ({ steps }) => {
+      turnState.aborted = true;
+      void persistAbortedTurn(deps, {
+        sessionId,
+        steps,
+        modelId,
+        reasons: decision.reasons,
+      });
+    },
     onFinish: async ({ text, totalUsage, steps, providerMetadata }) => {
+      // The SDK invokes `onFinish` even on an aborted stream; the abort path
+      // already persisted the partial turn, so bail before re-persisting.
+      if (turnState.aborted) return;
       try {
         const parts = reconstructUiParts(steps);
         const toolNames = collectToolNames(steps);
@@ -376,7 +474,7 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
           toLlmCallLog({
             lane: "claude",
             model: modelId,
-            intent: buildIntentLabel(decision.model, decision.reasons, toolNames),
+            intent: buildIntentLabel(strategy.model, decision.reasons, toolNames, strategy.intentPrefix),
             inputTokens: usageIn(totalUsage),
             outputTokens: usageOut(totalUsage),
             sessionId,
@@ -384,8 +482,32 @@ export async function runAgentTurn(deps: RunAgentTurnDeps, args: RunAgentTurnArg
               cacheReadTokens: totalUsage.cachedInputTokens ?? 0,
               cacheWriteTokens: stepWrites || (anthropicUsage?.cache_creation_input_tokens ?? 0),
             },
+            // WP10: the ttl actually in effect on this turn's two breakpoints,
+            // so a write is priced at 125% (5m) or 200% (1h) correctly.
+            ttl: cacheTtl,
           }),
         );
+
+        // WP12 advisor pilot: when the executor consulted the advisor mid-
+        // generation, each advisor sub-inference surfaces on
+        // `providerMetadata.anthropic.iterations` (type `advisor_message`) at the
+        // advisor model's rate. Ledger one ADDITIONAL opus-rate row per advisor
+        // iteration (intent `advisor-iteration`); the executor row above is
+        // unchanged. `parseAdvisorIterations` shape-checks the whole payload and
+        // returns [] on a normal turn, so this adds no rows unless an advisor ran.
+        for (const iteration of parseAdvisorIterations(providerMetadata)) {
+          await insertLlmCall(
+            db,
+            toLlmCallLog({
+              lane: "claude",
+              model: iteration.model ?? cfg.claudeOpus,
+              intent: "advisor-iteration",
+              inputTokens: iteration.inputTokens,
+              outputTokens: iteration.outputTokens,
+              sessionId,
+            }),
+          );
+        }
 
         await maybeRefreshSummary(deps, { sessionId, session });
 
@@ -517,6 +639,67 @@ export async function maybeGenerateTitle(
   );
 }
 
+// ─── Abort persistence (WP13) ─────────────────────────────────────────────────
+
+/**
+ * The trailing marker part appended to an aborted turn's persisted parts. The
+ * tolerant history reader passes it through and the chat panel renders it as a
+ * subtle italic "stopped" caption. `v: 1` per the WP13 part-versioning contract.
+ */
+export const STOPPED_MARKER_PART = { type: "data-stopped", v: 1 } as const;
+
+/**
+ * Persist the PARTIAL turn when the stream is aborted (client disconnect / the
+ * composer's Stop). Writes the finished steps' text + tool-activity parts, a
+ * trailing `data-stopped` marker, and a `(stopped)` content suffix, then ledgers
+ * whatever partial usage the finished steps reported (zeros if none) under the
+ * `agent-aborted` intent. Deliberately does NOT refresh the summary or mint an
+ * auto-title — an aborted turn is incomplete. Never throws to the caller (the
+ * abort path is fire-and-forget); a persistence failure is logged and swallowed.
+ */
+export async function persistAbortedTurn(
+  deps: RunAgentTurnDeps,
+  args: {
+    sessionId: string;
+    steps: readonly StepResult<ToolSet>[];
+    modelId: string;
+    reasons: string[];
+  },
+): Promise<void> {
+  const { db } = deps;
+  const { sessionId, steps, modelId } = args;
+  try {
+    const parts = reconstructUiParts(steps);
+    parts.push({ ...STOPPED_MARKER_PART });
+
+    const base = fullAssistantText(steps, "").trim();
+    const content = base.length > 0 ? `${base}\n\n(stopped)` : "(stopped)";
+
+    await appendChatMessage(db, {
+      sessionId,
+      role: "assistant",
+      content,
+      lane: "claude",
+      model: modelId,
+      parts,
+    });
+
+    // Partial usage: sum the finished steps' token counts (each aborted turn may
+    // have completed one or more tool steps before the interrupted text step).
+    const inputTokens = steps.reduce((sum, s) => sum + (s.usage?.inputTokens ?? 0), 0);
+    const outputTokens = steps.reduce((sum, s) => sum + (s.usage?.outputTokens ?? 0), 0);
+    const toolNames = collectToolNames(steps);
+    const intent =
+      toolNames.length > 0 ? `agent-aborted[${toolNames.join(",")}]`.slice(0, 120) : "agent-aborted";
+    await insertLlmCall(
+      db,
+      toLlmCallLog({ lane: "claude", model: modelId, intent, inputTokens, outputTokens, sessionId }),
+    );
+  } catch (err) {
+    console.error("[chat] persist aborted turn failed:", err instanceof Error ? err.message : err);
+  }
+}
+
 // ─── Assistant parts + ledger label reconstruction ───────────────────────────
 
 /**
@@ -533,13 +716,14 @@ export function reconstructUiParts(steps: readonly StepResult<ToolSet>[]): Recor
   for (const step of steps) {
     for (const c of step.content) {
       if (c.type === "text") {
-        if (c.text.length > 0) parts.push({ type: "text", text: c.text });
+        if (c.text.length > 0) parts.push({ type: "text", text: c.text, v: 1 });
       } else if (c.type === "tool-call") {
         const part: Record<string, unknown> = {
           type: `tool-${c.toolName}`,
           toolCallId: c.toolCallId,
           state: "input-available",
           input: c.input,
+          v: 1,
         };
         byId.set(c.toolCallId, part);
         parts.push(part);
@@ -555,6 +739,7 @@ export function reconstructUiParts(steps: readonly StepResult<ToolSet>[]): Recor
             state: "output-available",
             input: c.input,
             output: c.output,
+            v: 1,
           });
         }
       } else if (c.type === "tool-error") {
@@ -570,6 +755,7 @@ export function reconstructUiParts(steps: readonly StepResult<ToolSet>[]): Recor
             state: "output-error",
             input: c.input,
             errorText,
+            v: 1,
           });
         }
       }
@@ -628,17 +814,24 @@ export function appendAskUserSuffix(content: string, steps: readonly StepResult<
 }
 
 /**
- * The `llm_calls.intent` label for the turn: `agent-opus:<reason>` on an
- * escalation, `agent-suppressed:budget[...]` when an escalation was suppressed
- * by the daily cap, else `agent[<tools>]`. Capped to ~120 chars.
+ * The `llm_calls.intent` label for the turn: `agent-advisor:<reason>` when the
+ * WP12 advisor pilot attached an advisor (Sonnet executor + Opus advisor),
+ * `agent-opus:<reason>` on a plain Opus escalation, `agent-suppressed:budget[...]`
+ * when an escalation was suppressed by the daily cap, else `agent[<tools>]`.
+ * Capped to ~120 chars. `intentPrefix` is `resolveTurnStrategy`'s override —
+ * `"agent-advisor"` on the advisor branch, null everywhere else (so the flag-off
+ * path is byte-identical to before the pilot).
  */
 export function buildIntentLabel(
   model: "default" | "opus",
   reasons: string[],
   toolNames: string[],
+  intentPrefix?: string | null,
 ): string {
   let label: string;
-  if (model === "opus") {
+  if (intentPrefix === "agent-advisor") {
+    label = `agent-advisor:${reasons[0] ?? "escalation"}`;
+  } else if (model === "opus") {
     label = `agent-opus:${reasons[0] ?? "escalation"}`;
   } else if (reasons.includes("escalation-suppressed:budget")) {
     label = `agent-suppressed:budget[${toolNames.join(",")}]`;

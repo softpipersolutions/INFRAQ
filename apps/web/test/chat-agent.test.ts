@@ -1,4 +1,11 @@
-import { applyExtracted, initSlotState, type ChatModels, type SlotState } from "@pebble/ai";
+import {
+  ADVISOR_UNSUPPORTED_WARNING,
+  applyExtracted,
+  initSlotState,
+  TOOL_SEARCH_UNSUPPORTED_WARNING,
+  type ChatModels,
+  type SlotState,
+} from "@pebble/ai";
 import {
   appendChatMessage,
   createDb,
@@ -21,9 +28,14 @@ import {
 } from "@pebble/db";
 import type { PutResult, StorageAdapter } from "@pebble/worker";
 import type { LanguageModel } from "ai";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createAiServices } from "../src/server/ai-services";
-import { maybeGenerateTitle, maybeRefreshSummary, runAgentTurn } from "../src/server/chat-agent";
+import {
+  maybeGenerateTitle,
+  maybeRefreshSummary,
+  persistAbortedTurn,
+  runAgentTurn,
+} from "../src/server/chat-agent";
 
 /**
  * Agent-turn plumbing over an in-memory PGlite db with scripted stub models (no
@@ -65,7 +77,13 @@ function arrayToStream<T>(items: T[]): ReadableStream<T> {
   });
 }
 
-type ScriptTurn = { text: string } | { toolCall: { toolName: string; input: unknown } };
+type ScriptTurn =
+  | { text: string }
+  | { toolCall: { toolName: string; input: unknown } }
+  // A step whose model stream never produces and simply waits for the request's
+  // abort signal, then throws an AbortError (like a real provider on disconnect)
+  // — used to exercise the WP13 abort-persistence path.
+  | { blockUntilAbort: true };
 
 /**
  * A streaming LanguageModel stub: one scripted turn per `doStream` (= per agent
@@ -73,28 +91,48 @@ type ScriptTurn = { text: string } | { toolCall: { toolName: string; input: unkn
  * — `read` on the shared usage object (surfaces as `totalUsage.cachedInputTokens`)
  * and `write` via provider metadata (`cache_creation_input_tokens`), so the
  * ledger's cache-token columns can be exercised.
+ *
+ * `blocked` resolves the moment a `blockUntilAbort` step's `doStream` is reached
+ * (so a test can deterministically abort once the model has started the step
+ * that will be interrupted).
  */
 function streamStub(
   modelId: string,
   script: ScriptTurn[],
   cache?: { read?: number; write?: number },
+  // WP12: optional advisor sub-inference iterations emitted on the finish chunk's
+  // `providerMetadata.anthropic.iterations`, so the onFinish advisor-iteration
+  // ledgering can be exercised from a synthetic payload.
+  iterations?: unknown[],
 ) {
   const invoked = { count: 0 };
+  // WP10: the raw `prompt` (AI SDK's LanguageModelV2 message array) from the
+  // MOST RECENT `doStream` call, so a test can assert what `providerOptions`
+  // (i.e. cache_control breakpoints) actually reached the model — the two
+  // breakpoints' ttl threading is otherwise invisible from the outside.
+  const lastCall: { prompt: unknown } = { prompt: null };
   let step = 0;
+  let resolveBlocked: () => void = () => {};
+  const blocked = new Promise<void>((r) => {
+    resolveBlocked = r;
+  });
   const usage = {
     inputTokens: 100,
     outputTokens: 20,
     totalTokens: 120,
     ...(cache?.read ? { cachedInputTokens: cache.read } : {}),
   };
-  const finish = (finishReason: string): Record<string, unknown> => ({
-    type: "finish",
-    finishReason,
-    usage,
-    ...(cache?.write
-      ? { providerMetadata: { anthropic: { usage: { cache_creation_input_tokens: cache.write } } } }
-      : {}),
-  });
+  const finish = (finishReason: string): Record<string, unknown> => {
+    const anthropicMeta: Record<string, unknown> = {};
+    if (cache?.write) anthropicMeta.usage = { cache_creation_input_tokens: cache.write };
+    if (iterations) anthropicMeta.iterations = iterations;
+    return {
+      type: "finish",
+      finishReason,
+      usage,
+      ...(Object.keys(anthropicMeta).length > 0 ? { providerMetadata: { anthropic: anthropicMeta } } : {}),
+    };
+  };
   const model = {
     specificationVersion: "v2",
     provider: "test",
@@ -103,10 +141,28 @@ function streamStub(
     doGenerate: async () => {
       throw new Error("doGenerate not used in the streaming agent");
     },
-    doStream: async () => {
+    doStream: async (opts: { abortSignal?: AbortSignal; prompt?: unknown }) => {
       invoked.count += 1;
+      lastCall.prompt = opts.prompt ?? null;
       const turn = script[Math.min(step, script.length - 1)]!;
       step += 1;
+      if ("blockUntilAbort" in turn) {
+        const signal = opts.abortSignal;
+        resolveBlocked();
+        const stream = new ReadableStream<Record<string, unknown>>({
+          pull() {
+            return new Promise<void>((_resolve, reject) => {
+              if (signal?.aborted) return reject(new DOMException("Aborted", "AbortError"));
+              signal?.addEventListener(
+                "abort",
+                () => reject(new DOMException("Aborted", "AbortError")),
+                { once: true },
+              );
+            });
+          },
+        });
+        return { stream };
+      }
       const chunks: Array<Record<string, unknown>> = [{ type: "stream-start", warnings: [] }];
       if ("toolCall" in turn) {
         chunks.push({
@@ -126,7 +182,7 @@ function streamStub(
       return { stream: arrayToStream(chunks) };
     },
   } as unknown as LanguageModel;
-  return { model, invoked };
+  return { model, invoked, blocked, lastCall };
 }
 
 /** A generateText stub (Gemini summary lane): returns fixed text + usage. */
@@ -497,6 +553,97 @@ describe("agent turn + services", () => {
     expect(row.cacheWriteTokens).toBe(40);
   });
 
+  // ── cache ttl threading (WP10) ───────────────────────────────────────────
+
+  /** Every message in `prompt` carrying an Anthropic ephemeral cache_control breakpoint. */
+  function cacheBreakpoints(
+    prompt: unknown,
+  ): Array<{ type: string; ttl?: string }> {
+    const arr = prompt as Array<{ providerOptions?: { anthropic?: { cacheControl?: { type: string; ttl?: string } } } }>;
+    return arr
+      .map((m) => m.providerOptions?.anthropic?.cacheControl)
+      .filter((cc): cc is { type: string; ttl?: string } => cc != null);
+  }
+
+  it("defaults to the 5-minute breakpoint (no ttl key) on both breakpoints", async () => {
+    const sessionId = "agent-cache-ttl-default";
+    const stub = streamStub("claude-sonnet-4-6", [{ text: "hi" }]);
+    const res = await runAgentTurn(
+      { db, models: models({ claudeDefault: stub.model }) },
+      { sessionId, message: "hello", user: actor },
+    );
+    await drainBody(res);
+    await waitFor(async () => (stub.lastCall.prompt ? true : null));
+
+    const breakpoints = cacheBreakpoints(stub.lastCall.prompt);
+    // Breakpoint 1 (digest) + breakpoint 2 (the current user message).
+    expect(breakpoints.length).toBe(2);
+    for (const bp of breakpoints) {
+      expect(bp.type).toBe("ephemeral");
+      expect(bp.ttl).toBeUndefined();
+    }
+  });
+
+  it("PEBBLE_CACHE_TTL=1h puts ttl:1h on BOTH breakpoints", async () => {
+    const sessionId = "agent-cache-ttl-1h";
+    const stub = streamStub("claude-sonnet-4-6", [{ text: "hi" }]);
+    const res = await runAgentTurn(
+      { db, models: models({ claudeDefault: stub.model }), env: { PEBBLE_CACHE_TTL: "1h" } },
+      { sessionId, message: "hello", user: actor },
+    );
+    await drainBody(res);
+    await waitFor(async () => (stub.lastCall.prompt ? true : null));
+
+    const breakpoints = cacheBreakpoints(stub.lastCall.prompt);
+    expect(breakpoints.length).toBe(2);
+    for (const bp of breakpoints) {
+      expect(bp.type).toBe("ephemeral");
+      expect(bp.ttl).toBe("1h");
+    }
+  });
+
+  it("ledgers a higher cost for the SAME cache write under the 1h ttl than the 5m default", async () => {
+    const write = 100_000;
+    const sessionId5m = "agent-cache-cost-5m";
+    const res5m = await runAgentTurn(
+      {
+        db,
+        models: models({
+          claudeDefault: streamStub("claude-sonnet-4-6", [{ text: "hi" }], { write }).model,
+        }),
+      },
+      { sessionId: sessionId5m, message: "hello", user: actor },
+    );
+    await drainBody(res5m);
+    const row5m = await waitFor(async () => {
+      const rows = await db.select().from(schema.llmCalls);
+      return rows.find((r) => r.sessionId === sessionId5m) ?? null;
+    });
+
+    const sessionId1h = "agent-cache-cost-1h";
+    const res1h = await runAgentTurn(
+      {
+        db,
+        models: models({
+          claudeDefault: streamStub("claude-sonnet-4-6", [{ text: "hi" }], { write }).model,
+        }),
+        env: { PEBBLE_CACHE_TTL: "1h" },
+      },
+      { sessionId: sessionId1h, message: "hello", user: actor },
+    );
+    await drainBody(res1h);
+    const row1h = await waitFor(async () => {
+      const rows = await db.select().from(schema.llmCalls);
+      return rows.find((r) => r.sessionId === sessionId1h) ?? null;
+    });
+
+    expect(row5m.cacheWriteTokens).toBe(write);
+    expect(row1h.cacheWriteTokens).toBe(write);
+    // 1h writes bill at 2x the input rate vs 1.25x for 5m — same write tokens,
+    // strictly higher ledgered cost.
+    expect(Number(row1h.costUsd)).toBeGreaterThan(Number(row5m.costUsd));
+  });
+
   it("persists tool-activity parts for a tool-using turn", async () => {
     const sessionId = "agent-parts";
     const script: ScriptTurn[] = [
@@ -563,6 +710,89 @@ describe("agent turn + services", () => {
     expect(assistant.content).toContain(
       "[Asked: Which building type is this? — options: Commercial | Residential]",
     );
+  });
+
+  // ── abort persistence (WP13) ────────────────────────────────────────────────
+
+  it("persistAbortedTurn writes the partial text + a data-stopped marker and ledgers agent-aborted", async () => {
+    const sessionId = "agent-abort-direct";
+    await getOrCreateChatSession(db, { sessionId, userId: USER.firebaseUid });
+    // Fabricate the finished steps the SDK would hand `onAbort` (text produced
+    // before the interrupted step).
+    const steps = [
+      {
+        content: [{ type: "text", text: "Let me check the design rules." }],
+        text: "Let me check the design rules.",
+        usage: { inputTokens: 50, outputTokens: 12 },
+      },
+    ] as unknown as Parameters<typeof persistAbortedTurn>[1]["steps"];
+
+    await persistAbortedTurn(
+      { db, models: models() },
+      { sessionId, steps, modelId: "claude-sonnet-4-6", reasons: [] },
+    );
+
+    const msgs = await listChatMessages(db, sessionId, 100);
+    const assistant = msgs.find((m) => m.role === "assistant")!;
+    expect(assistant.content).toBe("Let me check the design rules.\n\n(stopped)");
+    const parts = assistant.parts as Array<Record<string, unknown>>;
+    expect(parts.some((p) => p.type === "text")).toBe(true);
+    expect(parts[parts.length - 1]).toEqual({ type: "data-stopped", v: 1 });
+
+    const rows = await db.select().from(schema.llmCalls);
+    const ledger = rows.find((r) => r.sessionId === sessionId);
+    expect(ledger?.intent).toBe("agent-aborted");
+    expect(ledger?.lane).toBe("claude");
+    // No summary/title Gemini calls on an aborted turn.
+    expect(rows.filter((r) => r.sessionId === sessionId && r.lane === "gemini")).toEqual([]);
+  });
+
+  it("runAgentTurn persists the partial turn on a real abort (tool step done, text step interrupted) — no title/summary", async () => {
+    const sessionId = "agent-abort-e2e";
+    await getOrCreateChatSession(db, { sessionId, userId: USER.firebaseUid });
+    const script: ScriptTurn[] = [
+      { toolCall: { toolName: "get_design_rules", input: { systemType: null } } },
+      { blockUntilAbort: true }, // the text step that gets aborted mid-flight
+    ];
+    const stub = streamStub("claude-sonnet-4-6", script);
+    const controller = new AbortController();
+
+    const res = await runAgentTurn(
+      { db, models: models({ claudeDefault: stub.model, classifier: generateStub("SHOULD NOT TITLE") }) },
+      { sessionId, message: "what design rules apply?", user: actor, abortSignal: controller.signal },
+    );
+    // Drain in the background so the agent loop advances to the second step,
+    // then abort deterministically once that step has begun.
+    const drained = drainBody(res);
+    await stub.blocked;
+    controller.abort();
+    await drained;
+
+    const assistant = await waitFor(async () => {
+      const msgs = await listChatMessages(db, sessionId, 100);
+      const a = msgs.find((m) => m.role === "assistant");
+      return a?.parts ? a : null;
+    });
+
+    // The finished tool step survived, the marker closes the turn, and the
+    // content carries the (stopped) suffix.
+    const parts = assistant.parts as Array<Record<string, unknown>>;
+    expect(parts.some((p) => p.type === "tool-get_design_rules")).toBe(true);
+    expect(parts[parts.length - 1]).toEqual({ type: "data-stopped", v: 1 });
+    expect(assistant.content).toContain("(stopped)");
+
+    const rows = await db.select().from(schema.llmCalls);
+    expect(
+      rows.some((r) => r.sessionId === sessionId && (r.intent ?? "").startsWith("agent-aborted")),
+    ).toBe(true);
+
+    // The turn was aborted, so no auto-title and no Gemini calls, even after a
+    // grace period for any (incorrect) fire-and-forget work to settle.
+    await new Promise((r) => setTimeout(r, 40));
+    expect((await getChatSession(db, sessionId, USER.firebaseUid))?.title).toBeNull();
+    expect((await db.select().from(schema.llmCalls)).filter(
+      (r) => r.sessionId === sessionId && r.lane === "gemini",
+    )).toEqual([]);
   });
 
   // ── auto-title, end to end via runAgentTurn's onFinish ──────────────────────
@@ -634,11 +864,17 @@ describe("agent turn + services", () => {
       outputTokens: 0,
       costUsd: 99,
     });
+    const now = new Date("2026-07-19T15:42:11.000Z");
     const res = await runAgentTurn(
-      { db, models: models({ claudeDefault: streamStub("claude-sonnet-4-6", [{ text: "hi" }]).model }), env: { PEBBLE_DAILY_LLM_BUDGET_USD: "5" } },
+      { db, models: models({ claudeDefault: streamStub("claude-sonnet-4-6", [{ text: "hi" }]).model }), env: { PEBBLE_DAILY_LLM_BUDGET_USD: "5" }, now },
       { sessionId, message: "hello", user: actor },
     );
     expect(res.status).toBe(429);
+    // WP13: the 429 body carries the next-UTC-midnight reset instant so the
+    // client can render a live "resets in …" countdown.
+    const body = (await res.json()) as { error: string; resetsAtISO: string };
+    expect(body.error).toBe("daily_budget_exceeded");
+    expect(body.resetsAtISO).toBe("2026-07-20T00:00:00.000Z");
   });
 
   it("returns 503 when no Claude model is configured", async () => {
@@ -756,5 +992,163 @@ describe("agent turn + services", () => {
       { type: "file", filename: "notes.txt", mediaType: "text/plain", attachmentId: id, v: 1 },
     ]);
     expect(dflt.invoked.count).toBe(1);
+  });
+
+  // ── WP11 tool-search pilot flag (functionally off: provider unsupported) ─────
+  it("PEBBLE_TOOL_SEARCH=1 logs the unsupported warning once and still streams a full turn", async () => {
+    const sessionId = "agent-tool-search-on";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const stub = streamStub("claude-sonnet-4-6", [{ text: "hi" }]);
+      const res = await runAgentTurn(
+        {
+          db,
+          models: models({ claudeDefault: stub.model }),
+          env: { PEBBLE_TOOL_SEARCH: "1", PEBBLE_DAILY_LLM_BUDGET_USD: "1000000" },
+        },
+        { sessionId, message: "hello", user: actor },
+      );
+      await drainBody(res);
+      await waitFor(async () => (stub.lastCall.prompt ? true : null));
+      // The installed @ai-sdk/anthropic ships no tool-search factory, so the flag
+      // warns and stays functionally off — the turn still runs to completion.
+      const warned = warn.mock.calls.filter((c) => String(c[0]).includes(TOOL_SEARCH_UNSUPPORTED_WARNING));
+      expect(warned.length).toBe(1);
+      expect(stub.invoked.count).toBe(1);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("does NOT log the tool-search warning when the flag is off", async () => {
+    const sessionId = "agent-tool-search-off";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const stub = streamStub("claude-sonnet-4-6", [{ text: "hi" }]);
+      const res = await runAgentTurn(
+        { db, models: models({ claudeDefault: stub.model }), env: { PEBBLE_DAILY_LLM_BUDGET_USD: "1000000" } },
+        { sessionId, message: "hello", user: actor },
+      );
+      await drainBody(res);
+      await waitFor(async () => (stub.lastCall.prompt ? true : null));
+      expect(warn.mock.calls.some((c) => String(c[0]).includes(TOOL_SEARCH_UNSUPPORTED_WARNING))).toBe(false);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  // ── WP12 advisor pilot (functionally the model switch: provider unsupported) ─
+  //
+  // A dedicated user keeps the Opus daily budget fresh: the shared USER
+  // accumulates Opus spend/turns across the suite (the suppression test blows the
+  // $1 cap), which would otherwise suppress the escalation this test relies on.
+  const ADVISOR_USER: AppUser = {
+    firebaseUid: "agent-advisor-user",
+    email: "advisor@greenberg.test",
+    displayName: "Advisor User",
+    role: "estimator",
+    active: true,
+  };
+  const advisorActor = { firebaseUid: ADVISOR_USER.firebaseUid, role: ADVISOR_USER.role };
+  function advisorServicesFor(sessionId: string) {
+    return createAiServices({
+      db,
+      actor: ADVISOR_USER.firebaseUid,
+      actorRole: ADVISOR_USER.role,
+      sessionId,
+    });
+  }
+
+  it("PEBBLE_ADVISOR=1 + escalation on the installed provider: warns once and falls back to the Opus switch", async () => {
+    await upsertUser(db, ADVISOR_USER);
+    const sessionId = "agent-advisor-unsupported";
+    await getOrCreateChatSession(db, { sessionId, userId: ADVISOR_USER.firebaseUid });
+    await updateSlotState(db, sessionId, ADVISOR_USER.firebaseUid, fullSlotState());
+    await advisorServicesFor(sessionId).createEnquiryFromState(sessionId); // links an estimate → a challenge escalates
+
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const dflt = streamStub("claude-sonnet-4-6", [{ text: "default reply" }]);
+      const opus = streamStub("claude-opus-4-8", [{ text: "Per DL-FAS-001 the count holds." }]);
+      const res = await runAgentTurn(
+        {
+          db,
+          models: models({ claudeDefault: dflt.model, claudeOpus: opus.model }),
+          env: { PEBBLE_ADVISOR: "1", PEBBLE_DAILY_LLM_BUDGET_USD: "1000000" },
+        },
+        { sessionId, message: "this total looks too high to me", user: advisorActor },
+      );
+      await drainBody(res);
+      const row = await waitFor(async () => {
+        const rows = await db.select().from(schema.llmCalls);
+        return rows.find((r) => r.sessionId === sessionId && (r.intent ?? "").startsWith("agent-opus")) ?? null;
+      });
+      // Behaviour identical to the deterministic switch: Opus ran, Sonnet did not,
+      // the intent is the plain agent-opus label (NOT agent-advisor), and the
+      // unsupported warning was logged exactly once.
+      expect(opus.invoked.count).toBe(1);
+      expect(dflt.invoked.count).toBe(0);
+      expect(row.intent).toBe("agent-opus:challenge");
+      const warned = warn.mock.calls.filter((c) => String(c[0]).includes(ADVISOR_UNSUPPORTED_WARNING));
+      expect(warned.length).toBe(1);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("ledgers one opus-rate advisor-iteration row per advisor_message in providerMetadata (executor row unchanged)", async () => {
+    const sessionId = "agent-advisor-iterations";
+    // A synthetic providerMetadata payload: an executor `message` iteration plus
+    // two advisor sub-inferences. The onFinish advisor ledgering is UNCONDITIONAL
+    // (defensive) — it fires whenever the provider reports advisor iterations.
+    const iterations = [
+      { type: "message", model: "claude-sonnet-4-6", inputTokens: 100, outputTokens: 20 },
+      { type: "advisor_message", model: "claude-opus-4-8", inputTokens: 500, outputTokens: 80 },
+      { type: "advisor_message", model: "claude-opus-4-8", inputTokens: 300, outputTokens: 40 },
+    ];
+    const stub = streamStub("claude-sonnet-4-6", [{ text: "advised reply" }], undefined, iterations);
+    const res = await runAgentTurn(
+      { db, models: models({ claudeDefault: stub.model }), env: { PEBBLE_DAILY_LLM_BUDGET_USD: "1000000" } },
+      { sessionId, message: "hello", user: actor },
+    );
+    await drainBody(res);
+
+    const advisorRows = await waitFor(async () => {
+      const all = await db.select().from(schema.llmCalls);
+      const rows = all.filter((r) => r.sessionId === sessionId && r.intent === "advisor-iteration");
+      return rows.length === 2 ? rows : null;
+    });
+    const byIn = [...advisorRows].sort((a, b) => (b.inputTokens ?? 0) - (a.inputTokens ?? 0));
+    expect(byIn.map((r) => r.model)).toEqual(["claude-opus-4-8", "claude-opus-4-8"]);
+    expect(byIn.map((r) => r.inputTokens)).toEqual([500, 300]);
+    expect(byIn.map((r) => r.outputTokens)).toEqual([80, 40]);
+    // Priced at the OPUS rate (in 15 $/M, out 75 $/M): 500/1e6*15 + 80/1e6*75 = 0.0135
+    // (the Sonnet rate would be 0.0027 — the assertion pins the opus rate).
+    expect(Number(byIn[0]!.costUsd)).toBeCloseTo(0.0135, 6);
+
+    // The executor row is a plain Sonnet agent turn, unchanged by the advisor rows.
+    const all = await db.select().from(schema.llmCalls);
+    const executor = all.find((r) => r.sessionId === sessionId && (r.intent ?? "").startsWith("agent["));
+    expect(executor).toBeTruthy();
+    expect(executor!.model).toBe("claude-sonnet-4-6");
+  });
+
+  it("does NOT log the advisor warning or ledger advisor rows when the flag is off", async () => {
+    const sessionId = "agent-advisor-off";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const stub = streamStub("claude-sonnet-4-6", [{ text: "hi" }]);
+      const res = await runAgentTurn(
+        { db, models: models({ claudeDefault: stub.model }), env: { PEBBLE_DAILY_LLM_BUDGET_USD: "1000000" } },
+        { sessionId, message: "hello", user: actor },
+      );
+      await drainBody(res);
+      await waitFor(async () => (stub.lastCall.prompt ? true : null));
+      expect(warn.mock.calls.some((c) => String(c[0]).includes(ADVISOR_UNSUPPORTED_WARNING))).toBe(false);
+      const all = await db.select().from(schema.llmCalls);
+      expect(all.some((r) => r.sessionId === sessionId && r.intent === "advisor-iteration")).toBe(false);
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

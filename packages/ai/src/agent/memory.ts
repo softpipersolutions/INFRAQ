@@ -307,5 +307,11 @@ export function memoryToolset(handler: MemoryHandler): ModuleToolset {
     promptFragment: MEMORY_FRAGMENT,
     tools: { [MEMORY_TOOL_NAME]: memoryTool },
     policy: { confirmRequired: [], humanOnly: [] },
+    // WP11 tool-search pilot — memory is a CORE contract tool (composed on every
+    // turn like ask_user): the agent must always be able to recall/record durable
+    // facts, so it stays non-deferred. NOTE: the provider-defined memory tool
+    // carries its own provider wiring; keeping it hot also side-steps the
+    // "deferred tool cannot carry cache_control" constraint entirely.
+    hotTools: [MEMORY_TOOL_NAME],
   };
 }

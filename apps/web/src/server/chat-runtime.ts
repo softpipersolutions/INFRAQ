@@ -54,6 +54,15 @@ export function startOfUtcDayISO(now: Date = new Date()): string {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
 }
 
+/**
+ * Start of the NEXT UTC day (the current day's start + 24h) as an ISO instant —
+ * i.e. the instant the daily-budget window rolls over. The 429 body carries this
+ * as `resetsAtISO` so the client can render a live "resets in …" countdown.
+ */
+export function startOfNextUtcDayISO(now: Date = new Date()): string {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)).toISOString();
+}
+
 export interface BudgetCheck {
   blocked: boolean;
   spentUsd: number;

@@ -13,6 +13,7 @@ import {
   getChatAttachment,
   getChatSession,
   getChatSessionOwner,
+  getLatestLlmCallForSession,
   getOrCreateChatSession,
   incrementContradictions,
   insertChatAttachment,
@@ -614,6 +615,42 @@ describe("llm cost ledger", () => {
     expect(rows[0]?.cacheWriteTokens).toBe(128);
     expect(rows[1]?.cacheReadTokens).toBeNull();
     expect(rows[1]?.cacheWriteTokens).toBeNull();
+  });
+
+  it("getLatestLlmCallForSession returns the most-recently-inserted row (WP10 eval tripwire)", async () => {
+    await getOrCreateChatSession(db, { sessionId: "sess-latest", userId: DEV_UID });
+
+    expect(await getLatestLlmCallForSession(db, "sess-latest")).toBeNull();
+
+    await insertLlmCall(db, {
+      sessionId: "sess-latest",
+      lane: "claude",
+      model: "claude-sonnet-4-6",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 500,
+    });
+    await insertLlmCall(db, {
+      sessionId: "sess-latest",
+      lane: "claude",
+      model: "claude-sonnet-4-6",
+      inputTokens: 20,
+      outputTokens: 8,
+      costUsd: 0.002,
+      cacheReadTokens: 900,
+      cacheWriteTokens: 0,
+    });
+
+    const latest = await getLatestLlmCallForSession(db, "sess-latest");
+    expect(latest).not.toBeNull();
+    expect(latest?.cacheReadTokens).toBe(900);
+    expect(latest?.cacheWriteTokens).toBe(0);
+    expect(latest?.inputTokens).toBe(20);
+
+    // Untouched sessions/other-session ids stay isolated.
+    expect(await getLatestLlmCallForSession(db, "sess-nonexistent")).toBeNull();
   });
 
   it("excludes calls before the since instant", async () => {

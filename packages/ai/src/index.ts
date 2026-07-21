@@ -23,12 +23,15 @@ export * from "./agent/persona";
 export * from "./agent/module02";
 export * from "./agent/attachments";
 export * from "./agent/memory";
+export * from "./agent/tool-search";
+export * from "./agent/advisor";
 export * from "./agent/escalation";
 export * from "./agent/compaction";
 export * from "./agent/context";
 export * from "./agent/title";
 
 export * from "./models";
+export * from "./cache";
 export * from "./slots";
 export * from "./digest";
 export * from "./prompts";

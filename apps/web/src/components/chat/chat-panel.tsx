@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isFileUIPart, isTextUIPart, type FileUIPart, type UIMessage } from "ai";
-import { ArrowDown, ArrowUp, Check, Copy, PanelLeft, Paperclip, RotateCw, Square } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Copy, PanelLeft, Paperclip, RotateCw, Square, WifiOff } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -20,6 +20,14 @@ import { Badge, Button, Card, TextInput } from "@/components/ui";
 import { Tooltip } from "@/components/ui/tooltip";
 import { trpc } from "@/trpc/react";
 import { PendingAttachmentsRow, SentFileChipsRow, type PendingAttachment } from "./attachment-chips";
+import {
+  attachmentIdFromUrl,
+  budgetBannerText,
+  parseChatError,
+  retryPayloadFromMessages,
+  shouldOfferRetry,
+  type ChatErrorInfo,
+} from "./chat-panel-helpers";
 import { useChatSidebarToggle } from "./chat-sidebar-context";
 import { ClarificationCard } from "./clarification-card";
 import { ConfirmationCard } from "./confirmation-card";
@@ -89,25 +97,6 @@ function messageHasSuccessfulCreateEnquiry(message: UIMessage | undefined): bool
 /** True for the agent-core `ask_user` clarification part (rendered as an option-chip card). */
 function isAskUserPart(part: ToolPart): boolean {
   return toolNameFromPart(part) === "ask_user";
-}
-
-/**
- * Pull a friendly notice out of a transport Error's message. /api/chat
- * returns JSON on 401 (signed out, `{ error }` only), 429 (daily budget,
- * `{ error, message }`) and 503 (model unconfigured, `{ error, message }`) —
- * `message` is the human-readable copy when present, `error` is a short
- * machine code (or, for 401, already a friendly sentence).
- */
-function friendlyError(err: Error | undefined): string | null {
-  if (!err) return null;
-  try {
-    const parsed = JSON.parse(err.message) as { error?: unknown; message?: unknown };
-    if (typeof parsed?.message === "string" && parsed.message.length > 0) return parsed.message;
-    if (typeof parsed?.error === "string" && parsed.error.length > 0) return parsed.error;
-  } catch {
-    // Not JSON — fall through to the raw message.
-  }
-  return err.message || "Something went wrong. Please try again.";
 }
 
 /** Per-message metadata sourced from the persisted `chat.history` transcript (createdAt/model), keyed by message id. Absent for messages still live-streaming in this tab (see chat-panel's local timestamp fallback). */
@@ -303,9 +292,18 @@ export function ChatPanel({
       new DefaultChatTransport<UIMessage>({
         api: "/api/chat",
         body: { sessionId },
-        prepareSendMessagesRequest: ({ messages, body }) => ({
-          body: { ...body, message: extractText(messages[messages.length - 1]) },
-        }),
+        // Derive BOTH the message text and the attachment ids from the last
+        // message's parts (not just the per-send body), so a `chat.regenerate()`
+        // retry of a dropped turn re-sends the same attachments — the file parts
+        // carry `/api/chat/attachments/<id>` urls the id is recovered from.
+        prepareSendMessagesRequest: ({ messages, body }) => {
+          const last = messages[messages.length - 1];
+          const attachmentIds = (last?.parts ?? [])
+            .filter(isFileUIPart)
+            .map((p) => attachmentIdFromUrl(p.url))
+            .filter((id): id is string => id !== null);
+          return { body: { ...body, message: extractText(last), attachmentIds } };
+        },
       }),
     [sessionId],
   );
@@ -353,6 +351,56 @@ export function ChatPanel({
 
   const streaming = chat.status === "submitted" || chat.status === "streaming";
 
+  // ─── Two-tab staleness (WP13 §3) ────────────────────────────────────────
+  // On focus / tab-visible, re-pull the server transcript + session state (via a
+  // ref so the window listeners mount once and always see the latest queries).
+  // Never while a stream is in flight — that would clobber the live turn.
+  const refetchOnFocusRef = useRef<() => void>(() => {});
+  refetchOnFocusRef.current = () => {
+    if (chat.status === "streaming" || chat.status === "submitted") return;
+    void history.refetch();
+    void sessionState.refetch();
+  };
+  useEffect(() => {
+    const handler = () => refetchOnFocusRef.current();
+    window.addEventListener("focus", handler);
+    document.addEventListener("visibilitychange", handler);
+    return () => {
+      window.removeEventListener("focus", handler);
+      document.removeEventListener("visibilitychange", handler);
+    };
+  }, []);
+
+  // Server wins on staleness: once THIS session is hydrated and no stream is in
+  // flight, if the refetched server transcript has MORE messages than the local
+  // list (another tab advanced the conversation), replace local with server.
+  // The `>` guard means an in-flight/just-finished turn in THIS tab (local ≥
+  // server) is never clobbered.
+  useEffect(() => {
+    if (!history.data) return;
+    if (streaming) return;
+    if (hydratedSessionIdRef.current !== sessionId) return;
+    if (history.data.length > chat.messages.length) {
+      chat.setMessages(historyRowsToUIMessages(history.data));
+    }
+  }, [history.data, streaming, sessionId, chat, chat.messages.length]);
+
+  // ─── Offline detection (WP13 §4) ────────────────────────────────────────
+  // `navigator.onLine` is only reliable after mount (SSR has no navigator), so
+  // seed `true` and correct on mount + track online/offline events.
+  const [online, setOnline] = useState(true);
+  useEffect(() => {
+    setOnline(navigator.onLine);
+    const goOnline = () => setOnline(true);
+    const goOffline = () => setOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
+
   // ─── Per-message timestamp / model metadata ────────────────────────────
   const historyMetaById = useMemo(() => {
     const map = new Map<string, HistoryMeta>();
@@ -386,7 +434,11 @@ export function ChatPanel({
 
   async function send(explicitText?: string) {
     const text = (explicitText ?? input).trim();
-    if (!text || streaming) return;
+    // Block while streaming, offline, or over the daily budget (the last two also
+    // disable the composer controls; this guards the direct callers — example
+    // prompts and clarification chips). A recoverable error (interrupted) does
+    // NOT block a fresh send.
+    if (!text || streaming || !online || parseChatError(chat.error)?.kind === "budget") return;
     if (explicitText === undefined) setInput("");
     // Fire BEFORE awaiting the send — the lobby's URL swap (see chat/page.tsx)
     // must happen at send-time, not once the turn finishes streaming.
@@ -491,10 +543,17 @@ export function ChatPanel({
     try {
       await chat.regenerate();
     } catch {
-      const lastUser = [...chat.messages].reverse().find((m) => m.role === "user");
-      const text = extractText(lastUser);
-      if (text) await chat.sendMessage({ text });
+      // Fallback: resend the last user message's text + its attachment ids
+      // (recovered from the file-part urls) through the same transport.
+      const payload = retryPayloadFromMessages(chat.messages);
+      if (payload) await chat.sendMessage({ text: payload.text }, { body: { attachmentIds: payload.attachmentIds } });
     }
+  }
+
+  /** Clear the error banner then retry the dropped turn (network / mid-stream drop). */
+  async function onRetryAfterError() {
+    chat.clearError();
+    await onRetryLast();
   }
 
   let lastAssistantIndex = -1;
@@ -515,7 +574,33 @@ export function ChatPanel({
 
   const showEmptyState = chat.messages.length === 0 && !streaming && !history.isLoading;
 
-  const errorMessage = friendlyError(chat.error);
+  // ─── Error / offline / budget banner state (WP13 §2/§4/§6) ──────────────
+  const errorInfo: ChatErrorInfo | null = parseChatError(chat.error);
+  const budgetBlocked = errorInfo?.kind === "budget";
+  // Did the dropped turn already stream any visible bytes? If the tail message
+  // is an assistant with parts, yes — leave the partial and don't offer Retry.
+  const lastTurnStreamedBytes = !!lastMessage && lastMessage.role === "assistant" && lastMessage.parts.length > 0;
+  const canRetryError = shouldOfferRetry(errorInfo, lastTurnStreamedBytes);
+
+  // A live clock, ticked every 30s only while the budget banner is up, so its
+  // "resets in …" countdown stays current without re-rendering otherwise.
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  useEffect(() => {
+    if (!budgetBlocked) return;
+    setNowTick(Date.now());
+    const t = setInterval(() => setNowTick(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, [budgetBlocked]);
+
+  // The composer is disabled while streaming, offline, or the daily budget is
+  // spent — sessions + history stay fully browsable in every case. The tooltip
+  // explains why (offline / budget countdown).
+  const composerDisabled = streaming || !online || budgetBlocked;
+  const composerDisabledReason = !online
+    ? "You're offline"
+    : budgetBlocked && errorInfo
+      ? budgetBannerText(errorInfo, nowTick)
+      : null;
 
   let lastDayKey: string | null = null;
 
@@ -643,13 +728,43 @@ export function ChatPanel({
           ) : null}
         </div>
 
-        {errorMessage ? (
-          <div className="flex items-center justify-between gap-3 border-t border-danger-border bg-danger-soft px-4 py-2 text-sm text-danger">
-            <span>{errorMessage}</span>
-            <button type="button" className="shrink-0 underline" onClick={() => chat.clearError()}>
-              Dismiss
-            </button>
+        {!online ? (
+          <div className="flex items-center gap-2 border-t border-danger-border bg-danger-soft px-4 py-2 text-sm text-danger">
+            <WifiOff size={15} strokeWidth={1.75} aria-hidden className="shrink-0" />
+            <span>You&apos;re offline — reconnect to keep chatting. Your history is still here.</span>
           </div>
+        ) : null}
+
+        {errorInfo ? (
+          budgetBlocked ? (
+            // Daily-budget banner: a live countdown, no Retry, composer disabled
+            // (sessions + history stay browsable).
+            <div className="border-t border-danger-border bg-danger-soft px-4 py-2 text-sm text-danger" aria-live="polite">
+              {budgetBannerText(errorInfo, nowTick)}
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3 border-t border-danger-border bg-danger-soft px-4 py-2 text-sm text-danger">
+              <span>
+                {errorInfo.message}
+                {canRetryError ? " — Retry below." : null}
+              </span>
+              <div className="flex shrink-0 items-center gap-3">
+                {canRetryError ? (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 font-medium underline"
+                    onClick={() => void onRetryAfterError()}
+                  >
+                    <RotateCw size={13} strokeWidth={1.75} aria-hidden />
+                    Retry
+                  </button>
+                ) : null}
+                <button type="button" className="underline" onClick={() => chat.clearError()}>
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )
         ) : null}
 
         {attachmentError ? (
@@ -687,11 +802,11 @@ export function ChatPanel({
             onChange={onFileInputChange}
             className="hidden"
           />
-          <Tooltip label="Attach files">
+          <Tooltip label={composerDisabledReason ?? "Attach files"}>
             <button
               type="button"
               aria-label="Attach files"
-              disabled={streaming}
+              disabled={composerDisabled}
               onClick={() => fileInputRef.current?.click()}
               className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-ink-muted transition hover:bg-grey-100 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -717,8 +832,8 @@ export function ChatPanel({
               }
             }}
             onPaste={onComposerPaste}
-            disabled={streaming}
-            placeholder="Tell me about the enquiry, or ask a question…"
+            disabled={composerDisabled}
+            placeholder={composerDisabledReason ?? "Tell me about the enquiry, or ask a question…"}
             enterKeyHint="send"
             className="max-h-48 flex-1 resize-none overflow-y-auto rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-muted outline-none focus:border-ink disabled:cursor-not-allowed disabled:opacity-50"
           />
@@ -734,11 +849,11 @@ export function ChatPanel({
               </button>
             </Tooltip>
           ) : (
-            <Tooltip label="Send message">
+            <Tooltip label={composerDisabledReason ?? "Send message"}>
               <button
                 type="submit"
                 aria-label="Send message"
-                disabled={streaming || input.trim() === ""}
+                disabled={composerDisabled || input.trim() === ""}
                 className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-inverse transition hover:bg-grey-800 disabled:cursor-not-allowed disabled:bg-grey-200 disabled:text-ink-muted"
               >
                 <ArrowUp size={18} strokeWidth={2} aria-hidden />
@@ -963,6 +1078,23 @@ function MessageBubble({
                 <ToolActivityRow part={part} />
               )}
             </div>
+          );
+        }
+        // WP13 markers. `data-stopped`: an aborted turn's subtle "stopped"
+        // caption. `data-unavailable`: the tolerant history reader's neutral
+        // placeholder for a persisted part it could not render.
+        if (part.type === "data-stopped") {
+          return (
+            <p key={i} className="px-1 text-xs italic text-ink-muted">
+              Response stopped.
+            </p>
+          );
+        }
+        if (part.type === "data-unavailable") {
+          return (
+            <p key={i} className="px-1 text-xs italic text-ink-muted">
+              Unavailable step
+            </p>
           );
         }
         return null;

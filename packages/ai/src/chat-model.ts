@@ -1,5 +1,6 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import type { LanguageModel } from "ai";
+import { advisorEnabled, withAdvisorBetaHeader } from "./agent/advisor";
 import { createGeminiModelFromEnv } from "./ingest/model";
 import { modelConfigFromEnv } from "./models";
 
@@ -36,7 +37,13 @@ export function createChatModelsFromEnv(env: Record<string, string | undefined>)
   let claudeDefault: LanguageModel | null = null;
   let claudeOpus: LanguageModel | null = null;
   if (anthropicKey) {
-    const anthropic = createAnthropic({ apiKey: anthropicKey });
+    // WP12: behind `PEBBLE_ADVISOR=1`, opt every Claude request into the advisor
+    // beta by adding `anthropic-beta: advisor-tool-2026-03-01` (comma-joined with
+    // any pre-existing betas). With the flag OFF the header is absent entirely —
+    // `withAdvisorBetaHeader` returns `undefined`, so no `headers` reach
+    // `createAnthropic` and the provider is byte-identical to before the pilot.
+    const headers = withAdvisorBetaHeader(undefined, advisorEnabled(env));
+    const anthropic = createAnthropic(headers ? { apiKey: anthropicKey, headers } : { apiKey: anthropicKey });
     claudeDefault = anthropic(models.claudeDefault);
     claudeOpus = anthropic(models.claudeOpus);
   }
