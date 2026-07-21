@@ -1,9 +1,9 @@
 /**
- * Phase C.5 WP5 — live conversation eval for the agentic chat
- * (`src/server/chat-agent.ts#runAgentTurn`).
+ * Phase C.5 WP5 (+ WP14's 5 closing scenarios) — live conversation eval for
+ * the agentic chat (`src/server/chat-agent.ts#runAgentTurn`).
  *
  * Calls the REAL Anthropic (Sonnet 5 / Opus 4.8) and Gemini (extraction +
- * summary compaction) APIs against the 8 canonical conversations in
+ * summary compaction) APIs against the 13 canonical conversations in
  * `eval/conversations/*.ts`. NEVER RUN IN CI — this costs real money and
  * depends on live model behaviour, which is exactly what it is testing.
  *
@@ -54,20 +54,24 @@ function parseArgs(argv: string[]): Args {
 interface CaseRow {
   slug: string;
   pass: boolean;
+  skipped?: boolean;
   costUsd: number;
   wallMs: number;
   notes: string[];
 }
 
 function fmtRow(row: CaseRow): string {
-  const status = row.pass ? "PASS" : "FAIL";
+  const status = row.skipped ? "SKIP" : row.pass ? "PASS" : "FAIL";
   return `${row.slug.padEnd(24)} ${status.padEnd(5)} $${row.costUsd.toFixed(4).padStart(8)}  ${String(row.wallMs).padStart(7)}ms`;
 }
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
-  const models = requireChatModelsOrExit(process.env);
 
+  // Resolve (and, for --only, validate) the scenario list BEFORE the model-key
+  // guard, so `pnpm eval:chat` always shows what it WOULD run — including with
+  // no keys set at all, where this doubles as part of the setup instructions
+  // rather than being silently skipped ahead of the exit(2) below.
   let scenarios = SCENARIOS;
   if (args.only) {
     const wanted = new Set(args.only);
@@ -82,8 +86,13 @@ async function main(): Promise<void> {
   }
 
   console.log(
-    `chat-agent-eval: running ${scenarios.length} scenario(s) — ${scenarios.map((s) => s.slug).join(", ")}\n`,
+    `chat-agent-eval: ${SCENARIOS.length} scenario(s) registered — ${SCENARIOS.map((s) => s.slug).join(", ")}`,
   );
+  console.log(
+    `chat-agent-eval: running ${scenarios.length} scenario(s) this invocation — ${scenarios.map((s) => s.slug).join(", ")}\n`,
+  );
+
+  const models = requireChatModelsOrExit(process.env);
 
   const rows: CaseRow[] = [];
   for (const scenario of scenarios) {
@@ -107,7 +116,14 @@ async function main(): Promise<void> {
     }
     await handle.close().catch(() => undefined);
 
-    const row: CaseRow = { slug: scenario.slug, pass: result.pass, costUsd, wallMs, notes: result.notes };
+    const row: CaseRow = {
+      slug: scenario.slug,
+      pass: result.pass,
+      skipped: result.skipped,
+      costUsd,
+      wallMs,
+      notes: result.notes,
+    };
     rows.push(row);
     console.log(fmtRow(row));
     for (const note of result.notes) console.log(`  - ${note}`);
@@ -117,9 +133,17 @@ async function main(): Promise<void> {
   console.log("slug                     status  cost         wall");
   for (const row of rows) console.log(fmtRow(row));
 
+  // A skip always carries pass:true (see `CaseResult.skipped`'s doc comment),
+  // so it never contributes to `failed` — it just gets its own SKIP label and
+  // its own count in the summary line below.
   const failed = rows.filter((r) => !r.pass);
+  const skipped = rows.filter((r) => r.skipped);
   const totalCost = rows.reduce((sum, r) => sum + r.costUsd, 0);
-  console.log(`\n${rows.length - failed.length}/${rows.length} passed — total cost $${totalCost.toFixed(4)}`);
+  console.log(
+    `\n${rows.length - failed.length}/${rows.length} passed` +
+      (skipped.length > 0 ? ` (${skipped.length} skipped)` : "") +
+      ` — total cost $${totalCost.toFixed(4)}`,
+  );
 
   if (failed.length > 0) {
     console.error(`\nFAIL: ${failed.map((r) => r.slug).join(", ")}`);

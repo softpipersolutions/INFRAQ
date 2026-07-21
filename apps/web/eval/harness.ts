@@ -54,6 +54,7 @@ import {
   type Db,
   type DbHandle,
 } from "@pebble/db";
+import { LocalStorageAdapter, type StorageAdapter } from "@pebble/worker";
 import { resetDigestCache, getCachedDigest } from "../src/server/digest-cache";
 import { runAgentTurn } from "../src/server/chat-agent";
 
@@ -262,14 +263,30 @@ export interface TurnResult {
   response: Response;
 }
 
+export interface SendTurnOpts {
+  /** Uploaded-attachment ids to attach to THIS turn (owner + session scoped, cost-guarded — WP14). */
+  attachmentIds?: string[];
+}
+
 export interface EvalCtx {
   db: Db;
   models: ChatModels;
   user: AppUser;
+  /**
+   * The harness's own local-filesystem storage adapter (a fresh temp dir per
+   * harness, mirroring `createStorage`'s zero-config `LocalStorageAdapter`
+   * default) — the SAME adapter every `sendTurn` call threads into
+   * `runAgentTurn`'s `deps.storage`. Scenarios that need a real uploaded file
+   * (WP14 `file-analysis-turn`) `put` bytes through this BEFORE calling
+   * `insertChatAttachment`, exactly the way the upload route does (see
+   * `apps/web/test/attachment-services.test.ts`), so `read_attachment` /
+   * the pre-flight attachment embed can read them back for real.
+   */
+  storage: StorageAdapter;
   /** A fresh, unique chat_sessions id. */
   makeSession(): string;
   /** One agent turn: runs `runAgentTurn` directly (no HTTP) and consumes the UI-message stream. */
-  sendTurn(sessionId: string, message: string): Promise<TurnResult>;
+  sendTurn(sessionId: string, message: string, opts?: SendTurnOpts): Promise<TurnResult>;
 }
 
 export interface HarnessHandle {
@@ -298,15 +315,31 @@ export async function createHarnessCtx(models: ChatModels): Promise<HarnessHandl
   // explicit is better than relying on that).
   resetDigestCache();
 
+  // WP14: a fresh local-storage temp dir per harness, mirroring
+  // `createStorage`'s zero-config default (`LocalStorageAdapter`) so a
+  // scenario that seeds a real attachment's bytes (e.g. `file-analysis-turn`)
+  // and a scenario that never touches attachments behave identically —
+  // `runAgentTurn` only ever reads `deps.storage` when `attachmentIds` is
+  // non-empty. Isolated per-run for the same reason the pglite dir is: no
+  // cross-scenario bleed when the runner iterates cases sequentially.
+  const storageDir = await mkdtemp(join(tmpdir(), "pebble-chat-eval-storage-"));
+  const storage: StorageAdapter = new LocalStorageAdapter(storageDir);
+
   const ctx: EvalCtx = {
     db,
     models,
     user,
+    storage,
     makeSession: () => `eval-${randomUUID()}`,
-    sendTurn: async (sessionId, message) => {
+    sendTurn: async (sessionId, message, opts) => {
       const response = await runAgentTurn(
-        { db, models },
-        { sessionId, message, user: { firebaseUid: user.firebaseUid, role: user.role } },
+        { db, models, storage },
+        {
+          sessionId,
+          message,
+          user: { firebaseUid: user.firebaseUid, role: user.role },
+          attachmentIds: opts?.attachmentIds,
+        },
       );
       const clone = response.clone();
       const consumed =
@@ -375,6 +408,14 @@ export async function assertCachePrefixIntact(db: Db, sessionId: string): Promis
 export interface CaseResult {
   pass: boolean;
   notes: string[];
+  /**
+   * True when the scenario deliberately did nothing (a flagged feature is off
+   * in this environment — WP14 `file-generation-turn` is the one case: it
+   * needs `PEBBLE_SKILLS_LANE=1` AND a live key). A skip always carries
+   * `pass:true` (it is not a failure) so the runner's exit code is unaffected;
+   * `skipped` just changes how the row is LABELLED (`SKIP` instead of `PASS`).
+   */
+  skipped?: boolean;
 }
 
 export interface ConversationScenario {

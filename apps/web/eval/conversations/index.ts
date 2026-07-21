@@ -7,11 +7,17 @@ import { scenario as recallNoSideEffects } from "./recall-no-side-effects";
 import { scenario as selfHeal } from "./self-heal";
 import { scenario as budgetExhaustion } from "./budget-exhaustion";
 import { scenario as explainWalkthrough } from "./explain-walkthrough";
+import { scenario as clarificationFlow } from "./clarification-flow";
+import { scenario as fileAnalysisTurn } from "./file-analysis-turn";
+import { scenario as fileGenerationTurn } from "./file-generation-turn";
+import { scenario as memoryRecallAcrossSessions } from "./memory-recall-across-sessions";
+import { scenario as multiSessionIsolation } from "./multi-session-isolation";
 
 /**
- * The 8 canonical live-model conversations (Phase C.5 WP5 / plan §Verification).
- * Order matches the plan's numbering; the runner (`scripts/chat-agent-eval.ts`)
- * iterates this list, optionally filtered by `--only <slug>`.
+ * The 13 canonical live-model conversations (Phase C.5 WP5's original 8, plus
+ * WP14's 5 closing-out-the-chat-overhaul scenarios). Order matches the
+ * plan's/WP numbering; the runner (`scripts/chat-agent-eval.ts`) iterates this
+ * list, optionally filtered by `--only <slug>`.
  */
 export const SCENARIOS: ConversationScenario[] = [
   happyPath,
@@ -22,4 +28,9 @@ export const SCENARIOS: ConversationScenario[] = [
   selfHeal,
   budgetExhaustion,
   explainWalkthrough,
+  clarificationFlow,
+  fileAnalysisTurn,
+  fileGenerationTurn,
+  memoryRecallAcrossSessions,
+  multiSessionIsolation,
 ];
