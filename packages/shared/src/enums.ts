@@ -135,6 +135,14 @@ export type EnquirySource = (typeof ENQUIRY_SOURCES)[number];
 export const USER_ROLES = ["admin", "estimator", "approver"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
+/**
+ * Lifecycle of a logged sign-in access request (in-app allowlist management).
+ * PENDING → an admin approves (APPROVED) or rejects (DENIED). A re-attempt never
+ * resurrects a DENIED request back to PENDING — only an admin can flip it.
+ */
+export const ACCESS_REQUEST_STATUSES = ["PENDING", "APPROVED", "DENIED"] as const;
+export type AccessRequestStatus = (typeof ACCESS_REQUEST_STATUSES)[number];
+
 /** Spec section D — the complete, closed set of audit event types. */
 export const AUDIT_EVENT_TYPES = [
   "ENQ_CREATED",

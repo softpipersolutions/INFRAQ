@@ -1,5 +1,7 @@
+import { recordAccessRequest } from "@pebble/db";
 import { NextResponse } from "next/server";
-import { isEmailAllowed } from "@/server/auth";
+import { isEmailAllowedForApp } from "@/server/auth";
+import { getDb } from "@/server/db";
 import { createSessionCookie, isFirebaseConfigured, verifyIdToken } from "@/server/firebase-admin";
 import { SESSION_COOKIE_NAME, SESSION_TTL_MS } from "@/lib/session";
 
@@ -37,16 +39,27 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   let email: string | null;
+  let displayName: string | null;
   try {
     const decoded = await verifyIdToken(idToken);
     email = typeof decoded.email === "string" ? decoded.email : null;
+    displayName = typeof decoded.name === "string" && decoded.name ? decoded.name : null;
   } catch {
     return NextResponse.json({ error: "Invalid or expired sign-in token" }, { status: 401 });
   }
 
-  if (!email || !isEmailAllowed(email)) {
+  const { db } = await getDb();
+  if (!email || !(await isEmailAllowedForApp(db, email))) {
+    // Log the denied attempt BEFORE the 403 so an admin can approve it from
+    // Admin → Access with no redeploy. Re-attempts bump the counter but never
+    // resurrect a DENIED request. (Shape/status unchanged so the login page's
+    // AccessDeniedError parsing still works.)
+    if (email) await recordAccessRequest(db, { email, displayName });
     return NextResponse.json(
-      { error: "This Google account is not authorised for Pebble." },
+      {
+        error:
+          "This Google account is not authorised for Pebble yet. Your request has been noted — an admin can approve it from Admin → Access.",
+      },
       { status: 403 },
     );
   }

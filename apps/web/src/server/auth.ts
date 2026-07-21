@@ -1,6 +1,15 @@
 import "server-only";
 
-import { DEV_USER, ensureDevUser, getUser, schema, upsertUser, type AppUser, type Db } from "@pebble/db";
+import {
+  DEV_USER,
+  ensureDevUser,
+  getUser,
+  isEmailInDbAllowlist,
+  schema,
+  upsertUser,
+  type AppUser,
+  type Db,
+} from "@pebble/db";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { SESSION_COOKIE_NAME } from "../lib/session";
@@ -21,21 +30,61 @@ import { isFirebaseConfigured, verifySessionCookie } from "./firebase-admin";
  */
 
 /**
- * Allowlist gate for firebase mode: PEBBLE_ALLOWED_EMAILS (comma-separated)
- * and/or PEBBLE_ALLOWED_DOMAIN. With NEITHER set, every login is denied —
- * a misconfigured deployment must not accept arbitrary Google accounts.
+ * The subset of process.env the allowlist reads; injectable so it is
+ * unit-testable. The index signature keeps it assignable from NodeJS.ProcessEnv
+ * (whose only declared member is a `string | undefined` index).
  */
-export function isEmailAllowed(email: string): boolean {
-  const allowedEmails = (process.env.PEBBLE_ALLOWED_EMAILS ?? "")
+export type AllowlistEnv = {
+  PEBBLE_ALLOWED_EMAILS?: string;
+  PEBBLE_ALLOWED_DOMAIN?: string;
+  [key: string]: string | undefined;
+};
+
+/**
+ * The DEPLOY-BAKED allowlist: PEBBLE_ALLOWED_EMAILS (comma-separated) and/or
+ * PEBBLE_ALLOWED_DOMAIN, parsed into a normalized shape. Exposed so the admin
+ * Access page can show the env base list read-only ("configured at deploy").
+ */
+export function parseEnvAllowlist(env: AllowlistEnv = process.env): {
+  emails: string[];
+  domain: string | null;
+} {
+  const emails = (env.PEBBLE_ALLOWED_EMAILS ?? "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
-  const allowedDomain = process.env.PEBBLE_ALLOWED_DOMAIN?.trim().toLowerCase();
+  const domain = env.PEBBLE_ALLOWED_DOMAIN?.trim().toLowerCase() || null;
+  return { emails, domain };
+}
 
+/**
+ * ENV-ONLY allowlist gate. True when the email is in PEBBLE_ALLOWED_EMAILS or
+ * under PEBBLE_ALLOWED_DOMAIN. This is only HALF of the effective check — see
+ * isEmailAllowedForApp for the union with the DB-managed allowlist.
+ */
+export function isEmailAllowedByEnv(email: string, env: AllowlistEnv = process.env): boolean {
+  const { emails, domain } = parseEnvAllowlist(env);
   const candidate = email.trim().toLowerCase();
-  if (allowedEmails.includes(candidate)) return true;
-  if (allowedDomain && candidate.endsWith(`@${allowedDomain}`)) return true;
+  if (emails.includes(candidate)) return true;
+  if (domain && candidate.endsWith(`@${domain}`)) return true;
   return false;
+}
+
+/**
+ * The EFFECTIVE allowlist gate for firebase mode: the env allowlist UNION the
+ * DB-managed allowed_emails (an admin can approve new accounts at runtime with
+ * no redeploy). FAIL-CLOSED is preserved — with an empty env allowlist AND an
+ * empty (or fully-deactivated) table, every login is denied. A deactivated DB
+ * row fails the offender closed on their next request, exactly like removing
+ * them from the env list.
+ */
+export async function isEmailAllowedForApp(
+  db: Db,
+  email: string,
+  env: AllowlistEnv = process.env,
+): Promise<boolean> {
+  if (isEmailAllowedByEnv(email, env)) return true;
+  return isEmailInDbAllowlist(db, email);
 }
 
 /**
@@ -73,7 +122,9 @@ async function firebaseUser(db: Db): Promise<AppUser | null> {
   }
 
   const email = typeof decoded.email === "string" ? decoded.email : null;
-  if (!email || !isEmailAllowed(email)) return null;
+  // Re-checked on EVERY request (union of env + DB allowlist): a user whose DB
+  // allowlist entry was deactivated fails closed here on their next request.
+  if (!email || !(await isEmailAllowedForApp(db, email))) return null;
 
   const existing = await getUser(db, decoded.uid);
   if (existing) {

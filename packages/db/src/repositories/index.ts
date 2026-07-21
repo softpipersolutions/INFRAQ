@@ -8,3 +8,4 @@ export * from "./ingestion";
 export * from "./rag";
 export * from "./chat";
 export * from "./memory";
+export * from "./access";

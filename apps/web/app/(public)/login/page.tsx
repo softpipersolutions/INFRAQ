@@ -89,7 +89,8 @@ export default function LoginPage() {
           <div className="text-lg font-semibold tracking-tight text-ink">Access not yet granted</div>
           <div className="mt-3 font-mono text-sm text-ink">{deniedEmail}</div>
           <p className="mt-4 text-sm text-ink-secondary">
-            Ask your Pebble admin to add you to the allowlist, then sign in again.
+            Your request has been sent to the admins. Once an admin approves it from Admin → Access,
+            sign in again with the same account.
           </p>
           <div className="mt-6">
             <Button variant="secondary" disabled={busy} onClick={() => setDeniedEmail(null)}>
