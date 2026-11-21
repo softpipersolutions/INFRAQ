@@ -9,7 +9,7 @@ import type { RawRateKind, XlsxRawLine } from "./types";
  * `test/xlsx.test.ts`), which turn out to use two genuinely different
  * layouts with DIFFERENT COLUMN POSITIONS between files:
  *
- *   - "commercial_bom" (`FF-103 V Agarwal Hotel (09112024 R0).xlsx`, sheet
+ *   - "commercial_bom" (`FF-103 V Proseware Hotel (09112024 R0).xlsx`, sheet
  *     "BOM"): Sl.No / Description / Indicative Images / Unit / Quantity /
  *     "Unit Price (SITC)" / Amount / Remarks. The make is embedded in the
  *     description ("... ; Make - Jindal (ISI)"), sometimes doubled

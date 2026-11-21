@@ -91,4 +91,4 @@ Cross-session memory needs no flag — the `memory` tool is composed on every ch
 
 ## Secrets
 
-`DATABASE_URL`, `RESEND_API_KEY`, `ANTHROPIC_API_KEY`, and `GOOGLE_GENERATIVE_AI_API_KEY` live in GCP Secret Manager under project `infraq-greenberg`. They are never stored in the repo.
+`DATABASE_URL`, `RESEND_API_KEY`, `ANTHROPIC_API_KEY`, and `GOOGLE_GENERATIVE_AI_API_KEY` live in GCP Secret Manager under project `example-project`. They are never stored in the repo.

@@ -110,7 +110,7 @@ Last updated: 2026-07-21 · Branch: `claude/fire-safety-boq-webapp-f5n921`
 > ANTHROPIC_API_KEY=... GOOGLE_GENERATIVE_AI_API_KEY=... \
 >   pnpm --filter @pebble/web eval:chat
 > # or Vertex, and/or a single scenario:
-> ANTHROPIC_API_KEY=... PEBBLE_AI_PROVIDER=vertex GOOGLE_VERTEX_PROJECT=infraq-greenberg \
+> ANTHROPIC_API_KEY=... PEBBLE_AI_PROVIDER=vertex GOOGLE_VERTEX_PROJECT=example-project \
 >   GOOGLE_VERTEX_LOCATION=global GOOGLE_VERTEX_ACCESS_TOKEN=$(gcloud auth print-access-token) \
 >   pnpm --filter @pebble/web eval:chat -- --only happy-path
 > ```
@@ -160,11 +160,11 @@ Last updated: 2026-07-21 · Branch: `claude/fire-safety-boq-webapp-f5n921`
 > bucket creds (uris derive from the corpus dir; gcloud user-token lane).
 >
 > ## 🚀 PHASE A DEPLOYED TO PRODUCTION (2026-07-19)
-> Live on Cloud Run (project **infraq-greenberg**, asia-south1):
-> **web** https://pebble-web-4xnkcvcksa-el.a.run.app (public, AUTH_MODE=firebase,
+> Live on Cloud Run (project **example-project**, asia-south1):
+> **web** https://pebble.greenberg.example (public, AUTH_MODE=firebase,
 > Google sign-in, allowlist `PEBBLE_ALLOWED_EMAILS` repo var) · **worker**
 > pebble-worker (private, OIDC-invoked, Chromium PDF, GCS outputs).
-> Real letterhead (GSTIN 09AAMCG0423A1Z3, brand marks, FF-149 T&C) ships in
+> Placeholder letterhead (GSTIN 09AAAAA0000A1Z5, brand marks, FF-149 T&C) ships in
 > `packages/documents`. RBAC live (admin/estimator/approver). Cloud SQL
 > `pebble-pg` (PG16, backups+PITR) migrated + seeded; DATABASE_URL/RESEND keys
 > in Secret Manager; WIF deploys from GitHub Actions on push to main
@@ -202,7 +202,7 @@ Non-negotiable invariants (from the client spec, `pebble-v1-module-02-estimate-c
 - AI split: **Gemini Flash** = retrieval/extraction lane; **Claude Sonnet default, Opus 4.8 escalation** = interpretation/drafting lane; router in `packages/ai`.
 - Deploy target: **GCP** (Cloud Run web+worker, Cloud SQL Postgres 16 + pgvector, GCS, Firebase Auth). Local dev: **PGlite, zero cloud creds**.
 
-User-confirmed decisions (do not re-litigate): full web app (forms + chat, Format B deferred), GCP + Firebase Auth, smart model routing, full ingestion+RAG of the 145 historical PDFs in `Amitabh Fire Safety BOQ Data/` (later phase).
+User-confirmed decisions (do not re-litigate): full web app (forms + chat, Format B deferred), GCP + Firebase Auth, smart model routing, full ingestion+RAG of the 145 historical PDFs in `proposal-corpus/` (later phase).
 
 ## 2. Current state — what exists and its quality
 

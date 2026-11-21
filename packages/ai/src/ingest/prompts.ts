@@ -34,7 +34,7 @@ export function buildDocMetaPrompt(hints: DocMetaHints): string {
     "- attention: the 'Attention' / 'Kind Attn' / 'To' contact person, if printed.",
     "- docDateISO: the document's own printed date, formatted YYYY-MM-DD. PREFER the printed date over the filename hints below — the filename is a fallback ONLY when no date is printed anywhere in the document.",
     "- revision: the printed revision/version label (e.g. 'R2', 'Rev 02'), transcribed exactly as printed, or null if the document shows none.",
-    "- sourceEntityGuess: the letterhead / issuing entity. This is usually 'Greenberg Enterprises' or 'Padmawati Enterprises', but transcribe exactly what is printed if it is some other name.",
+    "- sourceEntityGuess: the letterhead / issuing entity. This is usually 'Greenberg Enterprises' or 'Sample Traders', but transcribe exactly what is printed if it is some other name.",
     "- docKind: classify as exactly one of \"proposal\" | \"rate_list\" | \"estimate\" | \"other\".",
     "- systemsMentioned: every fire-safety system named anywhere in the document, as free text (e.g. 'Fire Alarm System', 'Sprinkler', 'Hydrant').",
     "- sections: every PART / section heading you see (e.g. 'PART I. SPRINKLER SYSTEM'), each with your best-guess canonical system — one of FAS, Hydrant, Sprinkler, Extinguisher, Suppression — or null if you cannot tell.",

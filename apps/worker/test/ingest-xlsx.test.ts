@@ -5,14 +5,14 @@ import { describe, expect, it } from "vitest";
 import { parseXlsxWorkbook } from "../src/ingest/xlsx";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const CORPUS_DIR = join(__dirname, "../../../Amitabh Fire Safety BOQ Data");
+const CORPUS_DIR = join(__dirname, "../../../proposal-corpus");
 
 /**
  * These 3 workbooks were opened cell-by-cell during development (see the WP2
  * report) to pick stable expected values — this test asserts against real,
  * observed sheet layouts, not a guessed shape.
  *
- *  - "FF-103 V Agarwal Hotel (09112024 R0).xlsx", sheet "BOM": a
+ *  - "FF-103 V Proseware Hotel (09112024 R0).xlsx", sheet "BOM": a
  *    commercial-BOM layout (Sl.No/Description/Unit/Quantity/"Unit Price
  *    (SITC)"/Amount/Remarks), make embedded in the description as
  *    "Make - X" (sometimes doubled "Make - Make - X").
@@ -25,9 +25,9 @@ const CORPUS_DIR = join(__dirname, "../../../Amitabh Fire Safety BOQ Data");
  *    NOT parsed (see xlsx.ts's SKIP_SHEET_NAME_RE).
  */
 
-describe("parseXlsxWorkbook — FF-103 V Agarwal Hotel (commercial_bom)", () => {
+describe("parseXlsxWorkbook — FF-103 V Proseware Hotel (commercial_bom)", () => {
   it("parses the BOM sheet with the expected layout and totals", async () => {
-    const bytes = await readFile(join(CORPUS_DIR, "FF-103 V Agarwal Hotel (09112024 R0).xlsx"));
+    const bytes = await readFile(join(CORPUS_DIR, "FF-103 V Proseware Hotel (09112024 R0).xlsx"));
     const result = await parseXlsxWorkbook(bytes);
 
     expect(result.schemaKind).toBe("commercial_bom");

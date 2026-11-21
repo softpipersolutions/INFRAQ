@@ -31,7 +31,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       <main className="flex-1">{children}</main>
 
       <footer className="border-t border-border px-5 py-4 text-xs text-ink-muted">
-        Greenberg Engineering Private Limited · GSTIN 09AAMCG0423A1Z3 · www.greenberg.engineering ·
+        Greenberg Engineering Private Limited · GSTIN 09AAAAA0000A1Z5 · www.greenberg.example ·
         Exploring Synergy, Empowering Lives!
       </footer>
     </div>

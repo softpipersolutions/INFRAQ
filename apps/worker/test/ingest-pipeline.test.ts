@@ -28,8 +28,8 @@ import { freshDb, stubIngestAi, tempStorageDir } from "./helpers";
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const CORPUS_XLSX = join(
   REPO_ROOT,
-  "Amitabh Fire Safety BOQ Data",
-  "FF-103 V Agarwal Hotel (09112024 R0).xlsx",
+  "proposal-corpus",
+  "FF-103 V Proseware Hotel (09112024 R0).xlsx",
 );
 
 // ─── Scripted stub model ────────────────────────────────────────────────────
@@ -90,8 +90,8 @@ function scriptedModel(
 // ─── Canned payloads ────────────────────────────────────────────────────────
 
 const CANNED_META: DocMeta = {
-  clientName: "Shri Narayan Plaza",
-  projectName: "Narayan Plaza — Active Fire Fighting",
+  clientName: "Contoso Plaza",
+  projectName: "Contoso Plaza — Active Fire Fighting",
   attention: null,
   docDateISO: "2022-09-21",
   revision: "R0",

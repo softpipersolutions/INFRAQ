@@ -54,8 +54,8 @@ function findUserContentParts(calls: CapturedCall[]): Array<{ type: string; [k: 
 
 const CANNED_META: DocMeta = {
   clientName: null,
-  projectName: "COMMERCIAL UNIT, EXPORIO BUILDING, LUCKNOW, UP",
-  attention: "Yamini Sharma",
+  projectName: "COMMERCIAL UNIT, LAKEVIEW LABS BUILDING, LUCKNOW, UP",
+  attention: "Yara Northwind",
   docDateISO: "2025-12-26",
   revision: "02",
   sourceEntityGuess: "Greenberg Enterprises",

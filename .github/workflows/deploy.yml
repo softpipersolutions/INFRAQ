@@ -3,7 +3,7 @@ name: Deploy
 # Build + push both images to Artifact Registry and deploy to Cloud Run on main,
 # running DB migrations as a pre-deploy gate.
 #
-# GCP wiring (project infraq-greenberg, asia-south1):
+# GCP wiring (project example-project, asia-south1):
 #   - Auth: Workload Identity Federation — pool `github`, provider `github-oidc`,
 #     restricted to this repository; deploys as pebble-deploy@ SA.
 #   - Repo secrets: WORKLOAD_IDENTITY_PROVIDER, DEPLOY_SERVICE_ACCOUNT.

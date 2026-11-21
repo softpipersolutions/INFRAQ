@@ -93,7 +93,7 @@ export function requireChatModelsOrExit(
         "Then run, e.g.:\n" +
         "  ANTHROPIC_API_KEY=... GOOGLE_GENERATIVE_AI_API_KEY=... pnpm --filter @pebble/web eval:chat\n" +
         "or:\n" +
-        "  ANTHROPIC_API_KEY=... PEBBLE_AI_PROVIDER=vertex GOOGLE_VERTEX_PROJECT=infraq-greenberg \\\n" +
+        "  ANTHROPIC_API_KEY=... PEBBLE_AI_PROVIDER=vertex GOOGLE_VERTEX_PROJECT=example-project \\\n" +
         "  GOOGLE_VERTEX_LOCATION=global GOOGLE_VERTEX_ACCESS_TOKEN=$(gcloud auth print-access-token) \\\n" +
         "  pnpm --filter @pebble/web eval:chat -- --only happy-path\n",
     );

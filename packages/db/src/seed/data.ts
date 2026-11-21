@@ -11,7 +11,7 @@ import type {
 
 /**
  * Seed dataset — starter masters drawn from the historical corpus analysis
- * (`Amitabh Fire Safety BOQ Data/`) and Greenberg's IS-code design basis.
+ * (`proposal-corpus/`) and Greenberg's IS-code design basis.
  *
  * Invariants that make the demo generation clean (see PROGRESS.md §5):
  *  - Every material has an Approved **Standard** make (the tier chosen for

@@ -11,7 +11,7 @@ import { isUrlAttachment } from "./types";
  */
 
 /** Greenberg's default sender — a verified domain address on the Resend account. */
-export const DEFAULT_EMAIL_FROM = "Greenberg Estimates <estimates@greenberg.co.in>";
+export const DEFAULT_EMAIL_FROM = "Greenberg Estimates <estimates@greenberg.example>";
 
 export interface EmailMessage {
   to: string | string[];

@@ -7,8 +7,8 @@ import corpusFilenamesSnapshot from "./fixtures/corpus-filenames.json";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // apps/worker/test -> apps/worker -> apps -> repo root, where the historical
-// corpus lives (see WP2 task spec: "Amitabh Fire Safety BOQ Data/").
-const CORPUS_DIR = join(__dirname, "../../../Amitabh Fire Safety BOQ Data");
+// corpus lives (see WP2 task spec: "proposal-corpus/").
+const CORPUS_DIR = join(__dirname, "../../../proposal-corpus");
 
 function corpusFiles(): string[] {
   return readdirSync(CORPUS_DIR)
@@ -58,18 +58,18 @@ describe("parseCorpusFilename — live corpus", () => {
 
 describe("parseCorpusFilename — variance cases", () => {
   it("1. canonical: fileRef + date + revision", () => {
-    const r = parseCorpusFilename("FF-01 Shri Narayan Plaza - SITC Active Fire Fighting (21092022 R0).pdf");
+    const r = parseCorpusFilename("FF-01 Contoso Plaza - SITC Active Fire Fighting (21092022 R0).pdf");
     expect(r.fileRef).toBe("FF-01");
     expect(r.revision).toBe("R0");
     expect(r.docDate).not.toBeNull();
     expect(utcYmd(r.docDate as Date)).toEqual([2022, 9, 21]);
     expect(r.docType).toBe("pdf");
-    expect(r.title).toContain("Shri Narayan Plaza");
+    expect(r.title).toContain("Contoso Plaza");
   });
 
   it("2. sub-numbers: FF-05-1 -> fileRef FF-05, subRef 1", () => {
     const r = parseCorpusFilename(
-      "FF-05-1 PSPL Lucknow Distilled Water Plant - SITC Compressed Air MS Pipework (10042023 R0).pdf",
+      "FF-05-1 Fabrikam Lucknow Distilled Water Plant - SITC Compressed Air MS Pipework (10042023 R0).pdf",
     );
     expect(r.fileRef).toBe("FF-05");
     expect(r.subRef).toBe("1");
@@ -78,7 +78,7 @@ describe("parseCorpusFilename — variance cases", () => {
 
   it("3. letter suffix via hyphen, date/rev OUTSIDE parens: FF-126-B", () => {
     const r = parseCorpusFilename(
-      "FF-126-B Fire Alarm System Cost Proposal by Greenberg (for Warehouse by AMT AVENTURES) 28042025 R1.pdf",
+      "FF-126-B Fire Alarm System Cost Proposal by Greenberg (for Warehouse by NORTHWIND VENTURES) 28042025 R1.pdf",
     );
     expect(r.fileRef).toBe("FF-126");
     expect(r.suffix).toBe("B");
@@ -90,38 +90,38 @@ describe("parseCorpusFilename — variance cases", () => {
 
   it("4. no hyphen: FF01 / FF57 normalize to FF-01 / FF-57 with a warning", () => {
     const a = parseCorpusFilename(
-      "FF01 Charan Residence - Supply & Installation Fire Fighting Equipment (19092022 R0).pdf",
+      "FF01 Woodgrove Residence - Supply & Installation Fire Fighting Equipment (19092022 R0).pdf",
     );
     expect(a.fileRef).toBe("FF-01");
     expect(a.warnings.some((w) => /normalized/i.test(w))).toBe(true);
 
-    const b = parseCorpusFilename("FF57 Ashish Kanwar - FE Supply (13112023 R0).pdf");
+    const b = parseCorpusFilename("FF57 Adam Northwind - FE Supply (13112023 R0).pdf");
     expect(b.fileRef).toBe("FF-57");
     expect(b.warnings.some((w) => /normalized/i.test(w))).toBe(true);
   });
 
   it("5. GBE prefix supply/labour split pair", () => {
     const supply = parseCorpusFilename(
-      "GBE-71 POCT C7 Fire Protection Systems (25052024 R5) - Supply Only.pdf",
+      "GBE-71 Tailspin C7 Fire Protection Systems (25052024 R5) - Supply Only.pdf",
     );
     expect(supply.fileRef).toBe("GBE-71");
     expect(supply.splitKind).toBe("supply_only");
 
     const labour = parseCorpusFilename(
-      "GBE-71 POCT C7 Fire Protection Systems (25052024 R5) - Labour Charges.pdf",
+      "GBE-71 Tailspin C7 Fire Protection Systems (25052024 R5) - Labour Charges.pdf",
     );
     expect(labour.fileRef).toBe("GBE-71");
     expect(labour.splitKind).toBe("labour_charges");
   });
 
-  it("6. non-numeric reference: GBE-Shivanan-BOQ", () => {
-    const r = parseCorpusFilename("GBE-Shivanan-BOQ (22072025 R2).pdf");
-    expect(r.fileRef).toBe("GBE-Shivanan");
+  it("6. non-numeric reference: GBE-Contoso-BOQ", () => {
+    const r = parseCorpusFilename("GBE-Contoso-BOQ (22072025 R2).pdf");
+    expect(r.fileRef).toBe("GBE-Contoso");
     expect(r.revision).toBe("R2");
   });
 
   it("7. no id/date/rev at all: title carries the name, warning raised", () => {
-    const r = parseCorpusFilename("FFS for A3 plot (Hawkins) - Estimate by Greenberg Enterprises.pdf");
+    const r = parseCorpusFilename("FFS for A3 plot (Fabrikam) - Estimate by Greenberg Enterprises.pdf");
     expect(r.fileRef).toBeNull();
     expect(r.docDate).toBeNull();
     expect(r.revision).toBeNull();
@@ -130,7 +130,7 @@ describe("parseCorpusFilename — variance cases", () => {
   });
 
   it("8. malformed 7-digit date -> docDate null + warning", () => {
-    const r = parseCorpusFilename("FF-119 POCT Electrical Panel Fire Safety (1702025 R0).pdf");
+    const r = parseCorpusFilename("FF-119 Tailspin Electrical Panel Fire Safety (1702025 R0).pdf");
     expect(r.fileRef).toBe("FF-119");
     expect(r.docDate).toBeNull();
     expect(r.revision).toBe("R0");
@@ -139,14 +139,14 @@ describe("parseCorpusFilename — variance cases", () => {
 
   it("9. paren letter suffix + split kind: FF-30(L) / FF-30(S)", () => {
     const labour = parseCorpusFilename(
-      "FF-30(L) POCT C42 Fire Protection Systems (13032024 R5) - Labour Charges.pdf",
+      "FF-30(L) Tailspin C42 Fire Protection Systems (13032024 R5) - Labour Charges.pdf",
     );
     expect(labour.fileRef).toBe("FF-30");
     expect(labour.suffix).toBe("L");
     expect(labour.splitKind).toBe("labour_charges");
 
     const supply = parseCorpusFilename(
-      "FF-30(S) POCT C42 Fire Protection Systems (13032024 R5) - Supply Only.pdf",
+      "FF-30(S) Tailspin C42 Fire Protection Systems (13032024 R5) - Supply Only.pdf",
     );
     expect(supply.fileRef).toBe("FF-30");
     expect(supply.suffix).toBe("S");
@@ -155,31 +155,31 @@ describe("parseCorpusFilename — variance cases", () => {
 
   it("10. two-digit sub-reference: FF-33-05", () => {
     const r = parseCorpusFilename(
-      "FF-33-05 Wadhwa Site Q-Lien Biotech Pvt Ltd - SITC Piezometer & Flow Meter (28082024 R0).pdf",
+      "FF-33-05 Alpine Site Northwind Biotech Pvt Ltd - SITC Piezometer & Flow Meter (28082024 R0).pdf",
     );
     expect(r.fileRef).toBe("FF-33");
     expect(r.subRef).toBe("05");
   });
 
   it("11. invalid calendar date (Feb 31) -> docDate null + warning", () => {
-    const r = parseCorpusFilename("FF-163 Fashion City (31022026 R0).pdf");
+    const r = parseCorpusFilename("FF-163 Tailspin Fashion (31022026 R0).pdf");
     expect(r.fileRef).toBe("FF-163");
     expect(r.docDate).toBeNull();
     expect(r.warnings.some((w) => /invalid date/i.test(w))).toBe(true);
   });
 
   it("12. fileRef with no date/rev/parens at all", () => {
-    const r = parseCorpusFilename("FF-66 Commercial Gomti Nagar.pdf");
+    const r = parseCorpusFilename("FF-66 Commercial Riverside Nagar.pdf");
     expect(r.fileRef).toBe("FF-66");
     expect(r.docDate).toBeNull();
     expect(r.revision).toBeNull();
-    expect(r.title).toBe("Commercial Gomti Nagar");
+    expect(r.title).toBe("Commercial Riverside Nagar");
   });
 });
 
 describe("sourceEntityForDate", () => {
-  it("attributes 2023 dates to Padmawati Enterprises", () => {
-    expect(sourceEntityForDate(new Date(Date.UTC(2023, 5, 15)))).toBe("Padmawati Enterprises");
+  it("attributes 2023 dates to Sample Traders", () => {
+    expect(sourceEntityForDate(new Date(Date.UTC(2023, 5, 15)))).toBe("Sample Traders");
   });
 
   it("attributes non-2023 dates to Greenberg Enterprises", () => {

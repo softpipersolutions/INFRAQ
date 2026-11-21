@@ -23,8 +23,8 @@ describe("renderFormatAHtml", () => {
   it("shows the estimate no., revision, client, project and GSTIN", () => {
     expect(html).toContain("GBE-EST-2025-014");
     expect(html).toContain("R1");
-    expect(html).toContain("Phoenix Mills Ltd");
-    expect(html).toContain("Phoenix Marketplace Mall, Gomti Nagar");
+    expect(html).toContain("Woodgrove Retail Ltd");
+    expect(html).toContain("Woodgrove Marketplace Mall, Riverside Nagar");
     expect(html).toContain(input.company.gstin);
     expect(html).toContain("GSTIN:");
   });
@@ -57,10 +57,10 @@ describe("renderFormatAHtml", () => {
 
   it("prints the T&C and signatory credentials", () => {
     expect(html).toContain("Terms &amp; Conditions");
-    expect(html).toContain("Devansh Gulati");
-    expect(html).toContain("IDip NEBOSH");
-    // Real letterhead facts (GST REG-06 certificate).
-    expect(html).toContain("09AAMCG0423A1Z3");
+    expect(html).toContain("A. Sample");
+    expect(html).toContain("Fire Safety Engineer");
+    // Default (synthetic) letterhead facts.
+    expect(html).toContain("09AAAAA0000A1Z5");
     expect(html).toContain("Greenberg Engineering Private Limited");
   });
 

@@ -1,20 +1,20 @@
 /**
  * Filename parsing for the Phase B historical corpus
- * ("Amitabh Fire Safety BOQ Data/" at the repo root — 142 PDF + 3 XLSX).
+ * ("proposal-corpus/" at the repo root — 142 PDF + 3 XLSX).
  *
  * Four accumulated years of ad hoc naming means there is no single
  * "canonical" shape: this parser was built by enumerating the *actual* 145
  * filenames (see `test/fixtures/corpus-filenames.json`, a snapshot of
  * `readdirSync` over the corpus dir) rather than guessing at a convention.
  * Observed variants:
- *   - Canonical: `FF-01 Shri Narayan Plaza - SITC Active Fire Fighting (21092022 R0).pdf`
+ *   - Canonical: `FF-01 Contoso Plaza - SITC Active Fire Fighting (21092022 R0).pdf`
  *   - Sub-numbers: `FF-05-1 ... .pdf` (fileRef "FF-05", subRef "1")
  *   - Letter suffixes via hyphen: `FF-126-B ... 28042025 R1.pdf` (date/rev OUTSIDE parens)
  *   - Letter suffixes via parens: `FF-30(L) ... - Labour Charges.pdf`
  *   - No hyphen: `FF01 ...`, `FF57 ...` (normalized to "FF-01"/"FF-57")
  *   - GBE prefix, with a supply/labour split: `GBE-71 ... - Supply Only.pdf`
- *   - Non-numeric ref: `GBE-Shivanan-BOQ (22072025 R2).pdf`
- *   - No id/date/rev at all: `FFS for A3 plot (Hawkins) - Estimate ....pdf`
+ *   - Non-numeric ref: `GBE-Contoso-BOQ (22072025 R2).pdf`
+ *   - No id/date/rev at all: `FFS for A3 plot (Fabrikam) - Estimate ....pdf`
  *   - Malformed 7-digit date: `(1702025 R0)` — a digit was dropped upstream
  *   - Invalid calendar date: `(31022026 R0)` — Feb 31 does not exist
  *
@@ -51,7 +51,7 @@ const REF_SUFFIX_PAREN_RE = /^(FF|GBE)-(\d+)\(([A-Za-z])\)/;
 const REF_PLAIN_RE = /^(FF|GBE)-(\d+)\b/;
 /** `FF01`, `FF57` — missing the hyphen; normalized on the way out. */
 const REF_NO_HYPHEN_RE = /^(FF)(\d+)\b/;
-/** `GBE-Shivanan` — a non-numeric reference token. */
+/** `GBE-Contoso` — a non-numeric reference token. */
 const REF_NONNUMERIC_RE = /^(FF|GBE)-([A-Za-z]+)\b/;
 
 // ─── Date + revision patterns ───────────────────────────────────────────────
@@ -241,13 +241,13 @@ export function parseCorpusFilename(filename: string): ParsedCorpusFilename {
 
 /**
  * Historical corpus entity attribution (per corpus analysis): proposals dated
- * within calendar-year 2023 were issued under Padmawati Enterprises; every
+ * within calendar-year 2023 were issued under Sample Traders; every
  * other dated proposal, under Greenberg Enterprises. Undated documents carry
  * no attribution here — that is resolved by the doc-meta pass.
  */
 export function sourceEntityForDate(
   d: Date | null,
-): "Padmawati Enterprises" | "Greenberg Enterprises" | null {
+): "Sample Traders" | "Greenberg Enterprises" | null {
   if (d === null) return null;
-  return d.getUTCFullYear() === 2023 ? "Padmawati Enterprises" : "Greenberg Enterprises";
+  return d.getUTCFullYear() === 2023 ? "Sample Traders" : "Greenberg Enterprises";
 }

@@ -173,8 +173,8 @@ describe("scoreExtraction", () => {
   it("compares scalar expectMeta fields case-insensitively and reports mismatches", () => {
     const meta: DocMeta = {
       clientName: null,
-      projectName: "COMMERCIAL UNIT, EXPORIO BUILDING, LUCKNOW, UP",
-      attention: "yamini sharma", // model returned lowercase — should still match
+      projectName: "COMMERCIAL UNIT, LAKEVIEW LABS BUILDING, LUCKNOW, UP",
+      attention: "yara northwind", // model returned lowercase — should still match
       docDateISO: "2025-12-26",
       revision: "02",
       sourceEntityGuess: "Greenberg Enterprises",
@@ -189,7 +189,7 @@ describe("scoreExtraction", () => {
       labeledPages: [1],
       expectedLines: [],
       expectMeta: {
-        attention: "Yamini Sharma",
+        attention: "Yara Northwind",
         docKind: "proposal",
         grandTotalRupees: 83909.8,
       },

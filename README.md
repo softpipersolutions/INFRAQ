@@ -43,7 +43,7 @@ Create an enquiry from the UI; a priced draft (v1, locked) is generated determin
 ## Source documents
 
 - `pebble-v1-module-02-estimate-crafting-space.html` — Module 02 technical spec (data model A.01–A.08, engines B.01–B.03, Format A/B, 14-event audit trail).
-- `Amitabh Fire Safety BOQ Data/` — 145 historical Greenberg proposals (2022–2026) used to seed masters and power "what did we quote before?" retrieval.
+- `proposal-corpus/` — 145 historical Greenberg proposals (2022–2026) used to seed masters and power "what did we quote before?" retrieval.
 
 ---
 

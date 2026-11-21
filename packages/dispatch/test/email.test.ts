@@ -23,8 +23,8 @@ describe("createEmailProvider", () => {
   });
 
   it("reads the default from address from DISPATCH_EMAIL_FROM", () => {
-    const provider = createEmailProvider({ DISPATCH_EMAIL_FROM: "ops@greenberg.co.in" });
-    expect((provider as StubEmailProvider).defaultFrom).toBe("ops@greenberg.co.in");
+    const provider = createEmailProvider({ DISPATCH_EMAIL_FROM: "ops@greenberg.example" });
+    expect((provider as StubEmailProvider).defaultFrom).toBe("ops@greenberg.example");
   });
 
   it("falls back to the Greenberg default from address", () => {

@@ -9,7 +9,7 @@ import {
 
 const COMPLETE: ExtractedFields = {
   clientName: "Acme Retail",
-  projectName: "Hazratganj Mall",
+  projectName: "Contoso Ganj Mall",
   buildingType: "Commercial",
   floorsAbove: 4,
   floorAreaSqm: 450,
@@ -36,13 +36,13 @@ describe("buildSessionStateBlock", () => {
 
   it("mid capture: reflects confirmed, proposed and still-needed splits", () => {
     let s = initSlotState();
-    s = applyExtracted(s, { clientName: "Acme Retail", projectName: "Hazratganj Mall" });
+    s = applyExtracted(s, { clientName: "Acme Retail", projectName: "Contoso Ganj Mall" });
     s = confirmAllProposed(s);
     s = applyExtracted(s, { buildingType: "Commercial" });
 
     const block = buildSessionStateBlock({ slotState: s, enquiryId: null, contradictions: 1 });
     expect(block).toContain("Captured: 2/8 required fields confirmed.");
-    expect(block).toContain("Confirmed: clientName=Acme Retail, projectName=Hazratganj Mall");
+    expect(block).toContain("Confirmed: clientName=Acme Retail, projectName=Contoso Ganj Mall");
     expect(block).toContain("Proposed (awaiting user yes): buildingType=Commercial");
     expect(block).toContain("Still needed (required): floorsAbove, floorAreaSqm, systemsRequired, makePreference, projectTier");
     expect(block).toContain("Contradictions logged this session: 1");

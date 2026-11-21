@@ -9,7 +9,7 @@ describe("PDF_EXTRACT_PROMPT_VERSION", () => {
 
 describe("buildDocMetaPrompt", () => {
   const hints = {
-    filename: "FF-149 Experio Unit Fire Sprinkler System & FAS (26122025 R2).pdf",
+    filename: "FF-149 Lakeview Labs Unit Fire Sprinkler System & FAS (26122025 R2).pdf",
     parsedFileRef: "FF-149",
     parsedDateISO: "2025-12-26",
     parsedRevision: "R2",
@@ -26,7 +26,7 @@ describe("buildDocMetaPrompt", () => {
   it("names the two known letterhead entities", () => {
     const prompt = buildDocMetaPrompt(hints);
     expect(prompt).toContain("Greenberg Enterprises");
-    expect(prompt).toContain("Padmawati Enterprises");
+    expect(prompt).toContain("Sample Traders");
   });
 
   it("prefers the printed date over the filename", () => {

@@ -26,7 +26,7 @@ import {
  *    documents layer only *sums per section for display* and *formats* — it
  *    trusts `totals.totalSitcPaise` / `gstPaise` / `grandTotalPaise` verbatim.
  *  - **The letterhead is editable config, not a hard-coded constant.** The 2023
- *    corpus was issued under the predecessor entity "Padmawati Enterprises", so
+ *    corpus was issued under the predecessor entity "Sample Traders", so
  *    every company/bank/T&C/signatory field lives in `CompanyConfig`. We ship
  *    sensible Greenberg defaults (`DEFAULT_COMPANY`) but callers may override.
  *  - **Split output modes are anticipated but not built.** Some jobs issue
@@ -38,7 +38,7 @@ import {
 /** Output modes the template is structured to support. v1 renders `"combined"`. */
 export type FormatAMode = "combined" | "supplyOnly" | "labour";
 
-/** Bank / payment block — appears in the letterhead footer (HDFC from 2024+). */
+/** Bank / payment block — appears in the letterhead footer (bank from 2024+). */
 export interface BankDetails {
   bankName: string;
   accountName: string;
@@ -149,13 +149,9 @@ export interface FormatAInput {
 // ─── Company defaults ───────────────────────────────────────────────────────
 
 /**
- * Greenberg house defaults — the *real* letterhead of the current legal entity.
- *
- * Sources (2026-07): GST Registration Certificate Form REG-06 (GSTIN, legal
- * name, principal place of business; effective 15/06/2025) and the official
- * company letterhead (brand marks, tagline, contact block). Bank block carried
- * from the latest issued proposals (FF-149, Dec 2025). Every field remains
- * overridable via `CompanyConfig` (see the entity-rename note above).
+ * Greenberg house defaults — a synthetic letterhead with placeholder contact,
+ * GSTIN, bank and signatory details (sanitized for the public archive). Every
+ * field remains overridable via `CompanyConfig` (see the entity-rename note above).
  */
 export const DEFAULT_COMPANY: CompanyConfig = {
   name: "Greenberg Engineering Private Limited",
@@ -163,23 +159,22 @@ export const DEFAULT_COMPANY: CompanyConfig = {
   logoDataUri: GREENBERG_MONOGRAM_DATA_URI,
   wordmarkDataUri: GREENBERG_WORDMARK_DATA_URI,
   addressLines: [
-    "5/178, Vikas Nagar Thana Road, Vikas Nagar",
-    "Lucknow, Uttar Pradesh 226022",
+    "Plot 12, Sample Industrial Area, Phase II",
+    "Lucknow, Uttar Pradesh 226000",
   ],
-  gstin: "09AAMCG0423A1Z3",
-  phone: "+91 9555 820 193",
-  email: "greenberg.connect@gmail.com",
-  website: "www.greenberg.engineering",
+  gstin: "09AAAAA0000A1Z5",
+  phone: "+91 0000 000 000",
+  email: "office@greenberg.example",
+  website: "www.greenberg.example",
   bank: {
-    bankName: "HDFC Bank",
+    bankName: "Example Bank",
     accountName: "Greenberg Enterprises",
-    accountNumber: "50200078849625",
-    ifsc: "HDFC0004492",
-    branch: "Vikas Nagar, Lucknow",
+    accountNumber: "000000000000",
+    ifsc: "EXMP0000000",
+    branch: "Sample Branch, Lucknow",
   },
-  signatoryName: "Devansh Gulati",
-  signatoryCredentials:
-    "IDip NEBOSH (M.Tech Env) | BV Certified IMS (9001, 14001, 18001) Internal Auditor | UK NFPA CFPS Trained",
+  signatoryName: "A. Sample",
+  signatoryCredentials: "Fire Safety Engineer",
   termsAndConditions: DEFAULT_TERMS(),
 };
 

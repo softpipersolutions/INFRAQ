@@ -187,7 +187,7 @@ describe("sequences → business ids", () => {
 describe("enquiry repository", () => {
   const input: EnquiryInput = {
     clientName: "Acme Retail Pvt Ltd",
-    projectName: "Hazratganj Mall",
+    projectName: "Contoso Ganj Mall",
     buildingType: "Commercial",
     floorsAbove: 4,
     floorAreaSqm: 450,

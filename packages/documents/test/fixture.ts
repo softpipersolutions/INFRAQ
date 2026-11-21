@@ -180,9 +180,9 @@ export function fixtureInput(overrides: { attention?: string } = {}): FormatAInp
     dateISO: "2026-07-18",
     validityDays: 7,
     project: {
-      clientName: "Phoenix Mills Ltd",
-      projectName: "Phoenix Marketplace Mall, Gomti Nagar",
-      clientEmail: "projects@phoenixmills.example",
+      clientName: "Woodgrove Retail Ltd",
+      projectName: "Woodgrove Marketplace Mall, Riverside Nagar",
+      clientEmail: "projects@woodgroveretail.example",
       clientPhone: "+91 90000 11111",
       buildingType: "Commercial",
       applicableStandard: "IS",

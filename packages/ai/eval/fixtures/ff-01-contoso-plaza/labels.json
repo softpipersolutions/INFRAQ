@@ -1,11 +1,11 @@
 {
-  "sourceFile": "Amitabh Fire Safety BOQ Data/FF-01 Shri Narayan Plaza - SITC Active Fire Fighting (21092022 R0).pdf",
+  "sourceFile": "proposal-corpus/FF-01 Contoso Plaza - SITC Active Fire Fighting (21092022 R0).pdf",
   "totalPages": 3,
   "labeledPages": [1, 2, 3],
   "notes": "Earliest-era (2022) proposal. No GSTIN printed on the letterhead (later docs add it). Rate column header is only 'Unit Price' (no '(SITC)' qualifier like later docs), but every line description is prefixed 'SITC' and the title is 'Supply, Installation, Testing & Commissioning (SITC)', so rateKind ground truth is SITC. Note the Two-Way Valve row on page 1 is mis-numbered '4' instead of 'A7' in the printed Sl. No. column (not labeled here).",
   "expectMeta": {
-    "attention": "Mr. Agarwaal",
-    "projectName": "Narayan Plaza, CP-65, Lucknow - Sitapur Rd, SBI Colony, Sector E, Aliganj, Lucknow, Uttar Pradesh 226018",
+    "attention": "Mr. Proseware",
+    "projectName": "Contoso Plaza, Lucknow - Alpine Rd, Hillcrest Colony, Woodgrove Ganj, Lucknow, Uttar Pradesh 226000",
     "docDateISO": "2022-09-21",
     "revision": "00",
     "sourceEntityGuess": "Greenberg Enterprises",

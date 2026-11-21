@@ -3,9 +3,9 @@ import { docMetaSchema, extractedLineSchema, pageLinesSchema } from "../src/inde
 
 function validDocMeta() {
   return {
-    clientName: "Yamini Sharma",
-    projectName: "COMMERCIAL UNIT, EXPORIO BUILDING, LUCKNOW, UP",
-    attention: "Yamini Sharma",
+    clientName: "Yara Northwind",
+    projectName: "COMMERCIAL UNIT, LAKEVIEW LABS BUILDING, LUCKNOW, UP",
+    attention: "Yara Northwind",
     docDateISO: "2025-12-26",
     revision: "02",
     sourceEntityGuess: "Greenberg Enterprises",

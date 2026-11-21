@@ -1,7 +1,7 @@
 #!/usr/bin/env -S npx tsx
 /**
  * Phase B backfill driver — pushes the historical corpus
- * ("Amitabh Fire Safety BOQ Data/" at the repo root: 142 PDF + 3 XLSX) through
+ * ("proposal-corpus/" at the repo root: 142 PDF + 3 XLSX) through
  * the ingestion pipeline. Three modes, one per stage of the rollout:
  *
  *   --upload   Upload the local corpus to gs://$INGEST_GCS_BUCKET/corpus/<filename>
@@ -48,7 +48,7 @@ import { ingestSourceDocument } from "../src/ingest/pipeline";
 import type { IngestReport } from "../src/ingest/pipeline";
 import { createStorage } from "../src/storage";
 
-const CORPUS_DIR_NAME = "Amitabh Fire Safety BOQ Data";
+const CORPUS_DIR_NAME = "proposal-corpus";
 const CORPUS_PREFIX = "corpus/";
 
 // ─── CLI parsing ────────────────────────────────────────────────────────────

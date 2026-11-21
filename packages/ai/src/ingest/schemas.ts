@@ -44,7 +44,7 @@ export const docMetaSchema = z.object({
   /** Printed document date, formatted YYYY-MM-DD. Null if no date is printed. */
   docDateISO: z.string().regex(ISO_DATE_RE, "docDateISO must be YYYY-MM-DD").nullable(),
   revision: z.string().nullable(),
-  /** Letterhead / issuing entity, e.g. "Greenberg Enterprises", "Padmawati Enterprises". */
+  /** Letterhead / issuing entity, e.g. "Greenberg Enterprises", "Sample Traders". */
   sourceEntityGuess: z.string().nullable(),
   docKind: z.enum(DOC_KINDS),
   /** Every fire-safety system named anywhere in the document, free text. */

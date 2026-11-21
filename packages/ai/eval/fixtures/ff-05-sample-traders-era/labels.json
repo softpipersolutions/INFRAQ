@@ -1,14 +1,14 @@
 {
-  "sourceFile": "Amitabh Fire Safety BOQ Data/FF-05 PSPL Lucknow Distilled Water Plant - SITC FireFighting (25022023 R2).pdf",
+  "sourceFile": "proposal-corpus/FF-05 Fabrikam Lucknow Distilled Water Plant - SITC FireFighting (25022023 R2).pdf",
   "totalPages": 4,
   "labeledPages": [1, 2, 3, 4],
-  "notes": "2023-era proposal issued on the PADMAWATI ENTERPRISES letterhead (GSTIN 09AOWPP9824K1ZS, Indira Nagar address, email gulatidevansh@gmail.com) rather than Greenberg Enterprises - so sourceEntityGuess is Padmawati Enterprises. Rate column header is only 'Unit Price'; rateKind SITC is asserted only for lines whose description is explicitly prefixed 'SITC' and omitted for non-SITC-prefixed lines (F1 fire extinguisher, G1 signage). Section F fire extinguishers are all printed at qty 0 (provisioned but not ordered); F1 is match-gated on its printed unit rate 5500 with qty intentionally omitted.",
+  "notes": "2023-era proposal issued on the SAMPLE TRADERS letterhead (GSTIN 09CCCCC0000C1Z5, Sample Nagar address, email owner@sampletraders.example) rather than Greenberg Enterprises - so sourceEntityGuess is Sample Traders. Rate column header is only 'Unit Price'; rateKind SITC is asserted only for lines whose description is explicitly prefixed 'SITC' and omitted for non-SITC-prefixed lines (F1 fire extinguisher, G1 signage). Section F fire extinguishers are all printed at qty 0 (provisioned but not ordered); F1 is match-gated on its printed unit rate 5500 with qty intentionally omitted.",
   "expectMeta": {
-    "attention": "Arch. Sumit",
-    "projectName": "PSPL Lucknow Distilled Water Plant (POCT), Nadarganj Industrial Area, Lucknow - UP",
+    "attention": "Arch. Steven",
+    "projectName": "Fabrikam Lucknow Distilled Water Plant (Tailspin), Woodgrove Ganj Industrial Area, Lucknow - UP",
     "docDateISO": "2023-02-25",
     "revision": "02",
-    "sourceEntityGuess": "Padmawati Enterprises",
+    "sourceEntityGuess": "Sample Traders",
     "docKind": "proposal",
     "gstMentioned": true,
     "grandTotalRupees": 1857410.86

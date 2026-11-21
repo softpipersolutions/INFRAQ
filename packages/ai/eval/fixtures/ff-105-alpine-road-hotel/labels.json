@@ -1,10 +1,10 @@
 {
-  "sourceFile": "Amitabh Fire Safety BOQ Data/FF-105 Vipin Agarwal IIM Road Hotel (08122024 R1).pdf",
+  "sourceFile": "proposal-corpus/FF-105 Victor Proseware Alpine Road Hotel (08122024 R1).pdf",
   "totalPages": 6,
   "labeledPages": [1, 2, 3, 4, 5],
   "expectMeta": {
-    "attention": "Mr. Vipin Agarwaal",
-    "projectName": "VIPIN AGARWAL HOTEL, IIM ROAD, LUCKNOW, U.P. -226020",
+    "attention": "Mr. Victor Proseware",
+    "projectName": "VICTOR PROSEWARE HOTEL, ALPINE ROAD, LUCKNOW, U.P. -226000",
     "docDateISO": "2024-12-08",
     "revision": "01",
     "sourceEntityGuess": "Greenberg Enterprises",

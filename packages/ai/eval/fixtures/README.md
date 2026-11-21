@@ -9,7 +9,7 @@ single `labels.json` file.
 `../../src/ingest/eval-score.ts`) plus two harness-only fields:
 
 - `sourceFile` (required): the labeled PDF's path, **relative to the repo
-  root** (e.g. `"Amitabh Fire Safety BOQ Data/FF-149 ... .pdf"`). The harness
+  root** (e.g. `"proposal-corpus/FF-149 ... .pdf"`). The harness
   resolves this against the repo root it discovers by walking up from this
   file looking for `pnpm-workspace.yaml`.
 - `totalPages` (optional): the document's real page count. The harness sends
@@ -51,12 +51,12 @@ single `labels.json` file.
 
 ```json
 {
-  "sourceFile": "Amitabh Fire Safety BOQ Data/FF-149 Experio Unit Fire Sprinkler System & FAS (26122025 R2).pdf",
+  "sourceFile": "proposal-corpus/FF-149 Lakeview Labs Unit Fire Sprinkler System & FAS (26122025 R2).pdf",
   "totalPages": 2,
   "labeledPages": [1],
   "expectMeta": {
-    "attention": "Yamini Sharma",
-    "projectName": "COMMERCIAL UNIT, EXPORIO BUILDING, LUCKNOW, UP",
+    "attention": "Yara Northwind",
+    "projectName": "COMMERCIAL UNIT, LAKEVIEW LABS BUILDING, LUCKNOW, UP",
     "docDateISO": "2025-12-26",
     "revision": "02",
     "sourceEntityGuess": "Greenberg Enterprises",
@@ -81,13 +81,13 @@ single `labels.json` file.
 }
 ```
 
-See `ff-149-experio/labels.json` for the complete, real fixture this example
+See `ff-149-lakeview-labs/labels.json` for the complete, real fixture this example
 is drawn from (11 hand-labeled line items across two BOQ sections on page 1
 of a real Greenberg proposal).
 
 ## Adding a fixture
 
-1. Pick a source PDF from `Amitabh Fire Safety BOQ Data/` and read the pages
+1. Pick a source PDF from `proposal-corpus/` and read the pages
    you intend to label (the `pdf` skill / `pypdf`/`pdfplumber` are fine for
    spot-checking what a human would see — the eval itself always calls the
    real Gemini model, never these tools).

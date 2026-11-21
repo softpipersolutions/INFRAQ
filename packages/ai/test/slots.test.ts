@@ -21,7 +21,7 @@ describe("slot-filling state machine", () => {
 
   it("extraction proposes values and advances the next question", () => {
     let s = initSlotState();
-    s = applyExtracted(s, { clientName: "Acme Retail", projectName: "Hazratganj Mall" });
+    s = applyExtracted(s, { clientName: "Acme Retail", projectName: "Contoso Ganj Mall" });
     expect(s.clientName.status).toBe("proposed");
     const action = nextAction(s);
     // clientName and projectName proposed → next missing required is buildingType
@@ -33,7 +33,7 @@ describe("slot-filling state machine", () => {
     let s = initSlotState();
     s = applyExtracted(s, {
       clientName: "Acme Retail",
-      projectName: "Hazratganj Mall",
+      projectName: "Contoso Ganj Mall",
       buildingType: "Commercial",
       floorsAbove: 4,
       floorAreaSqm: 450,
@@ -49,7 +49,7 @@ describe("slot-filling state machine", () => {
     let s = initSlotState();
     s = applyExtracted(s, {
       clientName: "Acme Retail",
-      projectName: "Hazratganj Mall",
+      projectName: "Contoso Ganj Mall",
       buildingType: "Commercial",
       floorsAbove: 4,
       floorAreaSqm: 450,

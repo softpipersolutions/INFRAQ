@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "Pebble — Estimate Crafting Space | Greenberg Engineering",
   description:
     "Fire-safety BOQ & estimate platform by Greenberg Engineering — agentic intake, deterministic pricing, audited dispatch.",
-  metadataBase: new URL("https://pebble-web-4xnkcvcksa-el.a.run.app"),
+  metadataBase: new URL("https://pebble.greenberg.example"),
   openGraph: {
     title: "Pebble — Estimate Crafting Space | Greenberg Engineering",
     description:

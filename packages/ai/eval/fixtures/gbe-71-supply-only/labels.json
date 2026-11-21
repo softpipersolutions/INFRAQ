@@ -1,10 +1,10 @@
 {
-  "sourceFile": "Amitabh Fire Safety BOQ Data/GBE-71 POCT C7 Fire Protection Systems (25052024 R5) - Supply Only.pdf",
+  "sourceFile": "proposal-corpus/GBE-71 Tailspin C7 Fire Protection Systems (25052024 R5) - Supply Only.pdf",
   "totalPages": 4,
   "labeledPages": [1, 2, 3],
-  "notes": "SUPPLY-ONLY variant. The rate column header on every page is 'Unit Price (Supply Only)' and the title says 'Supply Only', so rateKind is SUPPLY for ALL lines even though each line description is still prefixed 'SITC' (the SITC wording is boilerplate carried over from the full-scope quote; the column header is what classifies the rate). Letterhead entity is Greenberg Enterprises (GSTIN 09AAYFG9587A1ZM); the CLIENT is Q-Line Healthcare Pvt. Ltd. clientName/projectName omitted (long client string, exact-match risk). grandTotalRupees omitted: the document prints two separate section totals (Part I 'Total with GST' 2722346.13 and Part II 'Total with GST' 368685.10) but no single combined grand total. Page 4 has no line items.",
+  "notes": "SUPPLY-ONLY variant. The rate column header on every page is 'Unit Price (Supply Only)' and the title says 'Supply Only', so rateKind is SUPPLY for ALL lines even though each line description is still prefixed 'SITC' (the SITC wording is boilerplate carried over from the full-scope quote; the column header is what classifies the rate). Letterhead entity is Greenberg Enterprises (GSTIN 09BBBBB0000B1Z5); the CLIENT is Northwind Healthcare Pvt. Ltd. clientName/projectName omitted (long client string, exact-match risk). grandTotalRupees omitted: the document prints two separate section totals (Part I 'Total with GST' 2722346.13 and Part II 'Total with GST' 368685.10) but no single combined grand total. Page 4 has no line items.",
   "expectMeta": {
-    "attention": "Mr. Amit",
+    "attention": "Mr. Alan",
     "docDateISO": "2024-05-25",
     "revision": "05",
     "sourceEntityGuess": "Greenberg Enterprises",
