@@ -1,0 +1,10 @@
+[
+ {"materialCode": "SPR-PIPE-050", "makeCode": "SPR-PIPE-050-JIN", "buyingRatePaise": 55745, "sellingRatePaise": 71890},
+ {"materialCode": "SPR-PIPE-050", "makeCode": "SPR-PIPE-050-TATA", "buyingRatePaise": 68930, "sellingRatePaise": 86475},
+ {"materialCode": "SPR-PIPE-050", "makeCode": "SPR-PIPE-050-APL", "buyingRatePaise": 48610, "sellingRatePaise": 61225},
+ {"materialCode": "SPR-PIPE-050", "makeCode": "SPR-PIPE-050-SUR", "buyingRatePaise": 53980, "sellingRatePaise": 59340},
+ {"materialCode": "SPR-VALVE-001", "makeCode": "SPR-VALVE-001-TYCO", "buyingRatePaise": 3462500, "sellingRatePaise": 4398000},
+ {"materialCode": "SPR-VALVE-001", "makeCode": "SPR-VALVE-001-VIK", "buyingRatePaise": 4871250, "sellingRatePaise": 6064500},
+ {"materialCode": "SPR-VALVE-001", "makeCode": "SPR-VALVE-001-ZOL", "buyingRatePaise": 2986000, "sellingRatePaise": 3772500},
+ {"materialCode": "HYD-PIPE-100", "makeCode": "HYD-PIPE-100-SWT", "buyingRatePaise": 94215, "sellingRatePaise": 113640}
+]

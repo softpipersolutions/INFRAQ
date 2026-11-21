@@ -1,0 +1,5 @@
+{
+ "enquiryId": "GBE-ENQ-2026-004",
+ "approvedBrands": {"Extinguisher": ["Safe Pro", "Ceasefire", "Elitech"]},
+ "sameBrand": [["EXT-ABC-001", "EXT-CO2-001", "EXT-WCO2-001"]]
+}

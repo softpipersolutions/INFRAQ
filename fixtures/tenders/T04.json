@@ -1,0 +1,6258 @@
+{
+ "tenderId": "TND-2026-0104",
+ "issuedOn": "2026-01-14",
+ "client": "Contoso Hospitality Pvt Ltd",
+ "project": "Contoso Inn, Sector 9 - fire alarm and hydrant",
+ "contact": "purchase@contoso-hospitality.example",
+ "enquiry": {
+  "buildingType": "Commercial",
+  "floorsAbove": 5,
+  "floorAreaSqm": 640,
+  "systemsRequired": [
+   "FAS",
+   "Hydrant"
+  ],
+  "makePreference": "Premium",
+  "applicableStandard": "IS",
+  "projectTier": 2
+ },
+ "terms": {
+  "approvedBrands": {
+   "Detector": [
+    "Honeywell (UL)",
+    "Agni",
+    "Notifier"
+   ],
+   "Panel": [
+    "Honeywell (UL)",
+    "Agni",
+    "Notifier"
+   ],
+   "Pump": [
+    "M/s Kirloskar",
+    "Grundfos",
+    "Mather & Platt"
+   ],
+   "Pipe": [
+    "Make - Jindal (ISI)",
+    "Tata",
+    "Surya"
+   ],
+   "Valve": [
+    "ISI Marked Zoloto",
+    "Kartar Valves",
+    "HD Fire Protect"
+   ]
+  },
+  "sameBrand": [
+   [
+    "FAS-SMK-001",
+    "FAS-HEAT-001",
+    "FAS-MSD-001",
+    "FAS-PANEL-002",
+    "FAS-RPT-001",
+    "FAS-MCP-001",
+    "FAS-HOOT-001",
+    "FAS-CM-001",
+    "FAS-MM-001",
+    "FAS-ISO-001",
+    "FAS-RI-001"
+   ],
+   [
+    "FAS-CABLE-001",
+    "FAS-CABLE-025"
+   ],
+   [
+    "HYD-PIPE-080",
+    "HYD-PIPE-100",
+    "HYD-PIPE-150"
+   ],
+   [
+    "HYD-LV-001",
+    "HYD-GV-100",
+    "HYD-YH-001",
+    "HYD-BFV-150",
+    "HYD-NRV-150",
+    "HYD-FBC-001"
+   ],
+   [
+    "HYD-HOSE-001",
+    "HYD-NOZ-001",
+    "HYD-HR-001",
+    "HYD-HB-001"
+   ],
+   [
+    "HYD-PUMP-MAIN",
+    "HYD-PUMP-JOCKEY"
+   ]
+  ],
+  "budgetCapPaise": 695000000
+ },
+ "snapshot": {
+  "materials": [
+   {
+    "materialCode": "FAS-SMK-001",
+    "materialName": "Addressable Photoelectric Smoke Detector",
+    "systemType": "FAS",
+    "category": "Detector",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "FAS-HEAT-001",
+    "materialName": "Addressable Heat Detector (RoR + fixed 57°C)",
+    "systemType": "FAS",
+    "category": "Detector",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "FAS-MSD-001",
+    "materialName": "Multi-Criteria Detector (optical + heat)",
+    "systemType": "FAS",
+    "category": "Detector",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "FAS-BEAM-001",
+    "materialName": "Reflective Optical Beam Detector 100m",
+    "systemType": "FAS",
+    "category": "Detector",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "FAS-PANEL-002",
+    "materialName": "Addressable Fire Alarm Panel (2-loop)",
+    "systemType": "FAS",
+    "category": "Panel",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "FAS-PANEL-004",
+    "materialName": "Addressable Fire Alarm Panel (4-loop, networkable)",
+    "systemType": "FAS",
+    "category": "Panel",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "FAS-RPT-001",
+    "materialName": "Repeater Panel (LCD)",
+    "systemType": "FAS",
+    "category": "Panel",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "FAS-MCP-001",
+    "materialName": "Addressable Manual Call Point",
+    "systemType": "FAS",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "FAS-HOOT-001",
+    "materialName": "Addressable Hooter cum Strobe",
+    "systemType": "FAS",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "FAS-CM-001",
+    "materialName": "Addressable Control Module",
+    "systemType": "FAS",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "FAS-MM-001",
+    "materialName": "Addressable Monitor Module",
+    "systemType": "FAS",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "FAS-ISO-001",
+    "materialName": "Loop Fault Isolator Module",
+    "systemType": "FAS",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "FAS-RI-001",
+    "materialName": "Response Indicator",
+    "systemType": "FAS",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "FAS-CABLE-001",
+    "materialName": "FRLS Armoured Cable 2C x 1.5 sqmm",
+    "systemType": "FAS",
+    "category": "Cable",
+    "unitOfMeasure": "Metre",
+    "active": true
+   },
+   {
+    "materialCode": "FAS-CABLE-025",
+    "materialName": "FRLS Armoured Cable 2C x 2.5 sqmm",
+    "systemType": "FAS",
+    "category": "Cable",
+    "unitOfMeasure": "Metre",
+    "active": true
+   },
+   {
+    "materialCode": "FAS-BATT-001",
+    "materialName": "SMF Standby Battery 12V 26Ah",
+    "systemType": "FAS",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-PIPE-080",
+    "materialName": "MS ERW Pipe 80mm (C-Class)",
+    "systemType": "Hydrant",
+    "category": "Pipe",
+    "unitOfMeasure": "Metre",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-PIPE-100",
+    "materialName": "MS ERW Pipe 100mm (C-Class)",
+    "systemType": "Hydrant",
+    "category": "Pipe",
+    "unitOfMeasure": "Metre",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-PIPE-150",
+    "materialName": "MS ERW Pipe 150mm (C-Class)",
+    "systemType": "Hydrant",
+    "category": "Pipe",
+    "unitOfMeasure": "Metre",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-LV-001",
+    "materialName": "Single Headed Landing Valve 63mm (Gunmetal)",
+    "systemType": "Hydrant",
+    "category": "Valve",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-GV-100",
+    "materialName": "Sluice Valve 100mm (CI, PN16)",
+    "systemType": "Hydrant",
+    "category": "Valve",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-YH-001",
+    "materialName": "Double Headed Yard Hydrant Valve",
+    "systemType": "Hydrant",
+    "category": "Valve",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-BFV-150",
+    "materialName": "Butterfly Valve 150mm (PN16)",
+    "systemType": "Hydrant",
+    "category": "Valve",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-NRV-150",
+    "materialName": "Non-Return Valve 150mm (Dual Plate)",
+    "systemType": "Hydrant",
+    "category": "Valve",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-HOSE-001",
+    "materialName": "RRL Fire Hose 63mm x 15m (Type A)",
+    "systemType": "Hydrant",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-NOZ-001",
+    "materialName": "Branch Pipe with Nozzle 63mm",
+    "systemType": "Hydrant",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-HR-001",
+    "materialName": "First-Aid Hose Reel 30m x 19mm",
+    "systemType": "Hydrant",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-HB-001",
+    "materialName": "Hose Box (MS, double door)",
+    "systemType": "Hydrant",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-FBC-001",
+    "materialName": "Fire Brigade Inlet Connection (4-way)",
+    "systemType": "Hydrant",
+    "category": "Fitting",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-PUMP-MAIN",
+    "materialName": "Main Electric Fire Pump 2280 LPM @ 88m",
+    "systemType": "Hydrant",
+    "category": "Pump",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-PUMP-JOCKEY",
+    "materialName": "Jockey Pump 180 LPM @ 88m",
+    "systemType": "Hydrant",
+    "category": "Pump",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-PUMP-DIESEL",
+    "materialName": "Diesel Engine Driven Fire Pump 2280 LPM",
+    "systemType": "Hydrant",
+    "category": "Pump",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "HYD-PS-001",
+    "materialName": "Pressure Switch (pump start)",
+    "systemType": "Hydrant",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "SPR-HEAD-PEN",
+    "materialName": "Pendent Sprinkler 68°C K80 15mm",
+    "systemType": "Sprinkler",
+    "category": "Fitting",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "SPR-HEAD-UPR",
+    "materialName": "Upright Sprinkler 68°C K80 15mm",
+    "systemType": "Sprinkler",
+    "category": "Fitting",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "SPR-HEAD-SW",
+    "materialName": "Horizontal Sidewall Sprinkler 68°C",
+    "systemType": "Sprinkler",
+    "category": "Fitting",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "SPR-PIPE-025",
+    "materialName": "MS ERW Pipe 25mm (C-Class)",
+    "systemType": "Sprinkler",
+    "category": "Pipe",
+    "unitOfMeasure": "Metre",
+    "active": true
+   },
+   {
+    "materialCode": "SPR-PIPE-032",
+    "materialName": "MS ERW Pipe 32mm (C-Class)",
+    "systemType": "Sprinkler",
+    "category": "Pipe",
+    "unitOfMeasure": "Metre",
+    "active": true
+   },
+   {
+    "materialCode": "SPR-PIPE-050",
+    "materialName": "MS ERW Pipe 50mm (C-Class)",
+    "systemType": "Sprinkler",
+    "category": "Pipe",
+    "unitOfMeasure": "Metre",
+    "active": true
+   },
+   {
+    "materialCode": "SPR-ACV-150",
+    "materialName": "Alarm Check Valve 150mm (wet)",
+    "systemType": "Sprinkler",
+    "category": "Valve",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "SPR-ICV-100",
+    "materialName": "Floor Control Valve Assembly 100mm",
+    "systemType": "Sprinkler",
+    "category": "Valve",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "SPR-FS-001",
+    "materialName": "Water Flow Switch (vane type)",
+    "systemType": "Sprinkler",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "SPR-ITC-001",
+    "materialName": "Inspector's Test and Drain Assembly 25mm",
+    "systemType": "Sprinkler",
+    "category": "Fitting",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "SPR-CAB-001",
+    "materialName": "Spare Sprinkler Cabinet (12 heads + wrench)",
+    "systemType": "Sprinkler",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "EXT-ABC-004",
+    "materialName": "ABC Dry Powder Extinguisher 4kg (MAP 90)",
+    "systemType": "Extinguisher",
+    "category": "Extinguisher",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "EXT-ABC-006",
+    "materialName": "ABC Dry Powder Extinguisher 6kg (MAP 90)",
+    "systemType": "Extinguisher",
+    "category": "Extinguisher",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "EXT-ABC-009",
+    "materialName": "ABC Dry Powder Extinguisher 9kg (MAP 90)",
+    "systemType": "Extinguisher",
+    "category": "Extinguisher",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "EXT-CO2-002",
+    "materialName": "CO2 Extinguisher 2kg",
+    "systemType": "Extinguisher",
+    "category": "Extinguisher",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "EXT-CO2-045",
+    "materialName": "CO2 Extinguisher 4.5kg",
+    "systemType": "Extinguisher",
+    "category": "Extinguisher",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "EXT-CO2-009",
+    "materialName": "CO2 Extinguisher 9kg (trolley)",
+    "systemType": "Extinguisher",
+    "category": "Extinguisher",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "EXT-WCO2-009",
+    "materialName": "Water-CO2 Extinguisher 9L",
+    "systemType": "Extinguisher",
+    "category": "Extinguisher",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "EXT-FOAM-009",
+    "materialName": "Mechanical Foam Extinguisher 9L (AFFF)",
+    "systemType": "Extinguisher",
+    "category": "Extinguisher",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "EXT-STAND-001",
+    "materialName": "MS Extinguisher Stand (2-unit)",
+    "systemType": "Extinguisher",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "EXT-BKT-001",
+    "materialName": "Fire Bucket Stand with 4 Buckets",
+    "systemType": "Extinguisher",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "EXT-SIGN-001",
+    "materialName": "Photoluminescent Extinguisher Location Sign",
+    "systemType": "Extinguisher",
+    "category": "Signage",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "SUP-CLEAN-040",
+    "materialName": "Clean Agent (FK-5-1-12) Cylinder 40L with Valve",
+    "systemType": "Suppression",
+    "category": "Accessory",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "SUP-PANEL-001",
+    "materialName": "Gas Release Control Panel (2-zone)",
+    "systemType": "Suppression",
+    "category": "Panel",
+    "unitOfMeasure": "No.",
+    "active": true
+   },
+   {
+    "materialCode": "SUP-NOZ-001",
+    "materialName": "Discharge Nozzle 360° (brass)",
+    "systemType": "Suppression",
+    "category": "Fitting",
+    "unitOfMeasure": "No.",
+    "active": true
+   }
+  ],
+  "specs": [
+   {
+    "materialCode": "FAS-SMK-001",
+    "applicableStandard": "IS",
+    "rating": "Photoelectric, addressable",
+    "size": null,
+    "certifications": [
+     "IS 2189",
+     "EN 54-7"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "FAS-HEAT-001",
+    "applicableStandard": "IS",
+    "rating": "A1R",
+    "size": null,
+    "certifications": [
+     "IS 2189",
+     "EN 54-5"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "FAS-MSD-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": null,
+    "certifications": [
+     "EN 54-7",
+     "EN 54-5"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "FAS-BEAM-001",
+    "applicableStandard": "NFPA",
+    "rating": "5-100 m",
+    "size": null,
+    "certifications": [
+     "EN 54-12"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "FAS-PANEL-002",
+    "applicableStandard": "IS",
+    "rating": "2 loop, 240V AC",
+    "size": null,
+    "certifications": [
+     "IS 2189",
+     "EN 54-2"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "FAS-PANEL-004",
+    "applicableStandard": "IS",
+    "rating": "4 loop",
+    "size": null,
+    "certifications": [
+     "IS 2189",
+     "EN 54-2",
+     "EN 54-4"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "FAS-RPT-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": null,
+    "certifications": [
+     "EN 54-2"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "FAS-MCP-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": null,
+    "certifications": [
+     "IS 2189",
+     "EN 54-11"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "FAS-HOOT-001",
+    "applicableStandard": "IS",
+    "rating": "24V DC",
+    "size": null,
+    "certifications": [
+     "EN 54-3"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "FAS-CM-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": null,
+    "certifications": [
+     "EN 54-18"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "FAS-MM-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": null,
+    "certifications": [
+     "EN 54-18"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "FAS-ISO-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": null,
+    "certifications": [
+     "EN 54-17"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "FAS-RI-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": null,
+    "certifications": [
+     "IS 2189"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "FAS-CABLE-001",
+    "applicableStandard": "IS",
+    "rating": "FRLS",
+    "size": "2C x 1.5 sqmm",
+    "certifications": [
+     "IS 1554"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "FAS-CABLE-025",
+    "applicableStandard": "IS",
+    "rating": "FRLS",
+    "size": "2C x 2.5 sqmm",
+    "certifications": [
+     "IS 1554"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "FAS-BATT-001",
+    "applicableStandard": "IS",
+    "rating": "12V 26Ah",
+    "size": null,
+    "certifications": [
+     "IS 15549"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-PIPE-080",
+    "applicableStandard": "IS",
+    "rating": "C-Class",
+    "size": "80 mm",
+    "certifications": [
+     "IS 1239"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-PIPE-100",
+    "applicableStandard": "IS",
+    "rating": "C-Class",
+    "size": "100 mm",
+    "certifications": [
+     "IS 1239",
+     "IS 3589"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-PIPE-150",
+    "applicableStandard": "IS",
+    "rating": "C-Class",
+    "size": "150 mm",
+    "certifications": [
+     "IS 3589"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-LV-001",
+    "applicableStandard": "IS",
+    "rating": "63 mm",
+    "size": null,
+    "certifications": [
+     "IS 5290"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-GV-100",
+    "applicableStandard": "IS",
+    "rating": "PN16",
+    "size": "100 mm",
+    "certifications": [
+     "IS 14846"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-YH-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": "63 mm",
+    "certifications": [
+     "IS 5290"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-BFV-150",
+    "applicableStandard": "IS",
+    "rating": "PN16",
+    "size": "150 mm",
+    "certifications": [
+     "IS 13095"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-NRV-150",
+    "applicableStandard": "IS",
+    "rating": "PN16",
+    "size": "150 mm",
+    "certifications": [
+     "IS 5312"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-HOSE-001",
+    "applicableStandard": "IS",
+    "rating": "Type-A",
+    "size": "63 mm x 15 m",
+    "certifications": [
+     "IS 636"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-NOZ-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": "63 mm",
+    "certifications": [
+     "IS 903"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-HR-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": "30 m",
+    "certifications": [
+     "IS 884"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-HB-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": null,
+    "certifications": [],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-FBC-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": "4-way",
+    "certifications": [
+     "IS 904"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-PUMP-MAIN",
+    "applicableStandard": "NBC 2016",
+    "rating": "2280 LPM @ 88m",
+    "size": null,
+    "certifications": [
+     "IS 12469"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-PUMP-JOCKEY",
+    "applicableStandard": "NBC 2016",
+    "rating": "180 LPM @ 88m",
+    "size": null,
+    "certifications": [
+     "IS 12469"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-PUMP-DIESEL",
+    "applicableStandard": "NBC 2016",
+    "rating": "2280 LPM",
+    "size": null,
+    "certifications": [
+     "IS 1520"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "HYD-PS-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": null,
+    "certifications": [],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "SPR-HEAD-PEN",
+    "applicableStandard": "UL Listed",
+    "rating": "68°C, K80",
+    "size": "15 mm",
+    "certifications": [
+     "IS 15105",
+     "UL Listed"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "SPR-HEAD-UPR",
+    "applicableStandard": "UL Listed",
+    "rating": "68°C, K80",
+    "size": "15 mm",
+    "certifications": [
+     "IS 15105",
+     "UL Listed"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "SPR-HEAD-SW",
+    "applicableStandard": "UL Listed",
+    "rating": "68°C",
+    "size": "15 mm",
+    "certifications": [
+     "UL Listed"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "SPR-PIPE-025",
+    "applicableStandard": "IS",
+    "rating": "C-Class",
+    "size": "25 mm",
+    "certifications": [
+     "IS 1239"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "SPR-PIPE-032",
+    "applicableStandard": "IS",
+    "rating": "C-Class",
+    "size": "32 mm",
+    "certifications": [
+     "IS 1239"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "SPR-PIPE-050",
+    "applicableStandard": "IS",
+    "rating": "C-Class",
+    "size": "50 mm",
+    "certifications": [
+     "IS 1239"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "SPR-ACV-150",
+    "applicableStandard": "UL Listed",
+    "rating": "150 mm wet",
+    "size": "150 mm",
+    "certifications": [
+     "UL Listed"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "SPR-ICV-100",
+    "applicableStandard": "UL Listed",
+    "rating": null,
+    "size": "100 mm",
+    "certifications": [
+     "UL Listed"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "SPR-FS-001",
+    "applicableStandard": "UL Listed",
+    "rating": null,
+    "size": null,
+    "certifications": [
+     "UL Listed"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "SPR-ITC-001",
+    "applicableStandard": "UL Listed",
+    "rating": null,
+    "size": "25 mm",
+    "certifications": [],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "SPR-CAB-001",
+    "applicableStandard": "UL Listed",
+    "rating": null,
+    "size": null,
+    "certifications": [],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "EXT-ABC-004",
+    "applicableStandard": "IS",
+    "rating": "4 kg, MAP 90%",
+    "size": "4 kg",
+    "certifications": [
+     "IS 15683"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "EXT-ABC-006",
+    "applicableStandard": "IS",
+    "rating": "6 kg, MAP 90%",
+    "size": "6 kg",
+    "certifications": [
+     "IS 15683"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "EXT-ABC-009",
+    "applicableStandard": "IS",
+    "rating": "9 kg, MAP 90%",
+    "size": "9 kg",
+    "certifications": [
+     "IS 15683"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "EXT-CO2-002",
+    "applicableStandard": "IS",
+    "rating": "2 kg",
+    "size": "2 kg",
+    "certifications": [
+     "IS 15683"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "EXT-CO2-045",
+    "applicableStandard": "IS",
+    "rating": "4.5 kg",
+    "size": "4.5 kg",
+    "certifications": [
+     "IS 15683"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "EXT-CO2-009",
+    "applicableStandard": "IS",
+    "rating": "9 kg",
+    "size": "9 kg",
+    "certifications": [
+     "IS 15683"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "EXT-WCO2-009",
+    "applicableStandard": "IS",
+    "rating": "9 L stored pressure",
+    "size": "9 L",
+    "certifications": [
+     "IS 15683"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "EXT-FOAM-009",
+    "applicableStandard": "IS",
+    "rating": "9 L AFFF",
+    "size": "9 L",
+    "certifications": [
+     "IS 15683"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "EXT-STAND-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": null,
+    "certifications": [],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "EXT-BKT-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": null,
+    "certifications": [
+     "IS 2546"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "EXT-SIGN-001",
+    "applicableStandard": "IS",
+    "rating": null,
+    "size": "200 x 200 mm",
+    "certifications": [
+     "IS 12349"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "SUP-CLEAN-040",
+    "applicableStandard": "UL Listed",
+    "rating": "40 L",
+    "size": "40 L",
+    "certifications": [
+     "UL Listed",
+     "IS 15493"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "SUP-PANEL-001",
+    "applicableStandard": "UL Listed",
+    "rating": "2 zone",
+    "size": null,
+    "certifications": [
+     "EN 12094-1"
+    ],
+    "complianceNotes": null
+   },
+   {
+    "materialCode": "SUP-NOZ-001",
+    "applicableStandard": "UL Listed",
+    "rating": null,
+    "size": null,
+    "certifications": [],
+    "complianceNotes": null
+   }
+  ],
+  "makes": [
+   {
+    "makeCode": "FAS-SMK-001-NOT",
+    "materialCode": "FAS-SMK-001",
+    "brandName": "Notifier",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-SMK-001-HON",
+    "materialCode": "FAS-SMK-001",
+    "brandName": "Honeywell",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-SMK-001-EDW",
+    "materialCode": "FAS-SMK-001",
+    "brandName": "Edwards",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-SMK-001-AGNI",
+    "materialCode": "FAS-SMK-001",
+    "brandName": "Agni Devices",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-SMK-001-RAV",
+    "materialCode": "FAS-SMK-001",
+    "brandName": "Ravel",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-HEAT-001-NOT",
+    "materialCode": "FAS-HEAT-001",
+    "brandName": "Notifier",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-HEAT-001-HON",
+    "materialCode": "FAS-HEAT-001",
+    "brandName": "Honeywell",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-HEAT-001-EDW",
+    "materialCode": "FAS-HEAT-001",
+    "brandName": "Edwards",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-HEAT-001-AGNI",
+    "materialCode": "FAS-HEAT-001",
+    "brandName": "Agni Devices",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-HEAT-001-RAV",
+    "materialCode": "FAS-HEAT-001",
+    "brandName": "Ravel",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-MSD-001-NOT",
+    "materialCode": "FAS-MSD-001",
+    "brandName": "Notifier",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-MSD-001-HON",
+    "materialCode": "FAS-MSD-001",
+    "brandName": "Honeywell",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-MSD-001-EDW",
+    "materialCode": "FAS-MSD-001",
+    "brandName": "Edwards",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-MSD-001-AGNI",
+    "materialCode": "FAS-MSD-001",
+    "brandName": "Agni Devices",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-MSD-001-RAV",
+    "materialCode": "FAS-MSD-001",
+    "brandName": "Ravel",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-BEAM-001-NOT",
+    "materialCode": "FAS-BEAM-001",
+    "brandName": "Notifier",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-BEAM-001-HON",
+    "materialCode": "FAS-BEAM-001",
+    "brandName": "Honeywell",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-BEAM-001-EDW",
+    "materialCode": "FAS-BEAM-001",
+    "brandName": "Edwards",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-BEAM-001-AGNI",
+    "materialCode": "FAS-BEAM-001",
+    "brandName": "Agni Devices",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-BEAM-001-RAV",
+    "materialCode": "FAS-BEAM-001",
+    "brandName": "Ravel",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-PANEL-002-NOT",
+    "materialCode": "FAS-PANEL-002",
+    "brandName": "Notifier",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-PANEL-002-HON",
+    "materialCode": "FAS-PANEL-002",
+    "brandName": "Honeywell",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-PANEL-002-EDW",
+    "materialCode": "FAS-PANEL-002",
+    "brandName": "Edwards",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-PANEL-002-AGNI",
+    "materialCode": "FAS-PANEL-002",
+    "brandName": "Agni Devices",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-PANEL-002-RAV",
+    "materialCode": "FAS-PANEL-002",
+    "brandName": "Ravel",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-PANEL-004-NOT",
+    "materialCode": "FAS-PANEL-004",
+    "brandName": "Notifier",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-PANEL-004-HON",
+    "materialCode": "FAS-PANEL-004",
+    "brandName": "Honeywell",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-PANEL-004-EDW",
+    "materialCode": "FAS-PANEL-004",
+    "brandName": "Edwards",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-PANEL-004-AGNI",
+    "materialCode": "FAS-PANEL-004",
+    "brandName": "Agni Devices",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-PANEL-004-RAV",
+    "materialCode": "FAS-PANEL-004",
+    "brandName": "Ravel",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-RPT-001-NOT",
+    "materialCode": "FAS-RPT-001",
+    "brandName": "Notifier",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-RPT-001-HON",
+    "materialCode": "FAS-RPT-001",
+    "brandName": "Honeywell",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-RPT-001-EDW",
+    "materialCode": "FAS-RPT-001",
+    "brandName": "Edwards",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-RPT-001-AGNI",
+    "materialCode": "FAS-RPT-001",
+    "brandName": "Agni Devices",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-RPT-001-RAV",
+    "materialCode": "FAS-RPT-001",
+    "brandName": "Ravel",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-MCP-001-NOT",
+    "materialCode": "FAS-MCP-001",
+    "brandName": "Notifier",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-MCP-001-HON",
+    "materialCode": "FAS-MCP-001",
+    "brandName": "Honeywell",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-MCP-001-EDW",
+    "materialCode": "FAS-MCP-001",
+    "brandName": "Edwards",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-MCP-001-AGNI",
+    "materialCode": "FAS-MCP-001",
+    "brandName": "Agni Devices",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-MCP-001-RAV",
+    "materialCode": "FAS-MCP-001",
+    "brandName": "Ravel",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-HOOT-001-NOT",
+    "materialCode": "FAS-HOOT-001",
+    "brandName": "Notifier",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-HOOT-001-HON",
+    "materialCode": "FAS-HOOT-001",
+    "brandName": "Honeywell",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-HOOT-001-EDW",
+    "materialCode": "FAS-HOOT-001",
+    "brandName": "Edwards",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-HOOT-001-AGNI",
+    "materialCode": "FAS-HOOT-001",
+    "brandName": "Agni Devices",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-HOOT-001-RAV",
+    "materialCode": "FAS-HOOT-001",
+    "brandName": "Ravel",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-CM-001-NOT",
+    "materialCode": "FAS-CM-001",
+    "brandName": "Notifier",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-CM-001-HON",
+    "materialCode": "FAS-CM-001",
+    "brandName": "Honeywell",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-CM-001-EDW",
+    "materialCode": "FAS-CM-001",
+    "brandName": "Edwards",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-CM-001-AGNI",
+    "materialCode": "FAS-CM-001",
+    "brandName": "Agni Devices",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-CM-001-RAV",
+    "materialCode": "FAS-CM-001",
+    "brandName": "Ravel",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-MM-001-NOT",
+    "materialCode": "FAS-MM-001",
+    "brandName": "Notifier",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-MM-001-HON",
+    "materialCode": "FAS-MM-001",
+    "brandName": "Honeywell",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-MM-001-EDW",
+    "materialCode": "FAS-MM-001",
+    "brandName": "Edwards",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-MM-001-AGNI",
+    "materialCode": "FAS-MM-001",
+    "brandName": "Agni Devices",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-MM-001-RAV",
+    "materialCode": "FAS-MM-001",
+    "brandName": "Ravel",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-ISO-001-NOT",
+    "materialCode": "FAS-ISO-001",
+    "brandName": "Notifier",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-ISO-001-HON",
+    "materialCode": "FAS-ISO-001",
+    "brandName": "Honeywell",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-ISO-001-EDW",
+    "materialCode": "FAS-ISO-001",
+    "brandName": "Edwards",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-ISO-001-AGNI",
+    "materialCode": "FAS-ISO-001",
+    "brandName": "Agni Devices",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-ISO-001-RAV",
+    "materialCode": "FAS-ISO-001",
+    "brandName": "Ravel",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-RI-001-NOT",
+    "materialCode": "FAS-RI-001",
+    "brandName": "Notifier",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-RI-001-HON",
+    "materialCode": "FAS-RI-001",
+    "brandName": "Honeywell",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-RI-001-EDW",
+    "materialCode": "FAS-RI-001",
+    "brandName": "Edwards",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-RI-001-AGNI",
+    "materialCode": "FAS-RI-001",
+    "brandName": "Agni Devices",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-RI-001-RAV",
+    "materialCode": "FAS-RI-001",
+    "brandName": "Ravel",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-CABLE-001-FIN",
+    "materialCode": "FAS-CABLE-001",
+    "brandName": "Finolex",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-CABLE-001-POLY",
+    "materialCode": "FAS-CABLE-001",
+    "brandName": "Polycab",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-CABLE-001-HAV",
+    "materialCode": "FAS-CABLE-001",
+    "brandName": "Havells",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-CABLE-001-KEI",
+    "materialCode": "FAS-CABLE-001",
+    "brandName": "KEI",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-CABLE-001-RR",
+    "materialCode": "FAS-CABLE-001",
+    "brandName": "RR Kabel",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-CABLE-025-FIN",
+    "materialCode": "FAS-CABLE-025",
+    "brandName": "Finolex",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-CABLE-025-POLY",
+    "materialCode": "FAS-CABLE-025",
+    "brandName": "Polycab",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-CABLE-025-HAV",
+    "materialCode": "FAS-CABLE-025",
+    "brandName": "Havells",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-CABLE-025-KEI",
+    "materialCode": "FAS-CABLE-025",
+    "brandName": "KEI",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-CABLE-025-RR",
+    "materialCode": "FAS-CABLE-025",
+    "brandName": "RR Kabel",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-BATT-001-AMA",
+    "materialCode": "FAS-BATT-001",
+    "brandName": "Amaron",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-BATT-001-EXIDE",
+    "materialCode": "FAS-BATT-001",
+    "brandName": "Exide",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "FAS-BATT-001-GEN",
+    "materialCode": "FAS-BATT-001",
+    "brandName": "Generic",
+    "tier": "Economy",
+    "approvalStatus": "Conditional",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PIPE-080-TATA",
+    "materialCode": "HYD-PIPE-080",
+    "brandName": "Tata",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PIPE-080-JIN",
+    "materialCode": "HYD-PIPE-080",
+    "brandName": "Jindal",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PIPE-080-APL",
+    "materialCode": "HYD-PIPE-080",
+    "brandName": "APL Apollo",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PIPE-080-SUR",
+    "materialCode": "HYD-PIPE-080",
+    "brandName": "Surya",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PIPE-100-TATA",
+    "materialCode": "HYD-PIPE-100",
+    "brandName": "Tata",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PIPE-100-JIN",
+    "materialCode": "HYD-PIPE-100",
+    "brandName": "Jindal",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PIPE-100-APL",
+    "materialCode": "HYD-PIPE-100",
+    "brandName": "APL Apollo",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PIPE-100-SUR",
+    "materialCode": "HYD-PIPE-100",
+    "brandName": "Surya",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PIPE-150-TATA",
+    "materialCode": "HYD-PIPE-150",
+    "brandName": "Tata",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PIPE-150-JIN",
+    "materialCode": "HYD-PIPE-150",
+    "brandName": "Jindal",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PIPE-150-APL",
+    "materialCode": "HYD-PIPE-150",
+    "brandName": "APL Apollo",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PIPE-150-SUR",
+    "materialCode": "HYD-PIPE-150",
+    "brandName": "Surya",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-LV-001-KAR",
+    "materialCode": "HYD-LV-001",
+    "brandName": "Kartar",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-LV-001-ZOL",
+    "materialCode": "HYD-LV-001",
+    "brandName": "Zoloto",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-LV-001-NEW",
+    "materialCode": "HYD-LV-001",
+    "brandName": "Newage",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-LV-001-HDF",
+    "materialCode": "HYD-LV-001",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-LV-001-LDR",
+    "materialCode": "HYD-LV-001",
+    "brandName": "Leader",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-GV-100-KAR",
+    "materialCode": "HYD-GV-100",
+    "brandName": "Kartar",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-GV-100-ZOL",
+    "materialCode": "HYD-GV-100",
+    "brandName": "Zoloto",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-GV-100-NEW",
+    "materialCode": "HYD-GV-100",
+    "brandName": "Newage",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-GV-100-HDF",
+    "materialCode": "HYD-GV-100",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-GV-100-LDR",
+    "materialCode": "HYD-GV-100",
+    "brandName": "Leader",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-YH-001-KAR",
+    "materialCode": "HYD-YH-001",
+    "brandName": "Kartar",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-YH-001-ZOL",
+    "materialCode": "HYD-YH-001",
+    "brandName": "Zoloto",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-YH-001-NEW",
+    "materialCode": "HYD-YH-001",
+    "brandName": "Newage",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-YH-001-HDF",
+    "materialCode": "HYD-YH-001",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-YH-001-LDR",
+    "materialCode": "HYD-YH-001",
+    "brandName": "Leader",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-BFV-150-KAR",
+    "materialCode": "HYD-BFV-150",
+    "brandName": "Kartar",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-BFV-150-ZOL",
+    "materialCode": "HYD-BFV-150",
+    "brandName": "Zoloto",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-BFV-150-NEW",
+    "materialCode": "HYD-BFV-150",
+    "brandName": "Newage",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-BFV-150-HDF",
+    "materialCode": "HYD-BFV-150",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-BFV-150-LDR",
+    "materialCode": "HYD-BFV-150",
+    "brandName": "Leader",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-NRV-150-KAR",
+    "materialCode": "HYD-NRV-150",
+    "brandName": "Kartar",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-NRV-150-ZOL",
+    "materialCode": "HYD-NRV-150",
+    "brandName": "Zoloto",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-NRV-150-NEW",
+    "materialCode": "HYD-NRV-150",
+    "brandName": "Newage",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-NRV-150-HDF",
+    "materialCode": "HYD-NRV-150",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-NRV-150-LDR",
+    "materialCode": "HYD-NRV-150",
+    "brandName": "Leader",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-HOSE-001-ZEN",
+    "materialCode": "HYD-HOSE-001",
+    "brandName": "Zenith",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-HOSE-001-NEW",
+    "materialCode": "HYD-HOSE-001",
+    "brandName": "Newage",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-HOSE-001-HDF",
+    "materialCode": "HYD-HOSE-001",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-HOSE-001-SFX",
+    "materialCode": "HYD-HOSE-001",
+    "brandName": "Safex",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-NOZ-001-ZEN",
+    "materialCode": "HYD-NOZ-001",
+    "brandName": "Zenith",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-NOZ-001-NEW",
+    "materialCode": "HYD-NOZ-001",
+    "brandName": "Newage",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-NOZ-001-HDF",
+    "materialCode": "HYD-NOZ-001",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-NOZ-001-SFX",
+    "materialCode": "HYD-NOZ-001",
+    "brandName": "Safex",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-HR-001-ZEN",
+    "materialCode": "HYD-HR-001",
+    "brandName": "Zenith",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-HR-001-NEW",
+    "materialCode": "HYD-HR-001",
+    "brandName": "Newage",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-HR-001-HDF",
+    "materialCode": "HYD-HR-001",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-HR-001-SFX",
+    "materialCode": "HYD-HR-001",
+    "brandName": "Safex",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-HB-001-ZEN",
+    "materialCode": "HYD-HB-001",
+    "brandName": "Zenith",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-HB-001-NEW",
+    "materialCode": "HYD-HB-001",
+    "brandName": "Newage",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-HB-001-HDF",
+    "materialCode": "HYD-HB-001",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-HB-001-SFX",
+    "materialCode": "HYD-HB-001",
+    "brandName": "Safex",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-FBC-001-KAR",
+    "materialCode": "HYD-FBC-001",
+    "brandName": "Kartar",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-FBC-001-ZOL",
+    "materialCode": "HYD-FBC-001",
+    "brandName": "Zoloto",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-FBC-001-NEW",
+    "materialCode": "HYD-FBC-001",
+    "brandName": "Newage",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-FBC-001-HDF",
+    "materialCode": "HYD-FBC-001",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-FBC-001-LDR",
+    "materialCode": "HYD-FBC-001",
+    "brandName": "Leader",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PUMP-MAIN-GRU",
+    "materialCode": "HYD-PUMP-MAIN",
+    "brandName": "Grundfos",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PUMP-MAIN-KSB",
+    "materialCode": "HYD-PUMP-MAIN",
+    "brandName": "KSB",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PUMP-MAIN-KIR",
+    "materialCode": "HYD-PUMP-MAIN",
+    "brandName": "Kirloskar",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PUMP-MAIN-LUBI",
+    "materialCode": "HYD-PUMP-MAIN",
+    "brandName": "Lubi",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PUMP-JOCKEY-GRU",
+    "materialCode": "HYD-PUMP-JOCKEY",
+    "brandName": "Grundfos",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PUMP-JOCKEY-KSB",
+    "materialCode": "HYD-PUMP-JOCKEY",
+    "brandName": "KSB",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PUMP-JOCKEY-KIR",
+    "materialCode": "HYD-PUMP-JOCKEY",
+    "brandName": "Kirloskar",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PUMP-JOCKEY-LUBI",
+    "materialCode": "HYD-PUMP-JOCKEY",
+    "brandName": "Lubi",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PUMP-DIESEL-CUM",
+    "materialCode": "HYD-PUMP-DIESEL",
+    "brandName": "Cummins",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PUMP-DIESEL-KIR",
+    "materialCode": "HYD-PUMP-DIESEL",
+    "brandName": "Kirloskar",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PUMP-DIESEL-LUBI",
+    "materialCode": "HYD-PUMP-DIESEL",
+    "brandName": "Lubi",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PS-001-POT",
+    "materialCode": "HYD-PS-001",
+    "brandName": "Potter",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PS-001-SS",
+    "materialCode": "HYD-PS-001",
+    "brandName": "System Sensor",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "HYD-PS-001-GEN",
+    "materialCode": "HYD-PS-001",
+    "brandName": "Generic",
+    "tier": "Economy",
+    "approvalStatus": "Conditional",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-HEAD-PEN-VIK",
+    "materialCode": "SPR-HEAD-PEN",
+    "brandName": "Viking",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-HEAD-PEN-TYCO",
+    "materialCode": "SPR-HEAD-PEN",
+    "brandName": "Tyco",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-HEAD-PEN-HDF",
+    "materialCode": "SPR-HEAD-PEN",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-HEAD-PEN-OMA",
+    "materialCode": "SPR-HEAD-PEN",
+    "brandName": "Omaxe",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-HEAD-UPR-VIK",
+    "materialCode": "SPR-HEAD-UPR",
+    "brandName": "Viking",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-HEAD-UPR-TYCO",
+    "materialCode": "SPR-HEAD-UPR",
+    "brandName": "Tyco",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-HEAD-UPR-HDF",
+    "materialCode": "SPR-HEAD-UPR",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-HEAD-UPR-OMA",
+    "materialCode": "SPR-HEAD-UPR",
+    "brandName": "Omaxe",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-HEAD-SW-VIK",
+    "materialCode": "SPR-HEAD-SW",
+    "brandName": "Viking",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-HEAD-SW-TYCO",
+    "materialCode": "SPR-HEAD-SW",
+    "brandName": "Tyco",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-HEAD-SW-HDF",
+    "materialCode": "SPR-HEAD-SW",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-HEAD-SW-OMA",
+    "materialCode": "SPR-HEAD-SW",
+    "brandName": "Omaxe",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-PIPE-025-TATA",
+    "materialCode": "SPR-PIPE-025",
+    "brandName": "Tata",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-PIPE-025-JIN",
+    "materialCode": "SPR-PIPE-025",
+    "brandName": "Jindal",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-PIPE-025-APL",
+    "materialCode": "SPR-PIPE-025",
+    "brandName": "APL Apollo",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-PIPE-025-SUR",
+    "materialCode": "SPR-PIPE-025",
+    "brandName": "Surya",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-PIPE-032-TATA",
+    "materialCode": "SPR-PIPE-032",
+    "brandName": "Tata",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-PIPE-032-JIN",
+    "materialCode": "SPR-PIPE-032",
+    "brandName": "Jindal",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-PIPE-032-APL",
+    "materialCode": "SPR-PIPE-032",
+    "brandName": "APL Apollo",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-PIPE-032-SUR",
+    "materialCode": "SPR-PIPE-032",
+    "brandName": "Surya",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-PIPE-050-TATA",
+    "materialCode": "SPR-PIPE-050",
+    "brandName": "Tata",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-PIPE-050-JIN",
+    "materialCode": "SPR-PIPE-050",
+    "brandName": "Jindal",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-PIPE-050-APL",
+    "materialCode": "SPR-PIPE-050",
+    "brandName": "APL Apollo",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-PIPE-050-SUR",
+    "materialCode": "SPR-PIPE-050",
+    "brandName": "Surya",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-ACV-150-VIK",
+    "materialCode": "SPR-ACV-150",
+    "brandName": "Viking",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-ACV-150-TYCO",
+    "materialCode": "SPR-ACV-150",
+    "brandName": "Tyco",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-ACV-150-HDF",
+    "materialCode": "SPR-ACV-150",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-ACV-150-KAR",
+    "materialCode": "SPR-ACV-150",
+    "brandName": "Kartar",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-ICV-100-VIK",
+    "materialCode": "SPR-ICV-100",
+    "brandName": "Viking",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-ICV-100-TYCO",
+    "materialCode": "SPR-ICV-100",
+    "brandName": "Tyco",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-ICV-100-HDF",
+    "materialCode": "SPR-ICV-100",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-ICV-100-KAR",
+    "materialCode": "SPR-ICV-100",
+    "brandName": "Kartar",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-FS-001-POT",
+    "materialCode": "SPR-FS-001",
+    "brandName": "Potter",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-FS-001-SS",
+    "materialCode": "SPR-FS-001",
+    "brandName": "System Sensor",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-FS-001-GEN",
+    "materialCode": "SPR-FS-001",
+    "brandName": "Generic",
+    "tier": "Economy",
+    "approvalStatus": "Conditional",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-ITC-001-VIK",
+    "materialCode": "SPR-ITC-001",
+    "brandName": "Viking",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-ITC-001-TYCO",
+    "materialCode": "SPR-ITC-001",
+    "brandName": "Tyco",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-ITC-001-HDF",
+    "materialCode": "SPR-ITC-001",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-ITC-001-KAR",
+    "materialCode": "SPR-ITC-001",
+    "brandName": "Kartar",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-CAB-001-VIK",
+    "materialCode": "SPR-CAB-001",
+    "brandName": "Viking",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-CAB-001-TYCO",
+    "materialCode": "SPR-CAB-001",
+    "brandName": "Tyco",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-CAB-001-HDF",
+    "materialCode": "SPR-CAB-001",
+    "brandName": "HD Fire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SPR-CAB-001-OMA",
+    "materialCode": "SPR-CAB-001",
+    "brandName": "Omaxe",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-ABC-004-CEASE",
+    "materialCode": "EXT-ABC-004",
+    "brandName": "Ceasefire",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-ABC-004-MMX",
+    "materialCode": "EXT-ABC-004",
+    "brandName": "Minimax",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-ABC-004-SAFE",
+    "materialCode": "EXT-ABC-004",
+    "brandName": "Safepro",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-ABC-004-ELI",
+    "materialCode": "EXT-ABC-004",
+    "brandName": "Elitech",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-ABC-006-CEASE",
+    "materialCode": "EXT-ABC-006",
+    "brandName": "Ceasefire",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-ABC-006-MMX",
+    "materialCode": "EXT-ABC-006",
+    "brandName": "Minimax",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-ABC-006-SAFE",
+    "materialCode": "EXT-ABC-006",
+    "brandName": "Safepro",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-ABC-006-ELI",
+    "materialCode": "EXT-ABC-006",
+    "brandName": "Elitech",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-ABC-009-CEASE",
+    "materialCode": "EXT-ABC-009",
+    "brandName": "Ceasefire",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-ABC-009-MMX",
+    "materialCode": "EXT-ABC-009",
+    "brandName": "Minimax",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-ABC-009-SAFE",
+    "materialCode": "EXT-ABC-009",
+    "brandName": "Safepro",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-ABC-009-ELI",
+    "materialCode": "EXT-ABC-009",
+    "brandName": "Elitech",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-CO2-002-CEASE",
+    "materialCode": "EXT-CO2-002",
+    "brandName": "Ceasefire",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-CO2-002-MMX",
+    "materialCode": "EXT-CO2-002",
+    "brandName": "Minimax",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-CO2-002-SAFE",
+    "materialCode": "EXT-CO2-002",
+    "brandName": "Safepro",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-CO2-002-ELI",
+    "materialCode": "EXT-CO2-002",
+    "brandName": "Elitech",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-CO2-045-CEASE",
+    "materialCode": "EXT-CO2-045",
+    "brandName": "Ceasefire",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-CO2-045-MMX",
+    "materialCode": "EXT-CO2-045",
+    "brandName": "Minimax",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-CO2-045-SAFE",
+    "materialCode": "EXT-CO2-045",
+    "brandName": "Safepro",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-CO2-045-ELI",
+    "materialCode": "EXT-CO2-045",
+    "brandName": "Elitech",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-CO2-009-CEASE",
+    "materialCode": "EXT-CO2-009",
+    "brandName": "Ceasefire",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-CO2-009-MMX",
+    "materialCode": "EXT-CO2-009",
+    "brandName": "Minimax",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-CO2-009-SAFE",
+    "materialCode": "EXT-CO2-009",
+    "brandName": "Safepro",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-CO2-009-ELI",
+    "materialCode": "EXT-CO2-009",
+    "brandName": "Elitech",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-WCO2-009-CEASE",
+    "materialCode": "EXT-WCO2-009",
+    "brandName": "Ceasefire",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-WCO2-009-MMX",
+    "materialCode": "EXT-WCO2-009",
+    "brandName": "Minimax",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-WCO2-009-SAFE",
+    "materialCode": "EXT-WCO2-009",
+    "brandName": "Safepro",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-WCO2-009-ELI",
+    "materialCode": "EXT-WCO2-009",
+    "brandName": "Elitech",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-FOAM-009-CEASE",
+    "materialCode": "EXT-FOAM-009",
+    "brandName": "Ceasefire",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-FOAM-009-MMX",
+    "materialCode": "EXT-FOAM-009",
+    "brandName": "Minimax",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-FOAM-009-SAFE",
+    "materialCode": "EXT-FOAM-009",
+    "brandName": "Safepro",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-FOAM-009-ELI",
+    "materialCode": "EXT-FOAM-009",
+    "brandName": "Elitech",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-STAND-001-CEASE",
+    "materialCode": "EXT-STAND-001",
+    "brandName": "Ceasefire",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-STAND-001-SAFE",
+    "materialCode": "EXT-STAND-001",
+    "brandName": "Safepro",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-STAND-001-ELI",
+    "materialCode": "EXT-STAND-001",
+    "brandName": "Elitech",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-STAND-001-GEN",
+    "materialCode": "EXT-STAND-001",
+    "brandName": "Generic",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-BKT-001-CEASE",
+    "materialCode": "EXT-BKT-001",
+    "brandName": "Ceasefire",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-BKT-001-SAFE",
+    "materialCode": "EXT-BKT-001",
+    "brandName": "Safepro",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-BKT-001-ELI",
+    "materialCode": "EXT-BKT-001",
+    "brandName": "Elitech",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-BKT-001-GEN",
+    "materialCode": "EXT-BKT-001",
+    "brandName": "Generic",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-SIGN-001-JAL",
+    "materialCode": "EXT-SIGN-001",
+    "brandName": "Jalite",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-SIGN-001-SAFE",
+    "materialCode": "EXT-SIGN-001",
+    "brandName": "Safepro",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "EXT-SIGN-001-GEN",
+    "materialCode": "EXT-SIGN-001",
+    "brandName": "Generic",
+    "tier": "Economy",
+    "approvalStatus": "Conditional",
+    "notes": null
+   },
+   {
+    "makeCode": "SUP-CLEAN-040-KID",
+    "materialCode": "SUP-CLEAN-040",
+    "brandName": "Kidde",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SUP-CLEAN-040-CEASE",
+    "materialCode": "SUP-CLEAN-040",
+    "brandName": "Ceasefire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SUP-CLEAN-040-ELI",
+    "materialCode": "SUP-CLEAN-040",
+    "brandName": "Elitech",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SUP-PANEL-001-KID",
+    "materialCode": "SUP-PANEL-001",
+    "brandName": "Kidde",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SUP-PANEL-001-CEASE",
+    "materialCode": "SUP-PANEL-001",
+    "brandName": "Ceasefire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SUP-PANEL-001-ELI",
+    "materialCode": "SUP-PANEL-001",
+    "brandName": "Elitech",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SUP-NOZ-001-KID",
+    "materialCode": "SUP-NOZ-001",
+    "brandName": "Kidde",
+    "tier": "Premium",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SUP-NOZ-001-CEASE",
+    "materialCode": "SUP-NOZ-001",
+    "brandName": "Ceasefire",
+    "tier": "Standard",
+    "approvalStatus": "Approved",
+    "notes": null
+   },
+   {
+    "makeCode": "SUP-NOZ-001-ELI",
+    "materialCode": "SUP-NOZ-001",
+    "brandName": "Elitech",
+    "tier": "Economy",
+    "approvalStatus": "Approved",
+    "notes": null
+   }
+  ],
+  "prices": [
+   {
+    "priceId": "01KE5Q860046Q3D25VT4F5V37E",
+    "materialCode": "FAS-SMK-001",
+    "makeCode": "FAS-SMK-001-NOT",
+    "buyingRatePaise": 144944,
+    "sellingRatePaise": 192387,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600S3E28JT97KB6CQ64",
+    "materialCode": "FAS-SMK-001",
+    "makeCode": "FAS-SMK-001-HON",
+    "buyingRatePaise": 163082,
+    "sellingRatePaise": 205748,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600VMXXQKFBF5KZNWJ4",
+    "materialCode": "FAS-SMK-001",
+    "makeCode": "FAS-SMK-001-EDW",
+    "buyingRatePaise": 125770,
+    "sellingRatePaise": 148015,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86009ZT24MNPZX45HY43",
+    "materialCode": "FAS-SMK-001",
+    "makeCode": "FAS-SMK-001-AGNI",
+    "buyingRatePaise": 116333,
+    "sellingRatePaise": 139577,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600JRP1XPA7Z3DJ8FSS",
+    "materialCode": "FAS-SMK-001",
+    "makeCode": "FAS-SMK-001-RAV",
+    "buyingRatePaise": 111421,
+    "sellingRatePaise": 121990,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600BGJ09TQM83XSSSS6",
+    "materialCode": "FAS-HEAT-001",
+    "makeCode": "FAS-HEAT-001-NOT",
+    "buyingRatePaise": 135512,
+    "sellingRatePaise": 178025,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600DWA7N36096Q14DR9",
+    "materialCode": "FAS-HEAT-001",
+    "makeCode": "FAS-HEAT-001-HON",
+    "buyingRatePaise": 146111,
+    "sellingRatePaise": 188319,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600Y77ZXYYK596NGYA1",
+    "materialCode": "FAS-HEAT-001",
+    "makeCode": "FAS-HEAT-001-EDW",
+    "buyingRatePaise": 123740,
+    "sellingRatePaise": 141178,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86001K5GQAPENECFSECZ",
+    "materialCode": "FAS-HEAT-001",
+    "makeCode": "FAS-HEAT-001-AGNI",
+    "buyingRatePaise": 116900,
+    "sellingRatePaise": 133448,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600YGCPWPQ5E6EYCNDY",
+    "materialCode": "FAS-HEAT-001",
+    "makeCode": "FAS-HEAT-001-RAV",
+    "buyingRatePaise": 96798,
+    "sellingRatePaise": 108502,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86009X9YP981068VCD1G",
+    "materialCode": "FAS-MSD-001",
+    "makeCode": "FAS-MSD-001-NOT",
+    "buyingRatePaise": 351741,
+    "sellingRatePaise": 465746,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600MGT83PXT891WB09B",
+    "materialCode": "FAS-MSD-001",
+    "makeCode": "FAS-MSD-001-HON",
+    "buyingRatePaise": 326685,
+    "sellingRatePaise": 416059,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86003MY63FCH26W14WMC",
+    "materialCode": "FAS-MSD-001",
+    "makeCode": "FAS-MSD-001-EDW",
+    "buyingRatePaise": 263841,
+    "sellingRatePaise": 310537,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600FGCW8T7SWM4FV4DK",
+    "materialCode": "FAS-MSD-001",
+    "makeCode": "FAS-MSD-001-AGNI",
+    "buyingRatePaise": 279145,
+    "sellingRatePaise": 333806,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86009G8XE6SZAEAVSNTC",
+    "materialCode": "FAS-MSD-001",
+    "makeCode": "FAS-MSD-001-RAV",
+    "buyingRatePaise": 261149,
+    "sellingRatePaise": 272798,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600VGS9ZM5H3BV4H15G",
+    "materialCode": "FAS-BEAM-001",
+    "makeCode": "FAS-BEAM-001-NOT",
+    "buyingRatePaise": 3852110,
+    "sellingRatePaise": 4755077,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86007X0NTH82F7AG3BCK",
+    "materialCode": "FAS-BEAM-001",
+    "makeCode": "FAS-BEAM-001-HON",
+    "buyingRatePaise": 3926935,
+    "sellingRatePaise": 4806182,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600WBHP1G201CYFW6VZ",
+    "materialCode": "FAS-BEAM-001",
+    "makeCode": "FAS-BEAM-001-EDW",
+    "buyingRatePaise": 3322675,
+    "sellingRatePaise": 3943893,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600DENC8SP3804GVA35",
+    "materialCode": "FAS-BEAM-001",
+    "makeCode": "FAS-BEAM-001-AGNI",
+    "buyingRatePaise": 3399372,
+    "sellingRatePaise": 3902400,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600FJ2XBAHW0GQNMF2K",
+    "materialCode": "FAS-BEAM-001",
+    "makeCode": "FAS-BEAM-001-RAV",
+    "buyingRatePaise": 2930475,
+    "sellingRatePaise": 3190275,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86009RMZ9J92V81E5128",
+    "materialCode": "FAS-PANEL-002",
+    "makeCode": "FAS-PANEL-002-NOT",
+    "buyingRatePaise": 8142968,
+    "sellingRatePaise": 10611401,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860031FZG0X454YG4GFD",
+    "materialCode": "FAS-PANEL-002",
+    "makeCode": "FAS-PANEL-002-HON",
+    "buyingRatePaise": 10086833,
+    "sellingRatePaise": 12206374,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600R4YJ2C49NGK80Y3Z",
+    "materialCode": "FAS-PANEL-002",
+    "makeCode": "FAS-PANEL-002-EDW",
+    "buyingRatePaise": 7148701,
+    "sellingRatePaise": 8390521,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600ZJJXXX7CK5Y1JX4W",
+    "materialCode": "FAS-PANEL-002",
+    "makeCode": "FAS-PANEL-002-AGNI",
+    "buyingRatePaise": 7200022,
+    "sellingRatePaise": 8433323,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860059GQ8H7QEZZS1A0Z",
+    "materialCode": "FAS-PANEL-002",
+    "makeCode": "FAS-PANEL-002-RAV",
+    "buyingRatePaise": 6909795,
+    "sellingRatePaise": 7518742,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86004QVH3H63J9FHVMCQ",
+    "materialCode": "FAS-PANEL-004",
+    "makeCode": "FAS-PANEL-004-NOT",
+    "buyingRatePaise": 17785361,
+    "sellingRatePaise": 23845780,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600SD53TW8JZ38AYTNJ",
+    "materialCode": "FAS-PANEL-004",
+    "makeCode": "FAS-PANEL-004-HON",
+    "buyingRatePaise": 20849747,
+    "sellingRatePaise": 26781991,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600SFKYS7AA4DZEWNWV",
+    "materialCode": "FAS-PANEL-004",
+    "makeCode": "FAS-PANEL-004-EDW",
+    "buyingRatePaise": 15471376,
+    "sellingRatePaise": 18008353,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600N5MFQGC1TRTDRHN3",
+    "materialCode": "FAS-PANEL-004",
+    "makeCode": "FAS-PANEL-004-AGNI",
+    "buyingRatePaise": 14375292,
+    "sellingRatePaise": 17629925,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600D5HFRSWVK182VYZ0",
+    "materialCode": "FAS-PANEL-004",
+    "makeCode": "FAS-PANEL-004-RAV",
+    "buyingRatePaise": 13816529,
+    "sellingRatePaise": 14807611,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600764KCRGE00KXHMFY",
+    "materialCode": "FAS-RPT-001",
+    "makeCode": "FAS-RPT-001-NOT",
+    "buyingRatePaise": 5022449,
+    "sellingRatePaise": 6306560,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600K31CZT5GEVQEZ2NT",
+    "materialCode": "FAS-RPT-001",
+    "makeCode": "FAS-RPT-001-HON",
+    "buyingRatePaise": 4545627,
+    "sellingRatePaise": 5759555,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86004DZCKCEXEGJ6ZBEZ",
+    "materialCode": "FAS-RPT-001",
+    "makeCode": "FAS-RPT-001-EDW",
+    "buyingRatePaise": 3431698,
+    "sellingRatePaise": 4126085,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600S3D19T33BSWM75AN",
+    "materialCode": "FAS-RPT-001",
+    "makeCode": "FAS-RPT-001-AGNI",
+    "buyingRatePaise": 3545881,
+    "sellingRatePaise": 4155890,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86002KRQNWA605H5PT7D",
+    "materialCode": "FAS-RPT-001",
+    "makeCode": "FAS-RPT-001-RAV",
+    "buyingRatePaise": 3001686,
+    "sellingRatePaise": 3196884,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600GC4NQHN2GMHK041E",
+    "materialCode": "FAS-MCP-001",
+    "makeCode": "FAS-MCP-001-NOT",
+    "buyingRatePaise": 87879,
+    "sellingRatePaise": 118299,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600GVZ8ZB0K9FMMXQ5C",
+    "materialCode": "FAS-MCP-001",
+    "makeCode": "FAS-MCP-001-HON",
+    "buyingRatePaise": 96753,
+    "sellingRatePaise": 120268,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86002YMAV64G5D6TZWBE",
+    "materialCode": "FAS-MCP-001",
+    "makeCode": "FAS-MCP-001-EDW",
+    "buyingRatePaise": 77330,
+    "sellingRatePaise": 95180,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86007JJHHQGGCWFBFF9J",
+    "materialCode": "FAS-MCP-001",
+    "makeCode": "FAS-MCP-001-AGNI",
+    "buyingRatePaise": 76970,
+    "sellingRatePaise": 91985,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600SGFE6X260YEWQ2JE",
+    "materialCode": "FAS-MCP-001",
+    "makeCode": "FAS-MCP-001-RAV",
+    "buyingRatePaise": 76612,
+    "sellingRatePaise": 82115,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86000MTQBK4D2ZY4T6S9",
+    "materialCode": "FAS-HOOT-001",
+    "makeCode": "FAS-HOOT-001-NOT",
+    "buyingRatePaise": 143565,
+    "sellingRatePaise": 193128,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600HTJKT3KPTT1QCSSD",
+    "materialCode": "FAS-HOOT-001",
+    "makeCode": "FAS-HOOT-001-HON",
+    "buyingRatePaise": 134173,
+    "sellingRatePaise": 179313,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860075SQXA8039S5QA9P",
+    "materialCode": "FAS-HOOT-001",
+    "makeCode": "FAS-HOOT-001-EDW",
+    "buyingRatePaise": 112663,
+    "sellingRatePaise": 134952,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600RZCK82YM3R5AESCY",
+    "materialCode": "FAS-HOOT-001",
+    "makeCode": "FAS-HOOT-001-AGNI",
+    "buyingRatePaise": 104398,
+    "sellingRatePaise": 124065,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600ARP79FC22M7RXKTK",
+    "materialCode": "FAS-HOOT-001",
+    "makeCode": "FAS-HOOT-001-RAV",
+    "buyingRatePaise": 87990,
+    "sellingRatePaise": 97052,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600W2285M53R8147C8Z",
+    "materialCode": "FAS-CM-001",
+    "makeCode": "FAS-CM-001-NOT",
+    "buyingRatePaise": 204959,
+    "sellingRatePaise": 265435,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86004PGAMHX9GYDGFMQ2",
+    "materialCode": "FAS-CM-001",
+    "makeCode": "FAS-CM-001-HON",
+    "buyingRatePaise": 227286,
+    "sellingRatePaise": 279583,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600MRAG73QW6GSQGRQ9",
+    "materialCode": "FAS-CM-001",
+    "makeCode": "FAS-CM-001-EDW",
+    "buyingRatePaise": 172090,
+    "sellingRatePaise": 206776,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600B3JGKM02E9JVTQ38",
+    "materialCode": "FAS-CM-001",
+    "makeCode": "FAS-CM-001-AGNI",
+    "buyingRatePaise": 181901,
+    "sellingRatePaise": 211238,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860030PK6PETK8DQYA80",
+    "materialCode": "FAS-CM-001",
+    "makeCode": "FAS-CM-001-RAV",
+    "buyingRatePaise": 160899,
+    "sellingRatePaise": 171952,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600FA360C9TCTBK4K3Y",
+    "materialCode": "FAS-MM-001",
+    "makeCode": "FAS-MM-001-NOT",
+    "buyingRatePaise": 183648,
+    "sellingRatePaise": 233126,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86005WBE6GE27NG3HVGJ",
+    "materialCode": "FAS-MM-001",
+    "makeCode": "FAS-MM-001-HON",
+    "buyingRatePaise": 200860,
+    "sellingRatePaise": 271198,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86000AGFCAMCRNFRYY01",
+    "materialCode": "FAS-MM-001",
+    "makeCode": "FAS-MM-001-EDW",
+    "buyingRatePaise": 169676,
+    "sellingRatePaise": 193461,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600DS4A92176AP91128",
+    "materialCode": "FAS-MM-001",
+    "makeCode": "FAS-MM-001-AGNI",
+    "buyingRatePaise": 161705,
+    "sellingRatePaise": 188475,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860024QC4R6FDD7225JY",
+    "materialCode": "FAS-MM-001",
+    "makeCode": "FAS-MM-001-RAV",
+    "buyingRatePaise": 147131,
+    "sellingRatePaise": 156967,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600PY3D5JAV0CJ30PZ6",
+    "materialCode": "FAS-ISO-001",
+    "makeCode": "FAS-ISO-001-NOT",
+    "buyingRatePaise": 177480,
+    "sellingRatePaise": 238968,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600PGAJDEZA75Z6MP6S",
+    "materialCode": "FAS-ISO-001",
+    "makeCode": "FAS-ISO-001-HON",
+    "buyingRatePaise": 182076,
+    "sellingRatePaise": 224284,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600V1QDKGVAREX82PM9",
+    "materialCode": "FAS-ISO-001",
+    "makeCode": "FAS-ISO-001-EDW",
+    "buyingRatePaise": 151630,
+    "sellingRatePaise": 174051,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600AXWGE8NXFCHK99FM",
+    "materialCode": "FAS-ISO-001",
+    "makeCode": "FAS-ISO-001-AGNI",
+    "buyingRatePaise": 144413,
+    "sellingRatePaise": 172736,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600CG6A6CR99KKVHC66",
+    "materialCode": "FAS-ISO-001",
+    "makeCode": "FAS-ISO-001-RAV",
+    "buyingRatePaise": 122988,
+    "sellingRatePaise": 134244,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600EB7XVMG6TFSAGVYX",
+    "materialCode": "FAS-RI-001",
+    "makeCode": "FAS-RI-001-NOT",
+    "buyingRatePaise": 39014,
+    "sellingRatePaise": 48718,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600M0RZ62GDACP6XDY1",
+    "materialCode": "FAS-RI-001",
+    "makeCode": "FAS-RI-001-HON",
+    "buyingRatePaise": 33100,
+    "sellingRatePaise": 40521,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600TXDBS7P3GHRS304T",
+    "materialCode": "FAS-RI-001",
+    "makeCode": "FAS-RI-001-EDW",
+    "buyingRatePaise": 29309,
+    "sellingRatePaise": 33828,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600G6EKSESXDA84CYE9",
+    "materialCode": "FAS-RI-001",
+    "makeCode": "FAS-RI-001-AGNI",
+    "buyingRatePaise": 29793,
+    "sellingRatePaise": 35033,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600J8YPEHRGVBY0HPFK",
+    "materialCode": "FAS-RI-001",
+    "makeCode": "FAS-RI-001-RAV",
+    "buyingRatePaise": 24392,
+    "sellingRatePaise": 25987,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600BWP9DSA5KCZD5W77",
+    "materialCode": "FAS-CABLE-001",
+    "makeCode": "FAS-CABLE-001-FIN",
+    "buyingRatePaise": 8332,
+    "sellingRatePaise": 11137,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600Z3YX9ZFZA0AMXZJX",
+    "materialCode": "FAS-CABLE-001",
+    "makeCode": "FAS-CABLE-001-POLY",
+    "buyingRatePaise": 6881,
+    "sellingRatePaise": 8380,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600BQ112N6YZ92DT8N6",
+    "materialCode": "FAS-CABLE-001",
+    "makeCode": "FAS-CABLE-001-HAV",
+    "buyingRatePaise": 7056,
+    "sellingRatePaise": 8503,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600DJVNVG3JJPZSNHPD",
+    "materialCode": "FAS-CABLE-001",
+    "makeCode": "FAS-CABLE-001-KEI",
+    "buyingRatePaise": 7530,
+    "sellingRatePaise": 9047,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600MK852SS3SK602CY3",
+    "materialCode": "FAS-CABLE-001",
+    "makeCode": "FAS-CABLE-001-RR",
+    "buyingRatePaise": 6721,
+    "sellingRatePaise": 7096,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600T2M1V3Z27TSW40R9",
+    "materialCode": "FAS-CABLE-025",
+    "makeCode": "FAS-CABLE-025-FIN",
+    "buyingRatePaise": 12489,
+    "sellingRatePaise": 16386,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600YD90V0075D78Y1HF",
+    "materialCode": "FAS-CABLE-025",
+    "makeCode": "FAS-CABLE-025-POLY",
+    "buyingRatePaise": 9817,
+    "sellingRatePaise": 11821,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860095JZXG320305RKKA",
+    "materialCode": "FAS-CABLE-025",
+    "makeCode": "FAS-CABLE-025-HAV",
+    "buyingRatePaise": 10134,
+    "sellingRatePaise": 11783,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600MQWYA97QATYRWHNJ",
+    "materialCode": "FAS-CABLE-025",
+    "makeCode": "FAS-CABLE-025-KEI",
+    "buyingRatePaise": 10855,
+    "sellingRatePaise": 12561,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600N09KVFRRREWJ0MGH",
+    "materialCode": "FAS-CABLE-025",
+    "makeCode": "FAS-CABLE-025-RR",
+    "buyingRatePaise": 8617,
+    "sellingRatePaise": 9161,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600RX5P4ESGMYCCDC5B",
+    "materialCode": "FAS-BATT-001",
+    "makeCode": "FAS-BATT-001-AMA",
+    "buyingRatePaise": 568511,
+    "sellingRatePaise": 690541,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600PS9F2ZQ6QX59M1PH",
+    "materialCode": "FAS-BATT-001",
+    "makeCode": "FAS-BATT-001-EXIDE",
+    "buyingRatePaise": 414627,
+    "sellingRatePaise": 503648,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600ZDGHV6W8G2NCBR51",
+    "materialCode": "FAS-BATT-001",
+    "makeCode": "FAS-BATT-001-GEN",
+    "buyingRatePaise": 347004,
+    "sellingRatePaise": 389233,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86002GP313GY369M0CKW",
+    "materialCode": "HYD-PIPE-080",
+    "makeCode": "HYD-PIPE-080-TATA",
+    "buyingRatePaise": 123948,
+    "sellingRatePaise": 149491,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600GR7QYRAWF90XC2AE",
+    "materialCode": "HYD-PIPE-080",
+    "makeCode": "HYD-PIPE-080-JIN",
+    "buyingRatePaise": 83158,
+    "sellingRatePaise": 102855,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600W6R14WNMEY7Q9NE3",
+    "materialCode": "HYD-PIPE-080",
+    "makeCode": "HYD-PIPE-080-APL",
+    "buyingRatePaise": 69559,
+    "sellingRatePaise": 74308,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86009HTTF91HJNAGZ6MX",
+    "materialCode": "HYD-PIPE-080",
+    "makeCode": "HYD-PIPE-080-SUR",
+    "buyingRatePaise": 69857,
+    "sellingRatePaise": 75598,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860091WN8W0JBQV2TDHB",
+    "materialCode": "HYD-PIPE-100",
+    "makeCode": "HYD-PIPE-100-TATA",
+    "buyingRatePaise": 148213,
+    "sellingRatePaise": 196417,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600BC55ZHBD8CKC04T3",
+    "materialCode": "HYD-PIPE-100",
+    "makeCode": "HYD-PIPE-100-JIN",
+    "buyingRatePaise": 113973,
+    "sellingRatePaise": 139959,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860050TY8HFBQ2AQ0PW4",
+    "materialCode": "HYD-PIPE-100",
+    "makeCode": "HYD-PIPE-100-APL",
+    "buyingRatePaise": 108043,
+    "sellingRatePaise": 117916,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86003J6ZW181F5EBA6KG",
+    "materialCode": "HYD-PIPE-100",
+    "makeCode": "HYD-PIPE-100-SUR",
+    "buyingRatePaise": 104155,
+    "sellingRatePaise": 110373,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860077S8EE9XSA1RT2S3",
+    "materialCode": "HYD-PIPE-150",
+    "makeCode": "HYD-PIPE-150-TATA",
+    "buyingRatePaise": 242734,
+    "sellingRatePaise": 309221,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600VMS3M9PFV0Q6B4MV",
+    "materialCode": "HYD-PIPE-150",
+    "makeCode": "HYD-PIPE-150-JIN",
+    "buyingRatePaise": 194612,
+    "sellingRatePaise": 235296,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600TSX222HH26G70VF2",
+    "materialCode": "HYD-PIPE-150",
+    "makeCode": "HYD-PIPE-150-APL",
+    "buyingRatePaise": 162786,
+    "sellingRatePaise": 173167,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860073H5X9W78JTJHF5J",
+    "materialCode": "HYD-PIPE-150",
+    "makeCode": "HYD-PIPE-150-SUR",
+    "buyingRatePaise": 160442,
+    "sellingRatePaise": 175769,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600MZHJDJ31A4PW3RWP",
+    "materialCode": "HYD-LV-001",
+    "makeCode": "HYD-LV-001-KAR",
+    "buyingRatePaise": 305968,
+    "sellingRatePaise": 396465,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600TNP8CH6YH8T60T7Z",
+    "materialCode": "HYD-LV-001",
+    "makeCode": "HYD-LV-001-ZOL",
+    "buyingRatePaise": 271363,
+    "sellingRatePaise": 335564,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600H7RWXJPJPSRM0ZRW",
+    "materialCode": "HYD-LV-001",
+    "makeCode": "HYD-LV-001-NEW",
+    "buyingRatePaise": 282594,
+    "sellingRatePaise": 321321,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600RE5NMFMDV013GZKK",
+    "materialCode": "HYD-LV-001",
+    "makeCode": "HYD-LV-001-HDF",
+    "buyingRatePaise": 267411,
+    "sellingRatePaise": 317215,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600VRXP2PW04E6TQS9C",
+    "materialCode": "HYD-LV-001",
+    "makeCode": "HYD-LV-001-LDR",
+    "buyingRatePaise": 253313,
+    "sellingRatePaise": 262508,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600CTB36P2T00K0KS60",
+    "materialCode": "HYD-GV-100",
+    "makeCode": "HYD-GV-100-KAR",
+    "buyingRatePaise": 1104664,
+    "sellingRatePaise": 1357962,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600H9CT79A6164AZXV3",
+    "materialCode": "HYD-GV-100",
+    "makeCode": "HYD-GV-100-ZOL",
+    "buyingRatePaise": 825992,
+    "sellingRatePaise": 1012541,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86009FPHA2H64PCWR13E",
+    "materialCode": "HYD-GV-100",
+    "makeCode": "HYD-GV-100-NEW",
+    "buyingRatePaise": 863522,
+    "sellingRatePaise": 1010244,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86003FFE2ABM0XKTGZ4F",
+    "materialCode": "HYD-GV-100",
+    "makeCode": "HYD-GV-100-HDF",
+    "buyingRatePaise": 881336,
+    "sellingRatePaise": 1040995,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600TKSZ1F5BAPRB0JSQ",
+    "materialCode": "HYD-GV-100",
+    "makeCode": "HYD-GV-100-LDR",
+    "buyingRatePaise": 768029,
+    "sellingRatePaise": 816528,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860085CH8WXFAQPDSRDK",
+    "materialCode": "HYD-YH-001",
+    "makeCode": "HYD-YH-001-KAR",
+    "buyingRatePaise": 932900,
+    "sellingRatePaise": 1256824,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86008GWQFSD875HR19K0",
+    "materialCode": "HYD-YH-001",
+    "makeCode": "HYD-YH-001-ZOL",
+    "buyingRatePaise": 861716,
+    "sellingRatePaise": 1025361,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600MC64QKC4K5EJ8SJP",
+    "materialCode": "HYD-YH-001",
+    "makeCode": "HYD-YH-001-NEW",
+    "buyingRatePaise": 770602,
+    "sellingRatePaise": 955049,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86008HB1QPT1XFSP6BJ7",
+    "materialCode": "HYD-YH-001",
+    "makeCode": "HYD-YH-001-HDF",
+    "buyingRatePaise": 835061,
+    "sellingRatePaise": 956810,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600S2AVCK9R2KBEZGVP",
+    "materialCode": "HYD-YH-001",
+    "makeCode": "HYD-YH-001-LDR",
+    "buyingRatePaise": 699224,
+    "sellingRatePaise": 747336,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600W3DV8ZC2GBAFGF3A",
+    "materialCode": "HYD-BFV-150",
+    "makeCode": "HYD-BFV-150-KAR",
+    "buyingRatePaise": 1699301,
+    "sellingRatePaise": 2183718,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860088ZYFF0W8PK89FN7",
+    "materialCode": "HYD-BFV-150",
+    "makeCode": "HYD-BFV-150-ZOL",
+    "buyingRatePaise": 1193129,
+    "sellingRatePaise": 1432448,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600XSD7J0QZD23HKC7K",
+    "materialCode": "HYD-BFV-150",
+    "makeCode": "HYD-BFV-150-NEW",
+    "buyingRatePaise": 1264031,
+    "sellingRatePaise": 1468391,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600XQJA420XZ5NG6ZVZ",
+    "materialCode": "HYD-BFV-150",
+    "makeCode": "HYD-BFV-150-HDF",
+    "buyingRatePaise": 1172709,
+    "sellingRatePaise": 1449489,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86005JGF5811S9JQBA6K",
+    "materialCode": "HYD-BFV-150",
+    "makeCode": "HYD-BFV-150-LDR",
+    "buyingRatePaise": 1033403,
+    "sellingRatePaise": 1110309,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860059EA8WS52WYCDQ02",
+    "materialCode": "HYD-NRV-150",
+    "makeCode": "HYD-NRV-150-KAR",
+    "buyingRatePaise": 1808745,
+    "sellingRatePaise": 2304261,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86009J43TN4W0BARJ0WP",
+    "materialCode": "HYD-NRV-150",
+    "makeCode": "HYD-NRV-150-ZOL",
+    "buyingRatePaise": 1534608,
+    "sellingRatePaise": 1767098,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600XV9S53NKTQY8KN1C",
+    "materialCode": "HYD-NRV-150",
+    "makeCode": "HYD-NRV-150-NEW",
+    "buyingRatePaise": 1429851,
+    "sellingRatePaise": 1707269,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86009QTQFWSG7EBC7EG6",
+    "materialCode": "HYD-NRV-150",
+    "makeCode": "HYD-NRV-150-HDF",
+    "buyingRatePaise": 1401936,
+    "sellingRatePaise": 1631754,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600EXE75T4W876XSACY",
+    "materialCode": "HYD-NRV-150",
+    "makeCode": "HYD-NRV-150-LDR",
+    "buyingRatePaise": 1210435,
+    "sellingRatePaise": 1287306,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600QN0G7FQPZ2P6PM72",
+    "materialCode": "HYD-HOSE-001",
+    "makeCode": "HYD-HOSE-001-ZEN",
+    "buyingRatePaise": 390741,
+    "sellingRatePaise": 475045,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600CW1W71Z74GB9JR9G",
+    "materialCode": "HYD-HOSE-001",
+    "makeCode": "HYD-HOSE-001-NEW",
+    "buyingRatePaise": 309717,
+    "sellingRatePaise": 362653,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860001N9ZY224BSYAWSE",
+    "materialCode": "HYD-HOSE-001",
+    "makeCode": "HYD-HOSE-001-HDF",
+    "buyingRatePaise": 295434,
+    "sellingRatePaise": 345453,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600NDK82DAQXNXRPM0N",
+    "materialCode": "HYD-HOSE-001",
+    "makeCode": "HYD-HOSE-001-SFX",
+    "buyingRatePaise": 273173,
+    "sellingRatePaise": 291903,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86006QJF94KNQFPSN3NM",
+    "materialCode": "HYD-NOZ-001",
+    "makeCode": "HYD-NOZ-001-ZEN",
+    "buyingRatePaise": 175258,
+    "sellingRatePaise": 216411,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600FFP98D0XSWSKA49K",
+    "materialCode": "HYD-NOZ-001",
+    "makeCode": "HYD-NOZ-001-NEW",
+    "buyingRatePaise": 132914,
+    "sellingRatePaise": 154076,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600N4C5BKPXPV4ZMBHG",
+    "materialCode": "HYD-NOZ-001",
+    "makeCode": "HYD-NOZ-001-HDF",
+    "buyingRatePaise": 123856,
+    "sellingRatePaise": 150976,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600F1D3SWCJ6CF38354",
+    "materialCode": "HYD-NOZ-001",
+    "makeCode": "HYD-NOZ-001-SFX",
+    "buyingRatePaise": 112193,
+    "sellingRatePaise": 118492,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600NZSGX01MM3TNA519",
+    "materialCode": "HYD-HR-001",
+    "makeCode": "HYD-HR-001-ZEN",
+    "buyingRatePaise": 752011,
+    "sellingRatePaise": 967522,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600QVP9NEGY2KXHQH8G",
+    "materialCode": "HYD-HR-001",
+    "makeCode": "HYD-HR-001-NEW",
+    "buyingRatePaise": 637240,
+    "sellingRatePaise": 756489,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86009ES51873DBGQ9BA1",
+    "materialCode": "HYD-HR-001",
+    "makeCode": "HYD-HR-001-HDF",
+    "buyingRatePaise": 616888,
+    "sellingRatePaise": 736082,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600DPRXDM1604SP3ERT",
+    "materialCode": "HYD-HR-001",
+    "makeCode": "HYD-HR-001-SFX",
+    "buyingRatePaise": 579540,
+    "sellingRatePaise": 614401,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86008KJ5N0ZFAMWD3DQ2",
+    "materialCode": "HYD-HB-001",
+    "makeCode": "HYD-HB-001-ZEN",
+    "buyingRatePaise": 519676,
+    "sellingRatePaise": 640654,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86008K17908K9P6AXS5T",
+    "materialCode": "HYD-HB-001",
+    "makeCode": "HYD-HB-001-NEW",
+    "buyingRatePaise": 382861,
+    "sellingRatePaise": 440525,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600N2FC028EV613M477",
+    "materialCode": "HYD-HB-001",
+    "makeCode": "HYD-HB-001-HDF",
+    "buyingRatePaise": 363711,
+    "sellingRatePaise": 416382,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86000BE97PZ4PDE4HB0G",
+    "materialCode": "HYD-HB-001",
+    "makeCode": "HYD-HB-001-SFX",
+    "buyingRatePaise": 352129,
+    "sellingRatePaise": 365722,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600RT90FGRFC7523SMW",
+    "materialCode": "HYD-FBC-001",
+    "makeCode": "HYD-FBC-001-KAR",
+    "buyingRatePaise": 1975823,
+    "sellingRatePaise": 2551189,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600YYNRFRP4SHM4EGGY",
+    "materialCode": "HYD-FBC-001",
+    "makeCode": "HYD-FBC-001-ZOL",
+    "buyingRatePaise": 1540742,
+    "sellingRatePaise": 1867050,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600E94QDAQFB9XB2MRQ",
+    "materialCode": "HYD-FBC-001",
+    "makeCode": "HYD-FBC-001-NEW",
+    "buyingRatePaise": 1606946,
+    "sellingRatePaise": 1941147,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86009GR6QPKW5HSJW7WY",
+    "materialCode": "HYD-FBC-001",
+    "makeCode": "HYD-FBC-001-HDF",
+    "buyingRatePaise": 1674557,
+    "sellingRatePaise": 1934947,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860008QZFQNRG1C0G3BK",
+    "materialCode": "HYD-FBC-001",
+    "makeCode": "HYD-FBC-001-LDR",
+    "buyingRatePaise": 1392048,
+    "sellingRatePaise": 1541454,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600VGPFR8CQ4DN45WRS",
+    "materialCode": "HYD-PUMP-MAIN",
+    "makeCode": "HYD-PUMP-MAIN-GRU",
+    "buyingRatePaise": 30590977,
+    "sellingRatePaise": 38042394,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86006XXVTYB4WSZ80ECS",
+    "materialCode": "HYD-PUMP-MAIN",
+    "makeCode": "HYD-PUMP-MAIN-KSB",
+    "buyingRatePaise": 30919711,
+    "sellingRatePaise": 39403575,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600NRX75E406Z5DX3CN",
+    "materialCode": "HYD-PUMP-MAIN",
+    "makeCode": "HYD-PUMP-MAIN-KIR",
+    "buyingRatePaise": 25258637,
+    "sellingRatePaise": 28897949,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86008T39MNC0BHG5MRGK",
+    "materialCode": "HYD-PUMP-MAIN",
+    "makeCode": "HYD-PUMP-MAIN-LUBI",
+    "buyingRatePaise": 20527943,
+    "sellingRatePaise": 22959107,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600X3M04TM2HEWJCDXS",
+    "materialCode": "HYD-PUMP-JOCKEY",
+    "makeCode": "HYD-PUMP-JOCKEY-GRU",
+    "buyingRatePaise": 7054146,
+    "sellingRatePaise": 9371617,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600BV7384ZB0AZEJDA9",
+    "materialCode": "HYD-PUMP-JOCKEY",
+    "makeCode": "HYD-PUMP-JOCKEY-KSB",
+    "buyingRatePaise": 7654507,
+    "sellingRatePaise": 9813019,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600X6C53TEGWV9382AW",
+    "materialCode": "HYD-PUMP-JOCKEY",
+    "makeCode": "HYD-PUMP-JOCKEY-KIR",
+    "buyingRatePaise": 5836591,
+    "sellingRatePaise": 6808735,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86009KGMD9ES2MR9JE5C",
+    "materialCode": "HYD-PUMP-JOCKEY",
+    "makeCode": "HYD-PUMP-JOCKEY-LUBI",
+    "buyingRatePaise": 4618307,
+    "sellingRatePaise": 5089323,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86005C8YHEK260PC9K3B",
+    "materialCode": "HYD-PUMP-DIESEL",
+    "makeCode": "HYD-PUMP-DIESEL-CUM",
+    "buyingRatePaise": 41729870,
+    "sellingRatePaise": 54534553,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600QB7K4X67ASX2226T",
+    "materialCode": "HYD-PUMP-DIESEL",
+    "makeCode": "HYD-PUMP-DIESEL-KIR",
+    "buyingRatePaise": 35017890,
+    "sellingRatePaise": 41888934,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86004QAQA5N0YK9G66F7",
+    "materialCode": "HYD-PUMP-DIESEL",
+    "makeCode": "HYD-PUMP-DIESEL-LUBI",
+    "buyingRatePaise": 31591914,
+    "sellingRatePaise": 35106112,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600DE5A9G1VS7J75DEF",
+    "materialCode": "HYD-PS-001",
+    "makeCode": "HYD-PS-001-POT",
+    "buyingRatePaise": 288977,
+    "sellingRatePaise": 350279,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600F4N62DBKN5XB0MTT",
+    "materialCode": "HYD-PS-001",
+    "makeCode": "HYD-PS-001-SS",
+    "buyingRatePaise": 251073,
+    "sellingRatePaise": 291063,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600A9P8DCEN40Y2ZN44",
+    "materialCode": "HYD-PS-001",
+    "makeCode": "HYD-PS-001-GEN",
+    "buyingRatePaise": 202057,
+    "sellingRatePaise": 212857,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860074GEFCXFZ3SSNRS5",
+    "materialCode": "SPR-HEAD-PEN",
+    "makeCode": "SPR-HEAD-PEN-VIK",
+    "buyingRatePaise": 22124,
+    "sellingRatePaise": 27296,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600VK0KZ17YTTKX9ND5",
+    "materialCode": "SPR-HEAD-PEN",
+    "makeCode": "SPR-HEAD-PEN-TYCO",
+    "buyingRatePaise": 15434,
+    "sellingRatePaise": 18036,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600JN5HBWTF7D2RBRHN",
+    "materialCode": "SPR-HEAD-PEN",
+    "makeCode": "SPR-HEAD-PEN-HDF",
+    "buyingRatePaise": 15874,
+    "sellingRatePaise": 18339,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600SKZMCAS00B6FXGP6",
+    "materialCode": "SPR-HEAD-PEN",
+    "makeCode": "SPR-HEAD-PEN-OMA",
+    "buyingRatePaise": 14752,
+    "sellingRatePaise": 16080,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600RWK9X2MY80H9C2SB",
+    "materialCode": "SPR-HEAD-UPR",
+    "makeCode": "SPR-HEAD-UPR-VIK",
+    "buyingRatePaise": 20513,
+    "sellingRatePaise": 27693,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600FJ1TT5RZQHMAZ3P8",
+    "materialCode": "SPR-HEAD-UPR",
+    "makeCode": "SPR-HEAD-UPR-TYCO",
+    "buyingRatePaise": 17169,
+    "sellingRatePaise": 20121,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600KAK3KRQBHKYCMWS6",
+    "materialCode": "SPR-HEAD-UPR",
+    "makeCode": "SPR-HEAD-UPR-HDF",
+    "buyingRatePaise": 16184,
+    "sellingRatePaise": 18742,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600YH7DWTAM29HYT4HS",
+    "materialCode": "SPR-HEAD-UPR",
+    "makeCode": "SPR-HEAD-UPR-OMA",
+    "buyingRatePaise": 14752,
+    "sellingRatePaise": 16075,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600SSNSSZNPB9TJ8DN4",
+    "materialCode": "SPR-HEAD-SW",
+    "makeCode": "SPR-HEAD-SW-VIK",
+    "buyingRatePaise": 23272,
+    "sellingRatePaise": 30821,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600FVSDH89EF7J2RJ8R",
+    "materialCode": "SPR-HEAD-SW",
+    "makeCode": "SPR-HEAD-SW-TYCO",
+    "buyingRatePaise": 20696,
+    "sellingRatePaise": 25657,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600HDEK6Q5Q147MD0X8",
+    "materialCode": "SPR-HEAD-SW",
+    "makeCode": "SPR-HEAD-SW-HDF",
+    "buyingRatePaise": 20326,
+    "sellingRatePaise": 24682,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860022X7YEJNNEDDJ1EB",
+    "materialCode": "SPR-HEAD-SW",
+    "makeCode": "SPR-HEAD-SW-OMA",
+    "buyingRatePaise": 18006,
+    "sellingRatePaise": 19371,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600XCNC7SAJC41WCCGC",
+    "materialCode": "SPR-PIPE-025",
+    "makeCode": "SPR-PIPE-025-TATA",
+    "buyingRatePaise": 42787,
+    "sellingRatePaise": 54014,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860014PDT0GPAMPK62BP",
+    "materialCode": "SPR-PIPE-025",
+    "makeCode": "SPR-PIPE-025-JIN",
+    "buyingRatePaise": 33116,
+    "sellingRatePaise": 38727,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86006N69QYZ5NMY86GRD",
+    "materialCode": "SPR-PIPE-025",
+    "makeCode": "SPR-PIPE-025-APL",
+    "buyingRatePaise": 27186,
+    "sellingRatePaise": 30450,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600VRAV8807DR105X2D",
+    "materialCode": "SPR-PIPE-025",
+    "makeCode": "SPR-PIPE-025-SUR",
+    "buyingRatePaise": 28218,
+    "sellingRatePaise": 30049,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860043YASFYY97ZR4FE0",
+    "materialCode": "SPR-PIPE-032",
+    "makeCode": "SPR-PIPE-032-TATA",
+    "buyingRatePaise": 50420,
+    "sellingRatePaise": 63585,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600F6C02X3SFE2TG29X",
+    "materialCode": "SPR-PIPE-032",
+    "makeCode": "SPR-PIPE-032-JIN",
+    "buyingRatePaise": 40015,
+    "sellingRatePaise": 46407,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600B9AM6R041543JXS0",
+    "materialCode": "SPR-PIPE-032",
+    "makeCode": "SPR-PIPE-032-APL",
+    "buyingRatePaise": 32878,
+    "sellingRatePaise": 34756,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600XD7DV75P65F65QHK",
+    "materialCode": "SPR-PIPE-032",
+    "makeCode": "SPR-PIPE-032-SUR",
+    "buyingRatePaise": 34494,
+    "sellingRatePaise": 38061,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600V3BJWG8GKP1MR6AW",
+    "materialCode": "SPR-PIPE-050",
+    "makeCode": "SPR-PIPE-050-TATA",
+    "buyingRatePaise": 80934,
+    "sellingRatePaise": 100630,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600MHF0T1NEPN0FN5A6",
+    "materialCode": "SPR-PIPE-050",
+    "makeCode": "SPR-PIPE-050-JIN",
+    "buyingRatePaise": 57668,
+    "sellingRatePaise": 65828,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600NQ47XAD3FT5DDJ0G",
+    "materialCode": "SPR-PIPE-050",
+    "makeCode": "SPR-PIPE-050-APL",
+    "buyingRatePaise": 48672,
+    "sellingRatePaise": 50985,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600WAJSFNG15DG944SK",
+    "materialCode": "SPR-PIPE-050",
+    "makeCode": "SPR-PIPE-050-SUR",
+    "buyingRatePaise": 49003,
+    "sellingRatePaise": 54474,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600XNMD1RE6DPNH0C45",
+    "materialCode": "SPR-ACV-150",
+    "makeCode": "SPR-ACV-150-VIK",
+    "buyingRatePaise": 4578230,
+    "sellingRatePaise": 6059186,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600GB29Y63RG5E34J0H",
+    "materialCode": "SPR-ACV-150",
+    "makeCode": "SPR-ACV-150-TYCO",
+    "buyingRatePaise": 3473024,
+    "sellingRatePaise": 4072784,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600B8QGQQA7FAJR1ECE",
+    "materialCode": "SPR-ACV-150",
+    "makeCode": "SPR-ACV-150-HDF",
+    "buyingRatePaise": 3610825,
+    "sellingRatePaise": 4455570,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600G036RQFJ1YWZ77XZ",
+    "materialCode": "SPR-ACV-150",
+    "makeCode": "SPR-ACV-150-KAR",
+    "buyingRatePaise": 3825534,
+    "sellingRatePaise": 4406000,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600DR73V3FAMD65YGXX",
+    "materialCode": "SPR-ICV-100",
+    "makeCode": "SPR-ICV-100-VIK",
+    "buyingRatePaise": 1291581,
+    "sellingRatePaise": 1730301,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600M6DHQ47YYGB01Y2E",
+    "materialCode": "SPR-ICV-100",
+    "makeCode": "SPR-ICV-100-TYCO",
+    "buyingRatePaise": 1054182,
+    "sellingRatePaise": 1300545,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86009RM2QBE1X5WD2JW8",
+    "materialCode": "SPR-ICV-100",
+    "makeCode": "SPR-ICV-100-HDF",
+    "buyingRatePaise": 1107810,
+    "sellingRatePaise": 1298478,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600C4S1A0QYE4YQZDDC",
+    "materialCode": "SPR-ICV-100",
+    "makeCode": "SPR-ICV-100-KAR",
+    "buyingRatePaise": 1079381,
+    "sellingRatePaise": 1309322,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600R8GF7HT988M3AEVA",
+    "materialCode": "SPR-FS-001",
+    "makeCode": "SPR-FS-001-POT",
+    "buyingRatePaise": 348954,
+    "sellingRatePaise": 457195,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600E9HT63V61J4JB8T4",
+    "materialCode": "SPR-FS-001",
+    "makeCode": "SPR-FS-001-SS",
+    "buyingRatePaise": 268220,
+    "sellingRatePaise": 309892,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86007WFZQCV4GRBGFTQG",
+    "materialCode": "SPR-FS-001",
+    "makeCode": "SPR-FS-001-GEN",
+    "buyingRatePaise": 251562,
+    "sellingRatePaise": 263759,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600QQRZQ8EDH728ST4Y",
+    "materialCode": "SPR-ITC-001",
+    "makeCode": "SPR-ITC-001-VIK",
+    "buyingRatePaise": 266169,
+    "sellingRatePaise": 353938,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600PPVMBY1ASQ7JDFCQ",
+    "materialCode": "SPR-ITC-001",
+    "makeCode": "SPR-ITC-001-TYCO",
+    "buyingRatePaise": 234825,
+    "sellingRatePaise": 268219,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86004X2C0TH140B5F0BE",
+    "materialCode": "SPR-ITC-001",
+    "makeCode": "SPR-ITC-001-HDF",
+    "buyingRatePaise": 226177,
+    "sellingRatePaise": 274488,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86001755C9YN4PMJTYGN",
+    "materialCode": "SPR-ITC-001",
+    "makeCode": "SPR-ITC-001-KAR",
+    "buyingRatePaise": 221619,
+    "sellingRatePaise": 254180,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86004Y649CWXE5YV80CD",
+    "materialCode": "SPR-CAB-001",
+    "makeCode": "SPR-CAB-001-VIK",
+    "buyingRatePaise": 412633,
+    "sellingRatePaise": 512888,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600VN31E1EJDXCBDKG8",
+    "materialCode": "SPR-CAB-001",
+    "makeCode": "SPR-CAB-001-TYCO",
+    "buyingRatePaise": 311675,
+    "sellingRatePaise": 366376,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600KSMK3M5J3MF9BFX1",
+    "materialCode": "SPR-CAB-001",
+    "makeCode": "SPR-CAB-001-HDF",
+    "buyingRatePaise": 301813,
+    "sellingRatePaise": 368913,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600QYK464RVY4GEWMYT",
+    "materialCode": "SPR-CAB-001",
+    "makeCode": "SPR-CAB-001-OMA",
+    "buyingRatePaise": 264407,
+    "sellingRatePaise": 294094,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860032J864MATAFBRVNQ",
+    "materialCode": "EXT-ABC-004",
+    "makeCode": "EXT-ABC-004-CEASE",
+    "buyingRatePaise": 214196,
+    "sellingRatePaise": 286506,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86005GRYEBJXSC8CZ6NF",
+    "materialCode": "EXT-ABC-004",
+    "makeCode": "EXT-ABC-004-MMX",
+    "buyingRatePaise": 203046,
+    "sellingRatePaise": 266550,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600MMBNCT30EP0G22ME",
+    "materialCode": "EXT-ABC-004",
+    "makeCode": "EXT-ABC-004-SAFE",
+    "buyingRatePaise": 168294,
+    "sellingRatePaise": 200131,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600KQPSRJ7E0TF3A9KG",
+    "materialCode": "EXT-ABC-004",
+    "makeCode": "EXT-ABC-004-ELI",
+    "buyingRatePaise": 171545,
+    "sellingRatePaise": 180298,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600QF467M11EQ44Z3CX",
+    "materialCode": "EXT-ABC-006",
+    "makeCode": "EXT-ABC-006-CEASE",
+    "buyingRatePaise": 316654,
+    "sellingRatePaise": 386969,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600KYMPKP64YWT0EDDQ",
+    "materialCode": "EXT-ABC-006",
+    "makeCode": "EXT-ABC-006-MMX",
+    "buyingRatePaise": 288515,
+    "sellingRatePaise": 375659,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86002XV18V5BJP6E3EQV",
+    "materialCode": "EXT-ABC-006",
+    "makeCode": "EXT-ABC-006-SAFE",
+    "buyingRatePaise": 235044,
+    "sellingRatePaise": 268893,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600CMKNBZ09RAB17Q33",
+    "materialCode": "EXT-ABC-006",
+    "makeCode": "EXT-ABC-006-ELI",
+    "buyingRatePaise": 189728,
+    "sellingRatePaise": 202304,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600FGEBEBC7XDHV3Z0W",
+    "materialCode": "EXT-ABC-009",
+    "makeCode": "EXT-ABC-009-CEASE",
+    "buyingRatePaise": 392376,
+    "sellingRatePaise": 484652,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86009MXADNTFCEATPVKK",
+    "materialCode": "EXT-ABC-009",
+    "makeCode": "EXT-ABC-009-MMX",
+    "buyingRatePaise": 474989,
+    "sellingRatePaise": 580535,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600CM7JBTYWZYHYCY9A",
+    "materialCode": "EXT-ABC-009",
+    "makeCode": "EXT-ABC-009-SAFE",
+    "buyingRatePaise": 307957,
+    "sellingRatePaise": 376742,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600S6PVNPS9X02YPSVK",
+    "materialCode": "EXT-ABC-009",
+    "makeCode": "EXT-ABC-009-ELI",
+    "buyingRatePaise": 276714,
+    "sellingRatePaise": 301998,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600PMY7NGRG1QR4Q0HN",
+    "materialCode": "EXT-CO2-002",
+    "makeCode": "EXT-CO2-002-CEASE",
+    "buyingRatePaise": 352637,
+    "sellingRatePaise": 461181,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860014CD389KEE3VG769",
+    "materialCode": "EXT-CO2-002",
+    "makeCode": "EXT-CO2-002-MMX",
+    "buyingRatePaise": 349577,
+    "sellingRatePaise": 445564,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600VC2ZRV5B8K253A72",
+    "materialCode": "EXT-CO2-002",
+    "makeCode": "EXT-CO2-002-SAFE",
+    "buyingRatePaise": 301400,
+    "sellingRatePaise": 344972,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86007XA6BCPCQ7VMSTGW",
+    "materialCode": "EXT-CO2-002",
+    "makeCode": "EXT-CO2-002-ELI",
+    "buyingRatePaise": 238955,
+    "sellingRatePaise": 253386,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86009ZBRA00QTCRTNYAM",
+    "materialCode": "EXT-CO2-045",
+    "makeCode": "EXT-CO2-045-CEASE",
+    "buyingRatePaise": 635669,
+    "sellingRatePaise": 772973,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86000MMGNAZH5Z29V5TJ",
+    "materialCode": "EXT-CO2-045",
+    "makeCode": "EXT-CO2-045-MMX",
+    "buyingRatePaise": 589514,
+    "sellingRatePaise": 778518,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860086RH7VWG5WQ62ZKD",
+    "materialCode": "EXT-CO2-045",
+    "makeCode": "EXT-CO2-045-SAFE",
+    "buyingRatePaise": 443337,
+    "sellingRatePaise": 531498,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600VHXMSY729J38PRFG",
+    "materialCode": "EXT-CO2-045",
+    "makeCode": "EXT-CO2-045-ELI",
+    "buyingRatePaise": 355991,
+    "sellingRatePaise": 391489,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600EYEGG3EAK4RWD6TY",
+    "materialCode": "EXT-CO2-009",
+    "makeCode": "EXT-CO2-009-CEASE",
+    "buyingRatePaise": 1108773,
+    "sellingRatePaise": 1452393,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600EXYCGA7MSA8YYZHQ",
+    "materialCode": "EXT-CO2-009",
+    "makeCode": "EXT-CO2-009-MMX",
+    "buyingRatePaise": 1156217,
+    "sellingRatePaise": 1442772,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600AN6QR78ZJNRBM1MD",
+    "materialCode": "EXT-CO2-009",
+    "makeCode": "EXT-CO2-009-SAFE",
+    "buyingRatePaise": 789871,
+    "sellingRatePaise": 940546,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600QQYCBQCCKJF4T0D4",
+    "materialCode": "EXT-CO2-009",
+    "makeCode": "EXT-CO2-009-ELI",
+    "buyingRatePaise": 759100,
+    "sellingRatePaise": 789243,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600CBE6D7HMRS14V7H9",
+    "materialCode": "EXT-WCO2-009",
+    "makeCode": "EXT-WCO2-009-CEASE",
+    "buyingRatePaise": 381847,
+    "sellingRatePaise": 481538,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86003VRAQQ8PQG9AA997",
+    "materialCode": "EXT-WCO2-009",
+    "makeCode": "EXT-WCO2-009-MMX",
+    "buyingRatePaise": 356379,
+    "sellingRatePaise": 435517,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86006ZTX03FV8F0FPF5Y",
+    "materialCode": "EXT-WCO2-009",
+    "makeCode": "EXT-WCO2-009-SAFE",
+    "buyingRatePaise": 283719,
+    "sellingRatePaise": 328353,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600E3WF2BC4G5N5N5VK",
+    "materialCode": "EXT-WCO2-009",
+    "makeCode": "EXT-WCO2-009-ELI",
+    "buyingRatePaise": 243252,
+    "sellingRatePaise": 263811,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600CSAEDVGX5FX0ES6C",
+    "materialCode": "EXT-FOAM-009",
+    "makeCode": "EXT-FOAM-009-CEASE",
+    "buyingRatePaise": 435413,
+    "sellingRatePaise": 565305,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600NFHNE2STV49543CG",
+    "materialCode": "EXT-FOAM-009",
+    "makeCode": "EXT-FOAM-009-MMX",
+    "buyingRatePaise": 435989,
+    "sellingRatePaise": 553099,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600GC6ZWJ4Y894YV81B",
+    "materialCode": "EXT-FOAM-009",
+    "makeCode": "EXT-FOAM-009-SAFE",
+    "buyingRatePaise": 352804,
+    "sellingRatePaise": 436616,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86007MF3EHPAQTHAWWB0",
+    "materialCode": "EXT-FOAM-009",
+    "makeCode": "EXT-FOAM-009-ELI",
+    "buyingRatePaise": 323467,
+    "sellingRatePaise": 335850,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600WCKDYN8QPEH81TVB",
+    "materialCode": "EXT-STAND-001",
+    "makeCode": "EXT-STAND-001-CEASE",
+    "buyingRatePaise": 78641,
+    "sellingRatePaise": 97356,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600WQYFRJJS2GYMDWPK",
+    "materialCode": "EXT-STAND-001",
+    "makeCode": "EXT-STAND-001-SAFE",
+    "buyingRatePaise": 51447,
+    "sellingRatePaise": 62429,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600EVGQ1H3NQT2VKENN",
+    "materialCode": "EXT-STAND-001",
+    "makeCode": "EXT-STAND-001-ELI",
+    "buyingRatePaise": 47310,
+    "sellingRatePaise": 52790,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600Z6QCHZ28NTWJT9M9",
+    "materialCode": "EXT-STAND-001",
+    "makeCode": "EXT-STAND-001-GEN",
+    "buyingRatePaise": 50000,
+    "sellingRatePaise": 52986,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600G1SRBR0Q7MN82CD1",
+    "materialCode": "EXT-BKT-001",
+    "makeCode": "EXT-BKT-001-CEASE",
+    "buyingRatePaise": 281326,
+    "sellingRatePaise": 360833,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86006CFEYM72M5X7FDWK",
+    "materialCode": "EXT-BKT-001",
+    "makeCode": "EXT-BKT-001-SAFE",
+    "buyingRatePaise": 207846,
+    "sellingRatePaise": 245737,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86007NSFVFNFR2KHYYX0",
+    "materialCode": "EXT-BKT-001",
+    "makeCode": "EXT-BKT-001-ELI",
+    "buyingRatePaise": 201615,
+    "sellingRatePaise": 210326,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600BYRA6GW5KXD0455B",
+    "materialCode": "EXT-BKT-001",
+    "makeCode": "EXT-BKT-001-GEN",
+    "buyingRatePaise": 166123,
+    "sellingRatePaise": 180820,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q86005Q7QM8N7NAT1QES0",
+    "materialCode": "EXT-SIGN-001",
+    "makeCode": "EXT-SIGN-001-JAL",
+    "buyingRatePaise": 53600,
+    "sellingRatePaise": 67824,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600WQSGEBXAQ31REMS2",
+    "materialCode": "EXT-SIGN-001",
+    "makeCode": "EXT-SIGN-001-SAFE",
+    "buyingRatePaise": 39778,
+    "sellingRatePaise": 46600,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600B4BBG8AMJ8Y78HKK",
+    "materialCode": "EXT-SIGN-001",
+    "makeCode": "EXT-SIGN-001-GEN",
+    "buyingRatePaise": 36091,
+    "sellingRatePaise": 38968,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600EW5XFBCMN18NQ441",
+    "materialCode": "SUP-CLEAN-040",
+    "makeCode": "SUP-CLEAN-040-KID",
+    "buyingRatePaise": 20440318,
+    "sellingRatePaise": 24762445,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600HK5DWH03JEK5Y9RX",
+    "materialCode": "SUP-CLEAN-040",
+    "makeCode": "SUP-CLEAN-040-CEASE",
+    "buyingRatePaise": 13724573,
+    "sellingRatePaise": 16950936,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600HHF8KS2E6DWQXPZ1",
+    "materialCode": "SUP-CLEAN-040",
+    "makeCode": "SUP-CLEAN-040-ELI",
+    "buyingRatePaise": 12448328,
+    "sellingRatePaise": 13096930,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600P7YJRDMV0KG88AJ6",
+    "materialCode": "SUP-PANEL-001",
+    "makeCode": "SUP-PANEL-001-KID",
+    "buyingRatePaise": 5506300,
+    "sellingRatePaise": 6706224,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600VC69TB9MEVRH96BC",
+    "materialCode": "SUP-PANEL-001",
+    "makeCode": "SUP-PANEL-001-CEASE",
+    "buyingRatePaise": 4291433,
+    "sellingRatePaise": 5023595,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600Z61CW26VDKEBPQ6Y",
+    "materialCode": "SUP-PANEL-001",
+    "makeCode": "SUP-PANEL-001-ELI",
+    "buyingRatePaise": 3425724,
+    "sellingRatePaise": 3667864,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600QFT7E07N6WZ1EDP2",
+    "materialCode": "SUP-NOZ-001",
+    "makeCode": "SUP-NOZ-001-KID",
+    "buyingRatePaise": 307551,
+    "sellingRatePaise": 415617,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q8600SEKT4WVYHBTTD3DX",
+    "materialCode": "SUP-NOZ-001",
+    "makeCode": "SUP-NOZ-001-CEASE",
+    "buyingRatePaise": 265804,
+    "sellingRatePaise": 319805,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "priceId": "01KE5Q860075QV00GZACY8KVD9",
+    "materialCode": "SUP-NOZ-001",
+    "makeCode": "SUP-NOZ-001-ELI",
+    "buyingRatePaise": 269795,
+    "sellingRatePaise": 281691,
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   }
+  ],
+  "installRates": [
+   {
+    "rateCode": "INST-FAS-SMK-001",
+    "description": "Installation, testing & commissioning - Addressable Photoelectric Smoke Detector",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-SMK-001",
+    "ratePaise": 71236,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-FAS-HEAT-001",
+    "description": "Installation, testing & commissioning - Addressable Heat Detector (RoR + fixed 57°C)",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-HEAT-001",
+    "ratePaise": 63417,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-FAS-MSD-001",
+    "description": "Installation, testing & commissioning - Multi-Criteria Detector (optical + heat)",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-MSD-001",
+    "ratePaise": 139952,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-FAS-BEAM-001",
+    "description": "Installation, testing & commissioning - Reflective Optical Beam Detector 100m",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-BEAM-001",
+    "ratePaise": 1593219,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-FAS-PANEL-002",
+    "description": "Installation, testing & commissioning - Addressable Fire Alarm Panel (2-loop)",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-PANEL-002",
+    "ratePaise": 3837000,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-FAS-PANEL-004",
+    "description": "Installation, testing & commissioning - Addressable Fire Alarm Panel (4-loop, networkable)",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-PANEL-004",
+    "ratePaise": 6988121,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-FAS-RPT-001",
+    "description": "Installation, testing & commissioning - Repeater Panel (LCD)",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-RPT-001",
+    "ratePaise": 1753112,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-FAS-MCP-001",
+    "description": "Installation, testing & commissioning - Addressable Manual Call Point",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-MCP-001",
+    "ratePaise": 37441,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-FAS-HOOT-001",
+    "description": "Installation, testing & commissioning - Addressable Hooter cum Strobe",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-HOOT-001",
+    "ratePaise": 59985,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-FAS-CM-001",
+    "description": "Installation, testing & commissioning - Addressable Control Module",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-CM-001",
+    "ratePaise": 102064,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-FAS-MM-001",
+    "description": "Installation, testing & commissioning - Addressable Monitor Module",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-MM-001",
+    "ratePaise": 75653,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-FAS-ISO-001",
+    "description": "Installation, testing & commissioning - Loop Fault Isolator Module",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-ISO-001",
+    "ratePaise": 71565,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-FAS-RI-001",
+    "description": "Installation, testing & commissioning - Response Indicator",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-RI-001",
+    "ratePaise": 14609,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-FAS-CABLE-001",
+    "description": "Installation, testing & commissioning - FRLS Armoured Cable 2C x 1.5 sqmm",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-CABLE-001",
+    "ratePaise": 4038,
+    "unit": "Per Metre",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-FAS-CABLE-025",
+    "description": "Installation, testing & commissioning - FRLS Armoured Cable 2C x 2.5 sqmm",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-CABLE-025",
+    "ratePaise": 5116,
+    "unit": "Per Metre",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-FAS-BATT-001",
+    "description": "Installation, testing & commissioning - SMF Standby Battery 12V 26Ah",
+    "systemType": "FAS",
+    "linkedMaterialCode": "FAS-BATT-001",
+    "ratePaise": 194283,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-PIPE-080",
+    "description": "Installation, testing & commissioning - MS ERW Pipe 80mm (C-Class)",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-PIPE-080",
+    "ratePaise": 49317,
+    "unit": "Per Metre",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-PIPE-100",
+    "description": "Installation, testing & commissioning - MS ERW Pipe 100mm (C-Class)",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-PIPE-100",
+    "ratePaise": 61737,
+    "unit": "Per Metre",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-PIPE-150",
+    "description": "Installation, testing & commissioning - MS ERW Pipe 150mm (C-Class)",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-PIPE-150",
+    "ratePaise": 111225,
+    "unit": "Per Metre",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-LV-001",
+    "description": "Installation, testing & commissioning - Single Headed Landing Valve 63mm (Gunmetal)",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-LV-001",
+    "ratePaise": 156254,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-GV-100",
+    "description": "Installation, testing & commissioning - Sluice Valve 100mm (CI, PN16)",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-GV-100",
+    "ratePaise": 397630,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-YH-001",
+    "description": "Installation, testing & commissioning - Double Headed Yard Hydrant Valve",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-YH-001",
+    "ratePaise": 462081,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-BFV-150",
+    "description": "Installation, testing & commissioning - Butterfly Valve 150mm (PN16)",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-BFV-150",
+    "ratePaise": 669206,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-NRV-150",
+    "description": "Installation, testing & commissioning - Non-Return Valve 150mm (Dual Plate)",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-NRV-150",
+    "ratePaise": 794320,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-HOSE-001",
+    "description": "Installation, testing & commissioning - RRL Fire Hose 63mm x 15m (Type A)",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-HOSE-001",
+    "ratePaise": 160954,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-NOZ-001",
+    "description": "Installation, testing & commissioning - Branch Pipe with Nozzle 63mm",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-NOZ-001",
+    "ratePaise": 72341,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-HR-001",
+    "description": "Installation, testing & commissioning - First-Aid Hose Reel 30m x 19mm",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-HR-001",
+    "ratePaise": 362990,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-HB-001",
+    "description": "Installation, testing & commissioning - Hose Box (MS, double door)",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-HB-001",
+    "ratePaise": 180440,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-FBC-001",
+    "description": "Installation, testing & commissioning - Fire Brigade Inlet Connection (4-way)",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-FBC-001",
+    "ratePaise": 888175,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-PUMP-MAIN",
+    "description": "Installation, testing & commissioning - Main Electric Fire Pump 2280 LPM @ 88m",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-PUMP-MAIN",
+    "ratePaise": 12747711,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-PUMP-JOCKEY",
+    "description": "Installation, testing & commissioning - Jockey Pump 180 LPM @ 88m",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-PUMP-JOCKEY",
+    "ratePaise": 2935269,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-PUMP-DIESEL",
+    "description": "Installation, testing & commissioning - Diesel Engine Driven Fire Pump 2280 LPM",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-PUMP-DIESEL",
+    "ratePaise": 16623168,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-HYD-PS-001",
+    "description": "Installation, testing & commissioning - Pressure Switch (pump start)",
+    "systemType": "Hydrant",
+    "linkedMaterialCode": "HYD-PS-001",
+    "ratePaise": 117057,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-SPR-HEAD-PEN",
+    "description": "Installation, testing & commissioning - Pendent Sprinkler 68°C K80 15mm",
+    "systemType": "Sprinkler",
+    "linkedMaterialCode": "SPR-HEAD-PEN",
+    "ratePaise": 9049,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-SPR-HEAD-UPR",
+    "description": "Installation, testing & commissioning - Upright Sprinkler 68°C K80 15mm",
+    "systemType": "Sprinkler",
+    "linkedMaterialCode": "SPR-HEAD-UPR",
+    "ratePaise": 8499,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-SPR-HEAD-SW",
+    "description": "Installation, testing & commissioning - Horizontal Sidewall Sprinkler 68°C",
+    "systemType": "Sprinkler",
+    "linkedMaterialCode": "SPR-HEAD-SW",
+    "ratePaise": 9894,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-SPR-PIPE-025",
+    "description": "Installation, testing & commissioning - MS ERW Pipe 25mm (C-Class)",
+    "systemType": "Sprinkler",
+    "linkedMaterialCode": "SPR-PIPE-025",
+    "ratePaise": 18571,
+    "unit": "Per Metre",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-SPR-PIPE-032",
+    "description": "Installation, testing & commissioning - MS ERW Pipe 32mm (C-Class)",
+    "systemType": "Sprinkler",
+    "linkedMaterialCode": "SPR-PIPE-032",
+    "ratePaise": 19250,
+    "unit": "Per Metre",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-SPR-PIPE-050",
+    "description": "Installation, testing & commissioning - MS ERW Pipe 50mm (C-Class)",
+    "systemType": "Sprinkler",
+    "linkedMaterialCode": "SPR-PIPE-050",
+    "ratePaise": 25672,
+    "unit": "Per Metre",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-SPR-ACV-150",
+    "description": "Installation, testing & commissioning - Alarm Check Valve 150mm (wet)",
+    "systemType": "Sprinkler",
+    "linkedMaterialCode": "SPR-ACV-150",
+    "ratePaise": 1719724,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-SPR-ICV-100",
+    "description": "Installation, testing & commissioning - Floor Control Valve Assembly 100mm",
+    "systemType": "Sprinkler",
+    "linkedMaterialCode": "SPR-ICV-100",
+    "ratePaise": 613533,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-SPR-FS-001",
+    "description": "Installation, testing & commissioning - Water Flow Switch (vane type)",
+    "systemType": "Sprinkler",
+    "linkedMaterialCode": "SPR-FS-001",
+    "ratePaise": 140859,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-SPR-ITC-001",
+    "description": "Installation, testing & commissioning - Inspector's Test and Drain Assembly 25mm",
+    "systemType": "Sprinkler",
+    "linkedMaterialCode": "SPR-ITC-001",
+    "ratePaise": 103555,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-SPR-CAB-001",
+    "description": "Installation, testing & commissioning - Spare Sprinkler Cabinet (12 heads + wrench)",
+    "systemType": "Sprinkler",
+    "linkedMaterialCode": "SPR-CAB-001",
+    "ratePaise": 171494,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-EXT-ABC-004",
+    "description": "Installation, testing & commissioning - ABC Dry Powder Extinguisher 4kg (MAP 90)",
+    "systemType": "Extinguisher",
+    "linkedMaterialCode": "EXT-ABC-004",
+    "ratePaise": 87198,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-EXT-ABC-006",
+    "description": "Installation, testing & commissioning - ABC Dry Powder Extinguisher 6kg (MAP 90)",
+    "systemType": "Extinguisher",
+    "linkedMaterialCode": "EXT-ABC-006",
+    "ratePaise": 108316,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-EXT-ABC-009",
+    "description": "Installation, testing & commissioning - ABC Dry Powder Extinguisher 9kg (MAP 90)",
+    "systemType": "Extinguisher",
+    "linkedMaterialCode": "EXT-ABC-009",
+    "ratePaise": 149729,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-EXT-CO2-002",
+    "description": "Installation, testing & commissioning - CO2 Extinguisher 2kg",
+    "systemType": "Extinguisher",
+    "linkedMaterialCode": "EXT-CO2-002",
+    "ratePaise": 139921,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-EXT-CO2-045",
+    "description": "Installation, testing & commissioning - CO2 Extinguisher 4.5kg",
+    "systemType": "Extinguisher",
+    "linkedMaterialCode": "EXT-CO2-045",
+    "ratePaise": 249618,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-EXT-CO2-009",
+    "description": "Installation, testing & commissioning - CO2 Extinguisher 9kg (trolley)",
+    "systemType": "Extinguisher",
+    "linkedMaterialCode": "EXT-CO2-009",
+    "ratePaise": 378760,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-EXT-WCO2-009",
+    "description": "Installation, testing & commissioning - Water-CO2 Extinguisher 9L",
+    "systemType": "Extinguisher",
+    "linkedMaterialCode": "EXT-WCO2-009",
+    "ratePaise": 127553,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-EXT-FOAM-009",
+    "description": "Installation, testing & commissioning - Mechanical Foam Extinguisher 9L (AFFF)",
+    "systemType": "Extinguisher",
+    "linkedMaterialCode": "EXT-FOAM-009",
+    "ratePaise": 172324,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-EXT-STAND-001",
+    "description": "Installation, testing & commissioning - MS Extinguisher Stand (2-unit)",
+    "systemType": "Extinguisher",
+    "linkedMaterialCode": "EXT-STAND-001",
+    "ratePaise": 30436,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-EXT-BKT-001",
+    "description": "Installation, testing & commissioning - Fire Bucket Stand with 4 Buckets",
+    "systemType": "Extinguisher",
+    "linkedMaterialCode": "EXT-BKT-001",
+    "ratePaise": 103408,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-EXT-SIGN-001",
+    "description": "Installation, testing & commissioning - Photoluminescent Extinguisher Location Sign",
+    "systemType": "Extinguisher",
+    "linkedMaterialCode": "EXT-SIGN-001",
+    "ratePaise": 21256,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-SUP-CLEAN-040",
+    "description": "Installation, testing & commissioning - Clean Agent (FK-5-1-12) Cylinder 40L with Valve",
+    "systemType": "Suppression",
+    "linkedMaterialCode": "SUP-CLEAN-040",
+    "ratePaise": 7605319,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-SUP-PANEL-001",
+    "description": "Installation, testing & commissioning - Gas Release Control Panel (2-zone)",
+    "systemType": "Suppression",
+    "linkedMaterialCode": "SUP-PANEL-001",
+    "ratePaise": 2354944,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   },
+   {
+    "rateCode": "INST-SUP-NOZ-001",
+    "description": "Installation, testing & commissioning - Discharge Nozzle 360° (brass)",
+    "systemType": "Suppression",
+    "linkedMaterialCode": "SUP-NOZ-001",
+    "ratePaise": 144216,
+    "unit": "Per No.",
+    "effectiveFrom": "2026-01-05T00:00:00.000Z"
+   }
+  ],
+  "rules": [
+   {
+    "ruleId": "01KE5Q86005AWSH8VHTPRE95B9",
+    "ruleCode": "DL-FAS-001",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS",
+    "quantityFormula": "CEIL(total_area_sqm / 60)",
+    "outputMaterialCode": "FAS-SMK-001",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q86000YP57RCYBVN5SXS5",
+    "ruleCode": "DL-FAS-002",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS",
+    "quantityFormula": "CEIL(total_area_sqm / 250)",
+    "outputMaterialCode": "FAS-HEAT-001",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600Q1NXW1RNJ47E65GH",
+    "ruleCode": "DL-FAS-003",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS AND building_type = Commercial",
+    "quantityFormula": "CEIL(total_area_sqm / 400)",
+    "outputMaterialCode": "FAS-MSD-001",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q86000NR5YHCF05G59S2S",
+    "ruleCode": "DL-FAS-004",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS AND building_type = Industrial",
+    "quantityFormula": "CEIL(total_area_sqm / 1500)",
+    "outputMaterialCode": "FAS-BEAM-001",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600K9TPRM7N0MNS7C0J",
+    "ruleCode": "DL-FAS-005",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS AND floors_above <= 6",
+    "quantityFormula": "1",
+    "outputMaterialCode": "FAS-PANEL-002",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600XWF6E996X5208E2K",
+    "ruleCode": "DL-FAS-006",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS AND floors_above > 6",
+    "quantityFormula": "MAX(1, CEIL(floors_above / 12))",
+    "outputMaterialCode": "FAS-PANEL-004",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600KV53YCQWCMQY1TFS",
+    "ruleCode": "DL-FAS-007",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS AND floors_above >= 4",
+    "quantityFormula": "1",
+    "outputMaterialCode": "FAS-RPT-001",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600C4QBWG06PD2QN92D",
+    "ruleCode": "DL-FAS-008",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS",
+    "quantityFormula": "MAX(floors_above, 1) * 2",
+    "outputMaterialCode": "FAS-MCP-001",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600RQWWB10ZXFWXBYS6",
+    "ruleCode": "DL-FAS-009",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS",
+    "quantityFormula": "MAX(floors_above, 1) * 2",
+    "outputMaterialCode": "FAS-HOOT-001",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q86009W649HSG03PWZFA0",
+    "ruleCode": "DL-FAS-010",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS",
+    "quantityFormula": "MAX(floors_above, 1)",
+    "outputMaterialCode": "FAS-CM-001",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600DJMNVG1PGJ3QMYJ1",
+    "ruleCode": "DL-FAS-011",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS",
+    "quantityFormula": "MAX(floors_above, 1)",
+    "outputMaterialCode": "FAS-MM-001",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600X20SVEJX19GS0FVT",
+    "ruleCode": "DL-FAS-012",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS",
+    "quantityFormula": "CEIL(total_area_sqm / 800)",
+    "outputMaterialCode": "FAS-ISO-001",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600V5Q9KR35M8P00D4J",
+    "ruleCode": "DL-FAS-013",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS",
+    "quantityFormula": "CEIL(total_area_sqm / 150)",
+    "outputMaterialCode": "FAS-RI-001",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600R95D2XB6B2T60Q8K",
+    "ruleCode": "DL-FAS-014",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS",
+    "quantityFormula": "ROUND(total_area_sqm * 0.9)",
+    "outputMaterialCode": "FAS-CABLE-001",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q86002J99HZP5ZRCEK3SX",
+    "ruleCode": "DL-FAS-015",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS",
+    "quantityFormula": "ROUND(MAX(floors_above, 1) * 42)",
+    "outputMaterialCode": "FAS-CABLE-025",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600QXZ4S75GME5SBWAQ",
+    "ruleCode": "DL-FAS-016",
+    "ruleVersion": 1,
+    "systemType": "FAS",
+    "conditionExpr": "system = FAS",
+    "quantityFormula": "MAX(1, CEIL(floors_above / 8)) * 2",
+    "outputMaterialCode": "FAS-BATT-001",
+    "standardReference": "IS 2189",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q860093DYJ7GCQVGFF6RJ",
+    "ruleCode": "DL-HYD-001",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant",
+    "quantityFormula": "ROUND(MAX(floors_above, 1) * 8)",
+    "outputMaterialCode": "HYD-PIPE-080",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q860016CG1XFW6P6B2H7X",
+    "ruleCode": "DL-HYD-002",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant",
+    "quantityFormula": "ROUND(total_area_sqm * 0.25 + MAX(floors_above, 1) * 12)",
+    "outputMaterialCode": "HYD-PIPE-100",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600ERCQXKYYK1FNECRS",
+    "ruleCode": "DL-HYD-003",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant AND floors_above >= 4",
+    "quantityFormula": "ROUND(total_area_sqm * 0.06 + 60)",
+    "outputMaterialCode": "HYD-PIPE-150",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600SWN5AQMQ4KB7JNTA",
+    "ruleCode": "DL-HYD-004",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant",
+    "quantityFormula": "MAX(floors_above, 1)",
+    "outputMaterialCode": "HYD-LV-001",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600RNS47VPFRCXJPFV2",
+    "ruleCode": "DL-HYD-005",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant",
+    "quantityFormula": "CEIL(MAX(floors_above, 1) / 3)",
+    "outputMaterialCode": "HYD-GV-100",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600J23F72MDP5TSEH5P",
+    "ruleCode": "DL-HYD-006",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant AND total_area_sqm >= 3000",
+    "quantityFormula": "CEIL(total_area_sqm / 3000)",
+    "outputMaterialCode": "HYD-YH-001",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600RBPMEQ8QGF326S3D",
+    "ruleCode": "DL-HYD-007",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant AND floors_above >= 4",
+    "quantityFormula": "4",
+    "outputMaterialCode": "HYD-BFV-150",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600Q3SF3Q20DXK78V5C",
+    "ruleCode": "DL-HYD-008",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant AND floors_above >= 4",
+    "quantityFormula": "2",
+    "outputMaterialCode": "HYD-NRV-150",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600E1FX299HRH4GP826",
+    "ruleCode": "DL-HYD-009",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant",
+    "quantityFormula": "MAX(floors_above, 1) * 2",
+    "outputMaterialCode": "HYD-HOSE-001",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600N80CH0M1DMM1ZSNB",
+    "ruleCode": "DL-HYD-010",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant",
+    "quantityFormula": "MAX(floors_above, 1)",
+    "outputMaterialCode": "HYD-NOZ-001",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600E1G1GVFEPDMVHKZD",
+    "ruleCode": "DL-HYD-011",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant",
+    "quantityFormula": "MAX(floors_above, 1)",
+    "outputMaterialCode": "HYD-HR-001",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600C3TQH0M2XJNTHSVM",
+    "ruleCode": "DL-HYD-012",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant",
+    "quantityFormula": "MAX(floors_above, 1)",
+    "outputMaterialCode": "HYD-HB-001",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600MGFGW5Z5C8VJQ2WR",
+    "ruleCode": "DL-HYD-013",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant",
+    "quantityFormula": "1",
+    "outputMaterialCode": "HYD-FBC-001",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600T3KKFRVGKC83DQXZ",
+    "ruleCode": "DL-HYD-014",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant AND floors_above >= 4",
+    "quantityFormula": "1",
+    "outputMaterialCode": "HYD-PUMP-MAIN",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600BVNS72P7D4JZP1Z5",
+    "ruleCode": "DL-HYD-015",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant AND floors_above >= 4",
+    "quantityFormula": "1",
+    "outputMaterialCode": "HYD-PUMP-JOCKEY",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q86007MXFA2GQCJSD8FF6",
+    "ruleCode": "DL-HYD-016",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant AND floors_above >= 4",
+    "quantityFormula": "1",
+    "outputMaterialCode": "HYD-PUMP-DIESEL",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q86003QT5PAZZ8GK3XAVR",
+    "ruleCode": "DL-HYD-017",
+    "ruleVersion": 1,
+    "systemType": "Hydrant",
+    "conditionExpr": "system = Hydrant AND floors_above >= 4",
+    "quantityFormula": "3",
+    "outputMaterialCode": "HYD-PS-001",
+    "standardReference": "IS 3844 / NBC 2016 Part 4",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600R8GT4NWHJQKR3ZZQ",
+    "ruleCode": "DL-SPR-001",
+    "ruleVersion": 1,
+    "systemType": "Sprinkler",
+    "conditionExpr": "system = Sprinkler",
+    "quantityFormula": "CEIL(total_area_sqm / 12)",
+    "outputMaterialCode": "SPR-HEAD-PEN",
+    "standardReference": "IS 15105",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600J7GW02KPQGF46T7K",
+    "ruleCode": "DL-SPR-002",
+    "ruleVersion": 1,
+    "systemType": "Sprinkler",
+    "conditionExpr": "system = Sprinkler AND building_type = Industrial",
+    "quantityFormula": "CEIL(total_area_sqm / 9)",
+    "outputMaterialCode": "SPR-HEAD-UPR",
+    "standardReference": "IS 15105",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600HVQ4H57SRTE3QNG4",
+    "ruleCode": "DL-SPR-003",
+    "ruleVersion": 1,
+    "systemType": "Sprinkler",
+    "conditionExpr": "system = Sprinkler AND building_type = Residential",
+    "quantityFormula": "CEIL(total_area_sqm / 30)",
+    "outputMaterialCode": "SPR-HEAD-SW",
+    "standardReference": "IS 15105",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q86004MNXZD0FDPR668CW",
+    "ruleCode": "DL-SPR-004",
+    "ruleVersion": 1,
+    "systemType": "Sprinkler",
+    "conditionExpr": "system = Sprinkler",
+    "quantityFormula": "ROUND(total_area_sqm * 0.45)",
+    "outputMaterialCode": "SPR-PIPE-025",
+    "standardReference": "IS 15105",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q86009ZNC05427DRXTD51",
+    "ruleCode": "DL-SPR-005",
+    "ruleVersion": 1,
+    "systemType": "Sprinkler",
+    "conditionExpr": "system = Sprinkler",
+    "quantityFormula": "ROUND(total_area_sqm * 0.2)",
+    "outputMaterialCode": "SPR-PIPE-032",
+    "standardReference": "IS 15105",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600404Q497ZHWB6GKST",
+    "ruleCode": "DL-SPR-006",
+    "ruleVersion": 1,
+    "systemType": "Sprinkler",
+    "conditionExpr": "system = Sprinkler",
+    "quantityFormula": "ROUND(total_area_sqm * 0.12)",
+    "outputMaterialCode": "SPR-PIPE-050",
+    "standardReference": "IS 15105",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600ZYBEVW37C4HQWYFN",
+    "ruleCode": "DL-SPR-007",
+    "ruleVersion": 1,
+    "systemType": "Sprinkler",
+    "conditionExpr": "system = Sprinkler",
+    "quantityFormula": "MAX(1, CEIL(total_area_sqm / 4000))",
+    "outputMaterialCode": "SPR-ACV-150",
+    "standardReference": "IS 15105",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600KXHEM2TBNT1QAF09",
+    "ruleCode": "DL-SPR-008",
+    "ruleVersion": 1,
+    "systemType": "Sprinkler",
+    "conditionExpr": "system = Sprinkler",
+    "quantityFormula": "MAX(floors_above, 1)",
+    "outputMaterialCode": "SPR-ICV-100",
+    "standardReference": "IS 15105",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q86003YDM0WYNBXMEV5DT",
+    "ruleCode": "DL-SPR-009",
+    "ruleVersion": 1,
+    "systemType": "Sprinkler",
+    "conditionExpr": "system = Sprinkler",
+    "quantityFormula": "MAX(floors_above, 1)",
+    "outputMaterialCode": "SPR-FS-001",
+    "standardReference": "IS 15105",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600GAG543G8NNZ9C39V",
+    "ruleCode": "DL-SPR-010",
+    "ruleVersion": 1,
+    "systemType": "Sprinkler",
+    "conditionExpr": "system = Sprinkler",
+    "quantityFormula": "MAX(floors_above, 1)",
+    "outputMaterialCode": "SPR-ITC-001",
+    "standardReference": "IS 15105",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600WM36X5H8284X2K4N",
+    "ruleCode": "DL-SPR-011",
+    "ruleVersion": 1,
+    "systemType": "Sprinkler",
+    "conditionExpr": "system = Sprinkler",
+    "quantityFormula": "1",
+    "outputMaterialCode": "SPR-CAB-001",
+    "standardReference": "IS 15105",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600RVK8FN3PBM83XNYX",
+    "ruleCode": "DL-EXT-001",
+    "ruleVersion": 1,
+    "systemType": "Extinguisher",
+    "conditionExpr": "system = Extinguisher",
+    "quantityFormula": "CEIL(total_area_sqm / 200)",
+    "outputMaterialCode": "EXT-ABC-004",
+    "standardReference": "IS 2190",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600DX9D99W1V8GHETDX",
+    "ruleCode": "DL-EXT-002",
+    "ruleVersion": 1,
+    "systemType": "Extinguisher",
+    "conditionExpr": "system = Extinguisher AND building_type = Commercial",
+    "quantityFormula": "MAX(floors_above, 1)",
+    "outputMaterialCode": "EXT-ABC-006",
+    "standardReference": "IS 2190",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q860009QSMENASBJ781MY",
+    "ruleCode": "DL-EXT-003",
+    "ruleVersion": 1,
+    "systemType": "Extinguisher",
+    "conditionExpr": "system = Extinguisher AND building_type = Industrial",
+    "quantityFormula": "CEIL(total_area_sqm / 500)",
+    "outputMaterialCode": "EXT-ABC-009",
+    "standardReference": "IS 2190",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600BAB9P3W2W0WW1NS9",
+    "ruleCode": "DL-EXT-004",
+    "ruleVersion": 1,
+    "systemType": "Extinguisher",
+    "conditionExpr": "system = Extinguisher",
+    "quantityFormula": "MAX(floors_above, 1)",
+    "outputMaterialCode": "EXT-CO2-002",
+    "standardReference": "IS 2190",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600WY1552DXY5JNB87B",
+    "ruleCode": "DL-EXT-005",
+    "ruleVersion": 1,
+    "systemType": "Extinguisher",
+    "conditionExpr": "system = Extinguisher",
+    "quantityFormula": "MAX(1, CEIL(floors_above / 2))",
+    "outputMaterialCode": "EXT-CO2-045",
+    "standardReference": "IS 2190",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q86007F7J6C0H3V5HM0TP",
+    "ruleCode": "DL-EXT-006",
+    "ruleVersion": 1,
+    "systemType": "Extinguisher",
+    "conditionExpr": "system = Extinguisher AND floors_above >= 4",
+    "quantityFormula": "2",
+    "outputMaterialCode": "EXT-CO2-009",
+    "standardReference": "IS 2190",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600WF9BKVM6VA2Z7A3J",
+    "ruleCode": "DL-EXT-007",
+    "ruleVersion": 1,
+    "systemType": "Extinguisher",
+    "conditionExpr": "system = Extinguisher AND building_type <> Industrial",
+    "quantityFormula": "CEIL(total_area_sqm / 400)",
+    "outputMaterialCode": "EXT-WCO2-009",
+    "standardReference": "IS 2190",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600VF9G77R5E092P5KM",
+    "ruleCode": "DL-EXT-008",
+    "ruleVersion": 1,
+    "systemType": "Extinguisher",
+    "conditionExpr": "system = Extinguisher AND building_type = Industrial",
+    "quantityFormula": "CEIL(total_area_sqm / 600)",
+    "outputMaterialCode": "EXT-FOAM-009",
+    "standardReference": "IS 2190",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600APH3FN2B3VVC9Q77",
+    "ruleCode": "DL-EXT-009",
+    "ruleVersion": 1,
+    "systemType": "Extinguisher",
+    "conditionExpr": "system = Extinguisher",
+    "quantityFormula": "CEIL(total_area_sqm / 400)",
+    "outputMaterialCode": "EXT-STAND-001",
+    "standardReference": "IS 2190",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600TXJPQA6Z7QJDERPN",
+    "ruleCode": "DL-EXT-010",
+    "ruleVersion": 1,
+    "systemType": "Extinguisher",
+    "conditionExpr": "system = Extinguisher AND building_type = Industrial",
+    "quantityFormula": "CEIL(total_area_sqm / 1000)",
+    "outputMaterialCode": "EXT-BKT-001",
+    "standardReference": "IS 2190",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600EWM8QZWA36529H4B",
+    "ruleCode": "DL-EXT-011",
+    "ruleVersion": 1,
+    "systemType": "Extinguisher",
+    "conditionExpr": "system = Extinguisher",
+    "quantityFormula": "CEIL(total_area_sqm / 250)",
+    "outputMaterialCode": "EXT-SIGN-001",
+    "standardReference": "IS 2190",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600PSDAPZSA9VBYDCFP",
+    "ruleCode": "DL-SUP-001",
+    "ruleVersion": 1,
+    "systemType": "Suppression",
+    "conditionExpr": "system = Suppression",
+    "quantityFormula": "MAX(1, CEIL(floor_area_sqm / 120))",
+    "outputMaterialCode": "SUP-CLEAN-040",
+    "standardReference": "NFPA 2001",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q8600AK9G633CFD5GG5GZ",
+    "ruleCode": "DL-SUP-002",
+    "ruleVersion": 1,
+    "systemType": "Suppression",
+    "conditionExpr": "system = Suppression",
+    "quantityFormula": "1",
+    "outputMaterialCode": "SUP-PANEL-001",
+    "standardReference": "NFPA 2001",
+    "active": true
+   },
+   {
+    "ruleId": "01KE5Q86000J1RWMEN4835J2JK",
+    "ruleCode": "DL-SUP-003",
+    "ruleVersion": 1,
+    "systemType": "Suppression",
+    "conditionExpr": "system = Suppression",
+    "quantityFormula": "MAX(2, CEIL(floor_area_sqm / 40))",
+    "outputMaterialCode": "SUP-NOZ-001",
+    "standardReference": "NFPA 2001",
+    "active": true
+   }
+  ],
+  "marginMatrix": [
+   {
+    "tier": 1,
+    "tierLabel": "Sub ₹5L",
+    "targetMarginPct": 25,
+    "floorMarginPct": 18,
+    "discountAuthority": "Self"
+   },
+   {
+    "tier": 2,
+    "tierLabel": "₹5L–20L",
+    "targetMarginPct": 22,
+    "floorMarginPct": 15,
+    "discountAuthority": "GM"
+   },
+   {
+    "tier": 3,
+    "tierLabel": "₹20L–1Cr",
+    "targetMarginPct": 20,
+    "floorMarginPct": 12,
+    "discountAuthority": "GM"
+   },
+   {
+    "tier": 4,
+    "tierLabel": ">₹1Cr",
+    "targetMarginPct": 18,
+    "floorMarginPct": 10,
+    "discountAuthority": "MD"
+   }
+  ]
+ }
+}

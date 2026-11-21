@@ -1,0 +1,5 @@
+{
+ "enquiryId": "GBE-ENQ-2026-003",
+ "approvedBrands": {"Pump": ["M/s Kirloskar", "Grundfos", "KSB"]},
+ "sameBrand": [["HYD-PIPE-100", "HYD-PIPE-150", "SPR-PIPE-050"], ["HYD-PUMP-MAIN", "HYD-PUMP-JOCKEY"], ["HYD-LH-001", "HYD-NOZ-001"], ["SPR-HEAD-001", "SPR-VALVE-001"]]
+}

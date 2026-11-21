@@ -1,0 +1,5 @@
+{
+ "enquiryId": "GBE-ENQ-2026-002",
+ "approvedBrands": {"Pipe": ["Jindal (ISI)", "Tata", "Surya"]},
+ "sameBrand": [["HYD-PIPE-100", "HYD-PIPE-150"], ["HYD-PUMP-MAIN", "HYD-PUMP-JOCKEY"], ["EXT-ABC-001", "EXT-ABC-002", "EXT-CO2-001", "EXT-WCO2-001"]]
+}

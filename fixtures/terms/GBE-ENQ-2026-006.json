@@ -1,0 +1,5 @@
+{
+ "enquiryId": "GBE-ENQ-2026-006",
+ "approvedBrands": {"Detector": ["Agni", "Notifier", "Honeywell (UL)"]},
+ "sameBrand": [["FAS-SMK-001", "FAS-HEAT-001", "FAS-MCP-001", "FAS-HOOT-001", "FAS-RI-001", "FAS-PANEL-002"], ["SPR-HEAD-001", "SPR-VALVE-001"]]
+}

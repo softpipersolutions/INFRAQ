@@ -1,0 +1,5 @@
+{
+ "enquiryId": "GBE-ENQ-2026-001",
+ "approvedBrands": {"Detector": ["Agni", "Honeywell (UL)"], "Panel": ["Agni", "Honeywell (UL)"]},
+ "sameBrand": [["FAS-SMK-001", "FAS-HEAT-001", "FAS-PANEL-002"]]
+}
